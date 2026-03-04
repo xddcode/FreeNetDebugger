@@ -13,7 +13,7 @@ export default function AboutDialog({ open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center cursor-pointer"
+      className="fixed inset-0 z-9999 flex items-center justify-center cursor-pointer"
       onClick={onClose}
     >
       {/* 遮罩 */}
