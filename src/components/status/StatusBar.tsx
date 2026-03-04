@@ -5,8 +5,12 @@ import type { Session } from '../../types';
 interface Props { session: Session | null }
 
 function fmt(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024) {
+    return `${n} B`;
+  }
+  if (n < 1024 * 1024) {
+    return `${(n / 1024).toFixed(1)} KB`;
+  }
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
@@ -19,7 +23,9 @@ export default function StatusBar({ session }: Props) {
   const isError  = session?.status === 'error';
 
   const statusLabel = () => {
-    if (!session || session.status === 'idle') return t('status.ready');
+    if (!session || session.status === 'idle') {
+      return t('status.ready');
+    }
     const m: Record<string, string> = {
       connecting:    t('status.connecting'),
       connected:     t('status.connected'),
@@ -37,12 +43,22 @@ export default function StatusBar({ session }: Props) {
     : '#94a3b8';
 
   const addrText = () => {
-    if (!session) return '';
+    if (!session) {
+      return '';
+    }
     const { config, remoteAddr } = session;
-    if (remoteAddr) return remoteAddr;
-    if (['TCP_CLIENT', 'UDP_CLIENT'].includes(config.protocol)) return `${config.remoteHost}:${config.remotePort}`;
-    if (['TCP_SERVER', 'UDP_SERVER'].includes(config.protocol)) return `${config.localHost}:${config.localPort}`;
-    if (config.protocol === 'WEBSOCKET') return config.wsUrl;
+    if (remoteAddr) {
+      return remoteAddr;
+    }
+    if (['TCP_CLIENT', 'UDP_CLIENT'].includes(config.protocol)) {
+      return `${config.remoteHost}:${config.remotePort}`;
+    }
+    if (['TCP_SERVER', 'UDP_SERVER'].includes(config.protocol)) {
+      return `${config.localHost}:${config.localPort}`;
+    }
+    if (config.protocol === 'WEBSOCKET') {
+      return config.wsUrl;
+    }
     return '';
   };
 

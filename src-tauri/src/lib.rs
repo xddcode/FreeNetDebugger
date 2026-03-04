@@ -5,7 +5,7 @@ mod state;
 mod types;
 mod utils;
 
-use commands::{connect, disconnect, list_serial_ports, send_data};
+use commands::{connect, disconnect, exit_app, list_serial_ports, send_data};
 use state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -18,6 +18,7 @@ pub fn run() {
             disconnect,
             send_data,
             list_serial_ports,
+            exit_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

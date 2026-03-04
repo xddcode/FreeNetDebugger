@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
 import { useAppStore } from '../../store';
 import type { Session, ProtocolType, EncodingMode, AsciiNonPrintableMode } from '../../types';
+import { sendPanelBus } from '../../utils/sendPanelBus';
 import { bytesToDisplay, formatTimestamp } from '../../utils/encoding';
-
-// ─── Shared primitives ───────────────────────────────────────────────────────
 
 function PanelCard({ children }: { children: React.ReactNode }) {
   return <div className="neon-card flex flex-col overflow-hidden shrink-0">{children}</div>;
@@ -66,8 +65,6 @@ function RadioGroup({ options, value, onChange, accent }: { options: string[]; v
   );
 }
 
-// ─── Quick Shortcuts Panel ────────────────────────────────────────────────────
-
 interface QSPanelProps {
   onSend: (text: string, enc: EncodingMode) => void;
 }
@@ -119,7 +116,9 @@ function QuickShortcutsPanel({ onSend }: QSPanelProps) {
               className="px-2 rounded text-xs font-bold"
               style={{ height: 24, background: 'rgba(19,236,236,0.15)', border: '1px solid rgba(19,236,236,0.3)', color: 'var(--color-primary)', cursor: 'pointer', fontSize: 10 }}
               onClick={() => {
-                if (!name.trim() || !data.trim()) return;
+                if (!name.trim() || !data.trim()) {
+                  return;
+                }
                 addCmd({ name: name.trim(), data: data.trim(), encoding: enc });
                 setName(''); setData(''); setAdding(false);
               }}
@@ -139,8 +138,6 @@ function QuickShortcutsPanel({ onSend }: QSPanelProps) {
     </div>
   );
 }
-
-// ─── Send History Panel ───────────────────────────────────────────────────────
 
 function SendHistoryPanel({ history, onSelect }: { history: string[]; onSelect: (t: string) => void }) {
   const { t } = useTranslation();
@@ -170,19 +167,11 @@ function SendHistoryPanel({ history, onSelect }: { history: string[]; onSelect: 
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 interface Props {
   session: Session;
   onSendShortcut?: (text: string, enc: EncodingMode) => void;
   onSelectHistory?: (text: string) => void;
 }
-
-export const sendPanelBus = {
-  listeners: new Set<(text: string, enc: EncodingMode) => void>(),
-  emit(text: string, enc: EncodingMode) { this.listeners.forEach(fn => fn(text, enc)); },
-  on(fn: (text: string, enc: EncodingMode) => void) { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; },
-};
 
 export default function ConnectionPanel({ session }: Props) {
   const { t } = useTranslation();
@@ -245,7 +234,9 @@ export default function ConnectionPanel({ session }: Props) {
 
   const appendLineToFile = (line: string) => {
     const handle = fileHandleRef.current;
-    if (!handle) return;
+    if (!handle) {
+      return;
+    }
 
     writeChainRef.current = writeChainRef.current
       .then(async () => {
@@ -346,7 +337,6 @@ export default function ConnectionPanel({ session }: Props) {
 
   return (
     <>
-      {/* ── Network Settings ──────────────────────────── */}
       <PanelCard>
         <PanelHeader
           icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
@@ -393,7 +383,6 @@ export default function ConnectionPanel({ session }: Props) {
         </div>
       </PanelCard>
 
-      {/* ── Receive Settings ────────────────────────── */}
       <PanelCard>
         <PanelHeader
           icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg>}
@@ -423,7 +412,6 @@ export default function ConnectionPanel({ session }: Props) {
         </div>
       </PanelCard>
 
-      {/* ── Send Settings ───────────────────────────── */}
       <PanelCard>
         <PanelHeader
           icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>}

@@ -43,7 +43,7 @@ function makeSession(protocol: ProtocolType = 'TCP_CLIENT'): Session {
     config: cfg, status: 'idle', statusMsg: '',
     receiveSettings: defaultReceive(), sendSettings: defaultSend(),
     logs: [], rxBytes: 0, txBytes: 0,
-    trafficSamples: [], sendHistory: [],
+    trafficSamples: [], sendHistory: [], sendContent: '',
   };
 }
 
@@ -68,6 +68,7 @@ interface AppState {
   updateConfig: (id: string, patch: Partial<ConnectionConfig>) => void;
   updateReceiveSettings: (id: string, patch: Partial<ReceiveSettings>) => void;
   updateSendSettings: (id: string, patch: Partial<SendSettings>) => void;
+  updateSendContent: (id: string, content: string) => void;
 
   setStatus: (id: string, status: Session['status'], msg?: string, remoteAddr?: string) => void;
   appendLog: (id: string, entry: Omit<LogEntry, 'id'>) => void;
@@ -108,38 +109,54 @@ export const useAppStore = create<AppState>()(
       removeSession: (id) =>
         set(s => {
           const idx = s.sessions.findIndex((ss: Session) => ss.id === id);
-          if (idx === -1) return;
+          if (idx === -1) {
+            return;
+          }
           s.sessions.splice(idx, 1);
-          if (s.activeSessionId === id)
+          if (s.activeSessionId === id) {
             s.activeSessionId = s.sessions.length > 0 ? s.sessions[Math.max(0, idx - 1)].id : null;
+          }
         }),
 
       setActiveSession: (id) => set(s => { s.activeSessionId = id; }),
 
       updateConfig: (id, patch) =>
-        set(s => { const ss = find(s.sessions, id); if (ss) Object.assign(ss.config, patch); }),
+        set(s => { const ss = find(s.sessions, id); if (ss) { Object.assign(ss.config, patch); } }),
 
       updateReceiveSettings: (id, patch) =>
-        set(s => { const ss = find(s.sessions, id); if (ss) Object.assign(ss.receiveSettings, patch); }),
+        set(s => { const ss = find(s.sessions, id); if (ss) { Object.assign(ss.receiveSettings, patch); } }),
 
       updateSendSettings: (id, patch) =>
-        set(s => { const ss = find(s.sessions, id); if (ss) Object.assign(ss.sendSettings, patch); }),
+        set(s => { const ss = find(s.sessions, id); if (ss) { Object.assign(ss.sendSettings, patch); } }),
+
+      updateSendContent: (id, content) =>
+        set(s => { const ss = find(s.sessions, id); if (ss) { ss.sendContent = content; } }),
 
       setStatus: (id, status, msg = '', remoteAddr) =>
         set(s => {
           const ss = find(s.sessions, id);
-          if (!ss) return;
+          if (!ss) {
+            return;
+          }
           ss.status = status; ss.statusMsg = msg;
-          if (remoteAddr !== undefined) ss.remoteAddr = remoteAddr;
+          if (remoteAddr !== undefined) {
+            ss.remoteAddr = remoteAddr;
+          }
         }),
 
       appendLog: (id, entry) =>
         set(s => {
           const ss = find(s.sessions, id);
-          if (!ss) return;
-          if (ss.receiveSettings.pauseReceiving && entry.direction === 'recv') return;
+          if (!ss) {
+            return;
+          }
+          if (ss.receiveSettings.pauseReceiving && entry.direction === 'recv') {
+            return;
+          }
           ss.logs.push({ ...entry, id: nextLogId() });
-          if (ss.logs.length > LOGS_CAP) ss.logs.splice(0, LOGS_TRIM);
+          if (ss.logs.length > LOGS_CAP) {
+            ss.logs.splice(0, LOGS_TRIM);
+          }
         }),
 
       /**
@@ -149,23 +166,29 @@ export const useAppStore = create<AppState>()(
       appendLogs: (id: string, entries: Omit<LogEntry, 'id'>[]) =>
         set(s => {
           const ss = find(s.sessions, id);
-          if (!ss || entries.length === 0) return;
+          if (!ss || entries.length === 0) {
+            return;
+          }
           const paused = ss.receiveSettings.pauseReceiving;
           for (const e of entries) {
-            if (paused && e.direction === 'recv') continue;
+            if (paused && e.direction === 'recv') {
+              continue;
+            }
             ss.logs.push({ ...e, id: nextLogId() });
           }
-          if (ss.logs.length > LOGS_CAP) ss.logs.splice(0, ss.logs.length - (LOGS_CAP - LOGS_TRIM));
+          if (ss.logs.length > LOGS_CAP) {
+            ss.logs.splice(0, ss.logs.length - (LOGS_CAP - LOGS_TRIM));
+          }
         }),
 
       clearLogs: (id) =>
-        set(s => { const ss = find(s.sessions, id); if (ss) ss.logs = []; }),
+        set(s => { const ss = find(s.sessions, id); if (ss) { ss.logs = []; } }),
 
       addRxBytes: (id, n) =>
-        set(s => { const ss = find(s.sessions, id); if (ss) ss.rxBytes += n; }),
+        set(s => { const ss = find(s.sessions, id); if (ss) { ss.rxBytes += n; } }),
 
       addTxBytes: (id, n) =>
-        set(s => { const ss = find(s.sessions, id); if (ss) ss.txBytes += n; }),
+        set(s => { const ss = find(s.sessions, id); if (ss) { ss.txBytes += n; } }),
 
       resetCounts: (id) =>
         set(s => {
@@ -176,16 +199,21 @@ export const useAppStore = create<AppState>()(
       addTrafficSample: (id, sample) =>
         set(s => {
           const ss = find(s.sessions, id);
-          if (!ss) return;
+          if (!ss) {
+            return;
+          }
           ss.trafficSamples.push(sample);
-          if (ss.trafficSamples.length > TRAFFIC_MAX)
+          if (ss.trafficSamples.length > TRAFFIC_MAX) {
             ss.trafficSamples.splice(0, ss.trafficSamples.length - TRAFFIC_MAX);
+          }
         }),
 
       addSendHistory: (id, text) =>
         set(s => {
           const ss = find(s.sessions, id);
-          if (!ss || !text.trim()) return;
+          if (!ss || !text.trim()) {
+            return;
+          }
           // deduplicate + put latest at front
           ss.sendHistory = [text, ...ss.sendHistory.filter(t => t !== text)].slice(0, HISTORY_MAX);
         }),
@@ -199,7 +227,9 @@ export const useAppStore = create<AppState>()(
       updateQuickCommand: (id, patch) =>
         set(s => {
           const c = s.quickCommands.find((c: QuickCommand) => c.id === id);
-          if (c) Object.assign(c, patch);
+          if (c) {
+            Object.assign(c, patch);
+          }
         }),
 
       setLogFilter: (filter) => set(s => { s.logFilter = filter; }),
@@ -209,6 +239,17 @@ export const useAppStore = create<AppState>()(
     {
       name: 'fnd-store-v1',
       storage: createJSONStorage(() => localStorage),
+      migrate: (persisted: unknown) => {
+        const p = persisted as PersistedState | undefined;
+        if (p?.sessions) {
+          for (const s of p.sessions) {
+            if ((s as { sendContent?: string }).sendContent === undefined) {
+              (s as { sendContent: string }).sendContent = '';
+            }
+          }
+        }
+        return p ?? persisted;
+      },
       // Only persist config/settings, not ephemeral data
       partialize: (state): PersistedState => ({
         sessions: state.sessions.map(s => ({
@@ -220,6 +261,7 @@ export const useAppStore = create<AppState>()(
           logs: [], rxBytes: 0, txBytes: 0,
           trafficSamples: [],
           sendHistory: s.sendHistory,
+          sendContent: s.sendContent,
         })),
         activeSessionId: state.activeSessionId,
         quickCommands: state.quickCommands,

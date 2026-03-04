@@ -6,11 +6,15 @@ export function bytesToHex(bytes: number[]): string {
 
 export function hexToBytes(hex: string): number[] {
   const cleaned = hex.replace(/\s+/g, '');
-  if (cleaned.length % 2 !== 0) return [];
+  if (cleaned.length % 2 !== 0) {
+    return [];
+  }
   const bytes: number[] = [];
   for (let i = 0; i < cleaned.length; i += 2) {
     const val = parseInt(cleaned.substring(i, i + 2), 16);
-    if (isNaN(val)) return [];
+    if (isNaN(val)) {
+      return [];
+    }
     bytes.push(val);
   }
   return bytes;
@@ -18,7 +22,9 @@ export function hexToBytes(hex: string): number[] {
 
 export function bytesToAscii(bytes: number[], nonPrintable: AsciiNonPrintableMode = 'DOT'): string {
   return bytes.map((b) => {
-    if (b >= 32 && b < 127) return String.fromCharCode(b);
+    if (b >= 32 && b < 127) {
+      return String.fromCharCode(b);
+    }
     return nonPrintable === 'HEX' ? `\\x${b.toString(16).padStart(2, '0').toUpperCase()}` : '.';
   }).join('');
 }
@@ -40,20 +46,26 @@ function tryDecodeUtf8Strict(bytes: number[]): string | null {
 }
 
 function isMostlyPrintableText(text: string): boolean {
-  if (!text) return false;
+  if (!text) {
+    return false;
+  }
   let nonPrintable = 0;
   for (let i = 0; i < text.length; i += 1) {
     const c = text.charCodeAt(i);
     const isCtrl = c < 32 || c === 127;
     const isAllowedCtrl = c === 9 || c === 10 || c === 13;
-    if (isCtrl && !isAllowedCtrl) nonPrintable += 1;
+    if (isCtrl && !isAllowedCtrl) {
+      nonPrintable += 1;
+    }
   }
   return nonPrintable / text.length <= 0.1;
 }
 
 export function bytesToAuto(bytes: number[], _nonPrintable: AsciiNonPrintableMode = 'DOT'): string {
   const decoded = tryDecodeUtf8Strict(bytes);
-  if (decoded && isMostlyPrintableText(decoded)) return decoded;
+  if (decoded && isMostlyPrintableText(decoded)) {
+    return decoded;
+  }
   return bytesToHex(bytes);
 }
 

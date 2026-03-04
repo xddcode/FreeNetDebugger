@@ -68,6 +68,11 @@ pub async fn send_data(
 }
 
 #[tauri::command]
+pub fn exit_app(app: AppHandle) {
+    app.exit(0);
+}
+
+#[tauri::command]
 pub fn list_serial_ports() -> Vec<String> {
     serialport::available_ports()
         .map(|ports| ports.into_iter().map(|p| p.port_name).collect())

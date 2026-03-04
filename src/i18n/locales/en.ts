@@ -1,5 +1,4 @@
 const en = {
-  // ── Status labels ─────────────────────────────────────────────────────────
   status: {
     ready: 'Ready',
     connecting: 'Connecting...',
@@ -9,8 +8,6 @@ const en = {
     closing: 'Closing...',
     label: 'Status',
   },
-
-  // ── Protocol names ────────────────────────────────────────────────────────
   protocol: {
     TCP_CLIENT: 'TCP Client',
     TCP_SERVER: 'TCP Server',
@@ -19,13 +16,9 @@ const en = {
     WEBSOCKET:  'WebSocket',
     SERIAL:     'Serial Port',
   },
-
-  // ── Header ────────────────────────────────────────────────────────────────
   header: {
     newSession: 'New Session',
   },
-
-  // ── Network config panel ──────────────────────────────────────────────────
   network: {
     title:          'Network Settings',
     protocolType:   'Protocol Type',
@@ -40,8 +33,6 @@ const en = {
     disconnect:     'Disconnect',
     connecting:     'Connecting...',
   },
-
-  // ── Receive settings panel ────────────────────────────────────────────────
   receive: {
     title:          'Receive Settings',
     modeAuto:       'Auto (UTF-8 or HEX)',
@@ -61,8 +52,6 @@ const en = {
     startedSaving:  'Saving data to file...',
     handleMissingDisabled: 'File handle unavailable, save-to-file disabled',
   },
-
-  // ── Send settings panel ───────────────────────────────────────────────────
   sendSettings: {
     title:           'Send Settings',
     autoEscapes:     'Parse Escapes  (\\n \\r \\x..)',
@@ -72,8 +61,6 @@ const en = {
     quickShortcuts:  'Quick Shortcuts',
     sendHistory:     'Send History',
   },
-
-  // ── Quick shortcuts ───────────────────────────────────────────────────────
   shortcuts: {
     empty:           'No shortcuts yet',
     namePlaceholder: 'Name...',
@@ -82,13 +69,9 @@ const en = {
     save:            'Save',
     add:             '+ Add Shortcut',
   },
-
-  // ── Send history ──────────────────────────────────────────────────────────
   history: {
     empty: 'No send history yet',
   },
-
-  // ── Data Log ──────────────────────────────────────────────────────────────
   log: {
     title:            'Data Log',
     clear:            'Clear',
@@ -99,8 +82,6 @@ const en = {
     dirSend:          'SEND',
     dirSystem:        'SYSTEM',
   },
-
-  // ── Data Send ─────────────────────────────────────────────────────────────
   send: {
     title:            'Data Send',
     openFile:         'Open File',
@@ -110,15 +91,11 @@ const en = {
     asciiPlaceholder: 'Data to send...  (Ctrl+Enter)',
     sendFailed:       'Send failed',
   },
-
-  // ── Status bar ────────────────────────────────────────────────────────────
   statusBar: {
     rx:          'RX',
     tx:          'TX',
     resetCounts: 'Reset',
   },
-
-  // ── Traffic chart ─────────────────────────────────────────────────────────
   traffic: {
     title:      'Traffic Analysis',
     visualizer: 'DATA FLOW VISUALIZER',
@@ -129,7 +106,5 @@ const en = {
 
 export default en;
 
-// Derive the shape from the English file so Chinese must cover all keys,
-// but values are typed as `string` to allow any language's text.
 type DeepString<T> = { [K in keyof T]: T[K] extends object ? DeepString<T[K]> : string };
 export type Translations = DeepString<typeof en>;

@@ -1,7 +1,6 @@
 import type { Translations } from './en';
 
 const zhCN: Translations = {
-  // ── 状态标签 ─────────────────────────────────────────────────────────────
   status: {
     ready:      '就绪',
     connecting: '连接中...',
@@ -11,8 +10,6 @@ const zhCN: Translations = {
     closing:    '断开中...',
     label:      '状态',
   },
-
-  // ── 协议名称 ─────────────────────────────────────────────────────────────
   protocol: {
     TCP_CLIENT: 'TCP 客户端',
     TCP_SERVER: 'TCP 服务器',
@@ -21,13 +18,9 @@ const zhCN: Translations = {
     WEBSOCKET:  'WebSocket',
     SERIAL:     '串口',
   },
-
-  // ── 顶部栏 ───────────────────────────────────────────────────────────────
   header: {
     newSession: '新建会话',
   },
-
-  // ── 网络配置面板 ─────────────────────────────────────────────────────────
   network: {
     title:         '网络设置',
     protocolType:  '协议类型',
@@ -42,8 +35,6 @@ const zhCN: Translations = {
     disconnect:    '断开连接',
     connecting:    '连接中...',
   },
-
-  // ── 接收设置面板 ─────────────────────────────────────────────────────────
   receive: {
     title:          '接收设置',
     modeAuto:       '自动（UTF-8 或 HEX）',
@@ -63,8 +54,6 @@ const zhCN: Translations = {
     startedSaving:  '数据实时写入文件中...',
     handleMissingDisabled: '文件句柄不可用，已关闭保存到文件',
   },
-
-  // ── 发送设置面板 ─────────────────────────────────────────────────────────
   sendSettings: {
     title:          '发送设置',
     autoEscapes:    '解析转义字符（\\n \\r \\x..）',
@@ -74,8 +63,6 @@ const zhCN: Translations = {
     quickShortcuts: '快捷指令',
     sendHistory:    '发送历史',
   },
-
-  // ── 快捷指令 ─────────────────────────────────────────────────────────────
   shortcuts: {
     empty:           '暂无快捷指令',
     namePlaceholder: '名称...',
@@ -84,13 +71,9 @@ const zhCN: Translations = {
     save:            '保存',
     add:             '+ 添加快捷指令',
   },
-
-  // ── 发送历史 ─────────────────────────────────────────────────────────────
   history: {
     empty: '暂无发送历史',
   },
-
-  // ── 数据日志 ─────────────────────────────────────────────────────────────
   log: {
     title:             '数据日志',
     clear:             '清空',
@@ -101,8 +84,6 @@ const zhCN: Translations = {
     dirSend:           '发送',
     dirSystem:         '系统',
   },
-
-  // ── 数据发送区 ───────────────────────────────────────────────────────────
   send: {
     title:            '数据发送',
     openFile:         '打开文件',
@@ -112,15 +93,11 @@ const zhCN: Translations = {
     asciiPlaceholder: '输入要发送的数据...（Ctrl+Enter 发送）',
     sendFailed:       '发送失败',
   },
-
-  // ── 状态栏 ───────────────────────────────────────────────────────────────
   statusBar: {
     rx:          '接收',
     tx:          '发送',
     resetCounts: '重置',
   },
-
-  // ── 流量图表 ─────────────────────────────────────────────────────────────
   traffic: {
     title:      '流量分析',
     visualizer: '实时流量监控',

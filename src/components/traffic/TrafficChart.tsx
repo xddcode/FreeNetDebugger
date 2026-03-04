@@ -12,7 +12,9 @@ interface SparklineProps {
 
 function Sparkline({ data, color, fill, width, height }: SparklineProps) {
   const path = useMemo(() => {
-    if (data.length < 2) return { line: '', area: '' };
+    if (data.length < 2) {
+      return { line: '', area: '' };
+    }
     const max = Math.max(...data, 1);
     const pts = data.map((v, i) => ({
       x: (i / (data.length - 1)) * width,
@@ -23,7 +25,9 @@ function Sparkline({ data, color, fill, width, height }: SparklineProps) {
     return { line, area };
   }, [data, width, height]);
 
-  if (data.length < 2) return null;
+  if (data.length < 2) {
+    return null;
+  }
   return (
     <g>
       <path d={path.area} fill={fill} />
@@ -33,14 +37,22 @@ function Sparkline({ data, color, fill, width, height }: SparklineProps) {
 }
 
 function formatRate(bps: number): string {
-  if (bps >= 1024 * 1024) return `${(bps / 1024 / 1024).toFixed(1)} MB/s`;
-  if (bps >= 1024) return `${(bps / 1024).toFixed(1)} KB/s`;
+  if (bps >= 1024 * 1024) {
+    return `${(bps / 1024 / 1024).toFixed(1)} MB/s`;
+  }
+  if (bps >= 1024) {
+    return `${(bps / 1024).toFixed(1)} KB/s`;
+  }
   return `${bps} B/s`;
 }
 
 function formatTotal(n: number): string {
-  if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(2)} MB`;
-  if (n >= 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n >= 1024 * 1024) {
+    return `${(n / 1024 / 1024).toFixed(2)} MB`;
+  }
+  if (n >= 1024) {
+    return `${(n / 1024).toFixed(1)} KB`;
+  }
   return `${n} B`;
 }
 

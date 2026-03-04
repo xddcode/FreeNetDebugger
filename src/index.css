@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Design-spec color tokens ─────────────────────── */
   --color-primary:        #13ecec;
   --color-primary-dim:    rgba(19, 236, 236, 0.6);
   --color-accent:         #ff00ff;
@@ -12,17 +11,17 @@
   --color-bg-dark:        #102222;
   --color-panel-dark:     #162e2e;
 
-  /* ── Semantic aliases ─────────────────────────────── */
   --color-border:         rgba(19, 236, 236, 0.2);
   --color-border-dim:     rgba(19, 236, 236, 0.1);
 
-  /* ── Fonts ────────────────────────────────────────── */
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', 'Consolas', monospace;
 }
 
-/* ── Reset ──────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
+
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
 
 html, body, #root {
   height: 100%;
@@ -37,7 +36,6 @@ html, body, #root {
   user-select: none;
 }
 
-/* ── Hex-dot grid background ─────────────────────────── */
 .hex-grid {
   background-image: radial-gradient(
     circle at 2px 2px,
@@ -47,7 +45,6 @@ html, body, #root {
   background-size: 24px 24px;
 }
 
-/* ── Brushed-metal base ──────────────────────────────── */
 .brushed-metal {
   background: linear-gradient(135deg, #102222 0%, #162e2e 50%, #102222 100%);
   position: relative;
@@ -67,7 +64,6 @@ html, body, #root {
   z-index: 0;
 }
 
-/* ── Neon panel card ─────────────────────────────────── */
 .neon-card {
   background: rgba(22, 46, 46, 0.8);
   backdrop-filter: blur(4px);
@@ -76,13 +72,11 @@ html, body, #root {
   border-radius: 4px;
 }
 
-/* ── Neon border glow ────────────────────────────────── */
 .neon-border {
   box-shadow: 0 0 10px rgba(19,236,236,0.2), inset 0 0 5px rgba(19,236,236,0.1);
   border: 1px solid rgba(19,236,236,0.3);
 }
 
-/* ── CRT scanline overlay ───────────────────────────── */
 .crt-scanlines {
   position: absolute;
   inset: 0;
@@ -95,12 +89,7 @@ html, body, #root {
   z-index: 10;
 }
 
-/* ── Scrollbar ───────────────────────────────────────
-   Defining ::-webkit-scrollbar with a positive width forces
-   Chromium / WebView2 into "classic" (always-visible) mode.
-   Do NOT set `scrollbar-width: thin` globally — that switches
-   Chrome 121+ back to overlay (auto-hiding) mode.
-──────────────────────────────────────────────────── */
+/* Scrollbar: positive width forces Chromium/WebView2 into classic mode */
 ::-webkit-scrollbar             { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track       { background: rgba(19,236,236,0.05); }
 ::-webkit-scrollbar-thumb       { background: rgba(19,236,236,0.4); border-radius: 3px; }
@@ -118,7 +107,6 @@ html, body, #root {
   scrollbar-gutter: stable;
 }
 
-/* ── Form controls ───────────────────────────────────── */
 input, select, textarea {
   font-family: var(--font-mono);
   color-scheme: dark;
@@ -142,7 +130,6 @@ input, select, textarea {
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 0 1px var(--color-primary);
 }
 
-/* ── Custom checkbox ─────────────────────────────────── */
 .custom-check {
   appearance: none;
   width: 13px;
@@ -176,7 +163,6 @@ input, select, textarea {
   border-color: #102222;
 }
 
-/* ── Custom radio ────────────────────────────────────── */
 .custom-radio {
   appearance: none;
   width: 13px; height: 13px;
@@ -202,14 +188,12 @@ input, select, textarea {
 .custom-radio.accent:checked { border-color: var(--color-accent); }
 .custom-radio.accent:checked::after { background: var(--color-accent); }
 
-/* ── Cursor blink ────────────────────────────────────── */
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
 .blink { animation: blink 1s step-end infinite; }
 
-/* ── Pulse glow ──────────────────────────────────────── */
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 5px #13ecec; }
   50%       { box-shadow: 0 0 12px #13ecec, 0 0 20px rgba(19,236,236,0.4); }

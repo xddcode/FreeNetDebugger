@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
 import { useAppStore } from '../../store';
-import { sendPanelBus } from '../sidebar/ConnectionPanel';
+import { sendPanelBus } from '../../utils/sendPanelBus';
 import type { Session } from '../../types';
 import { asciiToBytes, hexToBytes, parseEscapeSequences } from '../../utils/encoding';
 import { appendChecksum } from '../../utils/checksum';
@@ -11,18 +11,21 @@ interface Props { session: Session }
 
 export default function DataSend({ session }: Props) {
   const { t } = useTranslation();
-  const [text, setText]         = useState('');
-  const appendLog               = useAppStore(s => s.appendLog);
-  const addTxBytes              = useAppStore(s => s.addTxBytes);
-  const addSendHistory          = useAppStore(s => s.addSendHistory);
-  const fileInputRef            = useRef<HTMLInputElement>(null);
-  const periodicRef             = useRef<ReturnType<typeof setInterval> | null>(null);
+  const text                    = session.sendContent;
+  const updateSendContent        = useAppStore(s => s.updateSendContent);
+  const appendLog                = useAppStore(s => s.appendLog);
+  const addTxBytes               = useAppStore(s => s.addTxBytes);
+  const addSendHistory           = useAppStore(s => s.addSendHistory);
+  const fileInputRef             = useRef<HTMLInputElement>(null);
+  const periodicRef              = useRef<number | null>(null);
+
+  const setText = (v: string) => updateSendContent(session.id, v);
 
   const { sendSettings } = session;
   const canSend = session.status === 'connected' || session.status === 'listening';
 
   const stopPeriodic = () => {
-    if (periodicRef.current) {
+    if (periodicRef.current !== null) {
       clearInterval(periodicRef.current);
       periodicRef.current = null;
     }
@@ -30,29 +33,41 @@ export default function DataSend({ session }: Props) {
 
   // Subscribe to shortcut / history bus
   useEffect(() => {
-    const unsub = sendPanelBus.on((t) => setText(t));
+    const unsub = sendPanelBus.on((t) => updateSendContent(session.id, t));
     return unsub;
-  }, []);
+  }, [session.id, updateSendContent]);
 
-  const buildPayload = (input: string): number[] => {
+  const buildPayload = useCallback((input: string): number[] => {
     if (sendSettings.encoding === 'HEX') {
       let b = hexToBytes(input);
-      if (sendSettings.autoChecksum) b = appendChecksum(b, sendSettings.checksumType);
+      if (sendSettings.autoChecksum) {
+        b = appendChecksum(b, sendSettings.checksumType);
+      }
       return b;
     }
     let s = input;
-    if (sendSettings.autoParseEscapes) s = parseEscapeSequences(s);
-    if (sendSettings.autoCRLF && !s.endsWith('\r\n')) s += '\r\n';
+    if (sendSettings.autoParseEscapes) {
+      s = parseEscapeSequences(s);
+    }
+    if (sendSettings.autoCRLF && !s.endsWith('\r\n')) {
+      s += '\r\n';
+    }
     let b = asciiToBytes(s);
-    if (sendSettings.autoChecksum) b = appendChecksum(b, sendSettings.checksumType);
+    if (sendSettings.autoChecksum) {
+      b = appendChecksum(b, sendSettings.checksumType);
+    }
     return b;
-  };
+  }, [sendSettings]);
 
-  const doSend = async (overrideText?: string) => {
+  const doSend = useCallback(async (overrideText?: string) => {
     const raw = overrideText ?? text;
-    if (!canSend || !raw.trim()) return;
+    if (!canSend || !raw.trim()) {
+      return;
+    }
     const payload = buildPayload(raw);
-    if (payload.length === 0) return;
+    if (payload.length === 0) {
+      return;
+    }
     try {
       await invoke('send_data', { id: session.id, data: payload });
       appendLog(session.id, { timestamp: Date.now(), direction: 'send', data: payload });
@@ -61,7 +76,7 @@ export default function DataSend({ session }: Props) {
     } catch (e) {
       appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(`${t('send.sendFailed')}: ${e}`)) });
     }
-  };
+  }, [text, canSend, session.id, buildPayload, appendLog, addTxBytes, addSendHistory, t]);
 
   // Periodic send
   useEffect(() => {
@@ -72,7 +87,7 @@ export default function DataSend({ session }: Props) {
     }
 
     return () => { stopPeriodic(); };
-  }, [sendSettings.periodicEnabled, sendSettings.periodicInterval, canSend, text]);
+  }, [sendSettings.periodicEnabled, sendSettings.periodicInterval, canSend, doSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSend(); }
@@ -81,7 +96,9 @@ export default function DataSend({ session }: Props) {
   // Open File Data Source
   const handleFileOpen = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
     const reader = new FileReader();
     reader.onload = ev => {
       const content = ev.target?.result;
@@ -134,7 +151,7 @@ export default function DataSend({ session }: Props) {
             style={{ color: '#64748b', cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-primary)')}
             onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
-            onClick={() => setText('')}
+            onClick={() => updateSendContent(session.id, '')}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
@@ -153,7 +170,7 @@ export default function DataSend({ session }: Props) {
           onBlurCapture={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(19,236,236,0.3)'; }}
         >
           <textarea
-            value={text}
+            value={text ?? ''}
             onChange={e => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={sendSettings.encoding === 'HEX' ? t('send.hexPlaceholder') : t('send.asciiPlaceholder')}

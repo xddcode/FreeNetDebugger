@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useAppStore } from './store';
-import type { TauriDataEvent, TauriStatusEvent, LogEntry } from './types';
+import type { ConnectionStatus, TauriDataEvent, TauriStatusEvent, LogEntry } from './types';
 import AppLayout from './components/layout/AppLayout';
 
 /** Maps raw Tauri status strings → our ConnectionStatus enum */
-function mapStatus(raw: string): import('./types').ConnectionStatus {
-  const m: Record<string, import('./types').ConnectionStatus> = {
+function mapStatus(raw: string): ConnectionStatus {
+  const m: Record<string, ConnectionStatus> = {
     idle: 'idle', connecting: 'connecting', connected: 'connected',
     listening: 'listening', error: 'error', disconnected: 'idle',
     disconnecting: 'disconnecting',
@@ -27,8 +27,6 @@ function statusLogText(raw: string, message: string): string | null {
     default:                    return null;
   }
 }
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function App() {
   const setStatus        = useAppStore(s => s.setStatus);
@@ -54,9 +52,8 @@ export default function App() {
     if (!store.activeSessionId && store.sessions.length > 0) {
       setActiveSession(store.sessions[0].id);
     }
-  }, []);
+  }, [setActiveSession]);
 
-  // ── Data event listener (just buffers, never touches React state) ──────────
   useEffect(() => {
     const unlistenData = listen<TauriDataEvent>('net:data', (ev) => {
       const { connection_id, direction, data, source, timestamp } = ev.payload;
@@ -65,7 +62,10 @@ export default function App() {
       if (!pendingLogs.current.has(connection_id)) {
         pendingLogs.current.set(connection_id, []);
       }
-      pendingLogs.current.get(connection_id)!.push({ timestamp, direction, data, source });
+      const arr = pendingLogs.current.get(connection_id);
+      if (arr) {
+        arr.push({ timestamp, direction, data, source });
+      }
 
       if (direction === 'recv') {
         pendingRx.current.set(
@@ -78,7 +78,6 @@ export default function App() {
     return () => { unlistenData.then(f => f()); };
   }, []);
 
-  // ── Status event listener (immediate, low-frequency) ──────────────────────
   useEffect(() => {
     const unlistenStatus = listen<TauriStatusEvent>('net:status', (ev) => {
       const { connection_id, status, message } = ev.payload;
@@ -99,10 +98,11 @@ export default function App() {
     return () => { unlistenStatus.then(f => f()); };
   }, [appendLog, setStatus]);
 
-  // ── Flush timer: batch-commit buffered data to Zustand every 80ms ─────────
   useEffect(() => {
     const flush = () => {
-      if (pendingLogs.current.size === 0 && pendingRx.current.size === 0) return;
+      if (pendingLogs.current.size === 0 && pendingRx.current.size === 0) {
+        return;
+      }
 
       // Drain buffers atomically
       const logsSnap = pendingLogs.current;
@@ -112,10 +112,14 @@ export default function App() {
 
       // Single Zustand update per session (not per packet)
       for (const [id, entries] of logsSnap) {
-        if (entries.length > 0) appendLogs(id, entries);
+        if (entries.length > 0) {
+          appendLogs(id, entries);
+        }
       }
       for (const [id, bytes] of rxSnap) {
-        if (bytes > 0) addRxBytes(id, bytes);
+        if (bytes > 0) {
+          addRxBytes(id, bytes);
+        }
       }
     };
 
@@ -123,7 +127,6 @@ export default function App() {
     return () => { clearInterval(timer); flush(); }; // flush on unmount
   }, [appendLogs, addRxBytes]);
 
-  // ── 1s traffic sampling ────────────────────────────────────────────────────
   const prevBytesRef = useRef<Map<string, { rx: number; tx: number }>>(new Map());
 
   useEffect(() => {

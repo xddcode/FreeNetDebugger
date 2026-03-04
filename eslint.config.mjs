@@ -16,6 +16,7 @@ export default [
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
+      globals: { setInterval: 'readonly', clearInterval: 'readonly', localStorage: 'readonly', window: 'readonly', document: 'readonly', btoa: 'readonly', atob: 'readonly' },
       parserOptions: {
         project: './tsconfig.json',
         ecmaVersion: 'latest',
@@ -29,18 +30,15 @@ export default [
       'react-refresh': reactRefresh,
     },
     rules: {
-      // ── TypeScript ────────────────────────────────────────────────────────
       ...tsPlugin.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       '@typescript-eslint/no-non-null-assertion': 'warn',
 
-      // ── React Hooks ───────────────────────────────────────────────────────
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
 
-      // ── General quality ───────────────────────────────────────────────────
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
       'no-var': 'error',

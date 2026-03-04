@@ -1,11 +1,13 @@
 import React, { useRef, useMemo, useCallback, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { Plug, Clock } from 'lucide-react';
 import { useAppStore } from '../../store';
 import type { Session, LogEntry, EncodingMode, AsciiNonPrintableMode } from '../../types';
 import {
   bytesToDisplay, bytesToHexText, formatTimestamp,
 } from '../../utils/encoding';
+import { APP_DISPLAY } from '../../config/app';
 
 interface Props { session: Session }
 
@@ -13,7 +15,6 @@ function renderData(entry: LogEntry, encoding: EncodingMode, asciiMode: AsciiNon
   return bytesToDisplay(entry.data, encoding, asciiMode);
 }
 
-// ─── LogRow is memoized: only re-renders when entry.id or encoding changes ──
 const LogRow = memo(function LogRow({
   entry,
   encoding,
@@ -76,8 +77,6 @@ const LogRow = memo(function LogRow({
   prev.dirSystem === next.dirSystem,
 );
 
-// ─── Main component ──────────────────────────────────────────────────────────
-
 export default function DataLog({ session }: Props) {
   const { t } = useTranslation();
   const logFilter    = useAppStore(s => s.logFilter);
@@ -90,7 +89,9 @@ export default function DataLog({ session }: Props) {
   const asciiMode = session.receiveSettings.asciiNonPrintable ?? 'DOT';
 
   const filteredLogs = useMemo(() => {
-    if (!logFilter.trim()) return session.logs;
+    if (!logFilter.trim()) {
+      return session.logs;
+    }
     const q = logFilter.toLowerCase();
     return session.logs.filter(e =>
       renderData(e, session.receiveSettings.encoding, asciiMode).toLowerCase().includes(q),
@@ -104,6 +105,7 @@ export default function DataLog({ session }: Props) {
     [filteredLogs],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual uses interior mutability
   const virtualizer = useVirtualizer({
     count: filteredLogs.length,
     getScrollElement: () => parentRef.current,
@@ -125,14 +127,14 @@ export default function DataLog({ session }: Props) {
 
   const handleScroll = useCallback(() => {
     const el = parentRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }, []);
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'rgba(16,34,34,0.8)' }}>
-
-      {/* ── Header ─────────────────────────────────── */}
       <div className="flex items-center justify-between px-3 py-1.5 shrink-0"
         style={{ background: 'linear-gradient(to right,rgba(19,236,236,0.1),transparent)', borderBottom: '1px solid rgba(19,236,236,0.2)' }}>
         <div className="flex items-center gap-2" style={{ borderLeft: '2px solid var(--color-primary)', paddingLeft: 8 }}>
@@ -147,7 +149,7 @@ export default function DataLog({ session }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'rgba(255,0,255,0.7)', fontWeight: 700 }}>
-            FreeNetDebugger v0.1
+            {APP_DISPLAY}
           </span>
           <button
             className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase transition-colors"
@@ -159,7 +161,6 @@ export default function DataLog({ session }: Props) {
         </div>
       </div>
 
-      {/* ── Search ─────────────────────────────────── */}
       <div className="flex items-center gap-2 px-3 py-1.5 shrink-0"
         style={{ background: 'rgba(16,34,34,0.5)', borderBottom: '1px solid rgba(19,236,236,0.1)' }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(100,116,139,0.8)" strokeWidth="2" style={{ flexShrink: 0 }}>
@@ -179,7 +180,6 @@ export default function DataLog({ session }: Props) {
         )}
       </div>
 
-      {/* ── Virtual log list ───────────────────────── */}
       <div
         ref={parentRef}
         className="flex-1 overflow-y-auto relative"
@@ -189,17 +189,25 @@ export default function DataLog({ session }: Props) {
         <div className="crt-scanlines" />
 
         {filteredLogs.length === 0 ? (
-          <div className="flex items-center justify-center h-full relative z-20"
+          <div
+            className="flex flex-col items-center justify-center gap-3 h-full relative z-20"
             style={{
-              color: '#b8f6f6',
+              color: 'rgba(100,116,139,0.9)',
               fontSize: 13,
               fontFamily: 'var(--font-mono)',
-              textShadow: '0 0 6px rgba(19,236,236,0.28)',
               background: 'rgba(16,34,34,0.32)',
-            }}>
-            {session.status === 'idle' || session.status === 'error'
-              ? `// ${t('log.connectFirst')}`
-              : `// ${t('log.waiting')}`}
+            }}
+          >
+            {session.status === 'idle' || session.status === 'error' ? (
+              <Plug size={48} strokeWidth={1.2} style={{ opacity: 0.5 }} />
+            ) : (
+              <Clock size={48} strokeWidth={1.2} style={{ opacity: 0.5 }} />
+            )}
+            <span>
+              {session.status === 'idle' || session.status === 'error'
+                ? t('log.connectFirst')
+                : t('log.waiting')}
+            </span>
           </div>
         ) : (
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative', zIndex: 20 }}>

@@ -77,14 +77,12 @@ export interface TrafficSample {
   txTotal: number;
 }
 
-// ─────────────────────────────────────────────────────────────────
 // PRO-version extension interfaces (not activated in MVP)
 // These define the contract for the future script-based protocol
 // parser feature. The Pro version will allow users to write a JS
 // function `parse_payload(bytes: number[]): ParsedFrame` that is
 // executed in an isolated sandbox for every received packet.
 // The result is rendered in a "Structured Data Tree" panel.
-// ─────────────────────────────────────────────────────────────────
 
 export interface ParsedFrame {
   fields: ParsedField[];
@@ -129,6 +127,8 @@ export interface Session {
   trafficSamples: TrafficSample[];
   /** Last 30 sent texts for history recall */
   sendHistory: string[];
+  /** Per-session send input content */
+  sendContent: string;
   // [PRO] optional script parser for this session
   parser?: ProtocolParser;
 }

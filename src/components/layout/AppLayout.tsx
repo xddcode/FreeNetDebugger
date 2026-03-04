@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import i18n from '../../i18n';
 import { useAppStore, getActiveSession } from '../../store';
 import ConnectionPanel from '../sidebar/ConnectionPanel';
@@ -7,6 +10,8 @@ import DataLog from '../log/DataLog';
 import DataSend from '../send/DataSend';
 import StatusBar from '../status/StatusBar';
 import TrafficChart from '../traffic/TrafficChart';
+import AboutDialog from '../AboutDialog';
+import { APP } from '../../config/app';
 
 function SessionDot({ status }: { status: string }) {
   const c = { connected: '#00ff00', listening: '#13ecec', connecting: '#fbbf24', error: '#f87171' }[status]
@@ -27,10 +32,26 @@ export default function AppLayout() {
   const setLocale     = useAppStore(s => s.setLocale);
 
   const [trafficOpen, setTrafficOpen] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   useEffect(() => {
-    if (!activeId && sessions.length > 0) setActive(sessions[0].id);
-  }, []);
+    if (!activeId && sessions.length > 0) {
+      setActive(sessions[0].id);
+    }
+  }, [activeId, sessions, setActive]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+    const onDocClick = () => setMenuOpen(false);
+    const id = window.setTimeout(() => document.addEventListener('click', onDocClick), 0);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener('click', onDocClick);
+    };
+  }, [menuOpen]);
 
   const isAlive = activeSession?.status === 'connected' || activeSession?.status === 'listening';
 
@@ -52,82 +73,127 @@ export default function AppLayout() {
     i18n.changeLanguage(next);
   };
 
+  const win = getCurrentWindow();
+  const btn = (onClick: () => void, icon: ReactNode, title: string) => (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="w-11 h-10 flex items-center justify-center transition-colors hover:bg-white/10"
+      style={{ color: 'var(--color-primary)' }}
+    >
+      {icon}
+    </button>
+  );
+
   return (
     <div className="relative flex flex-col h-full w-full overflow-hidden hex-grid brushed-metal">
 
-      {/* ── Header ─────────────────────────────────────────── */}
       <header
-        className="relative z-20 flex items-center justify-between px-6 py-2 shrink-0"
+        className="relative z-20 flex items-center justify-between pl-4 pr-0 py-0 shrink-0 select-none"
         style={{
-          background: 'rgba(16,34,34,0.9)',
-          backdropFilter: 'blur(8px)',
+          height: 40,
+          background: 'rgba(16,34,34,0.95)',
           borderBottom: '1px solid rgba(19,236,236,0.2)',
-          boxShadow: '0 4px 20px rgba(19,236,236,0.1)',
         }}
       >
-        <div className="flex items-center gap-3" style={{ color: 'var(--color-primary)' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        {/* 左侧：图标+标题+空白 可拖拽 */}
+        <div
+          data-tauri-drag-region
+          className="flex items-center gap-2 flex-1 min-w-0 cursor-move"
+          style={{ color: 'var(--color-primary)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <circle cx="12" cy="12" r="3"/>
             <circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/>
             <circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/>
             <line x1="12" y1="9" x2="5" y2="7"/><line x1="12" y1="9" x2="19" y2="7"/>
             <line x1="12" y1="15" x2="5" y2="17"/><line x1="12" y1="15" x2="19" y2="17"/>
           </svg>
-          <h1 className="text-base font-bold tracking-tight uppercase" style={{ fontFamily: 'var(--font-display)' }}>
-            FreeNetDebugger
+          <h1 className="text-sm font-bold tracking-tight uppercase" style={{ fontFamily: 'var(--font-display)' }}>
+            {APP.name}
           </h1>
         </div>
+        {/* 右侧：菜单+状态+按钮 可点击 */}
+        <div className="flex items-center gap-4 shrink-0" style={{ color: 'var(--color-primary)' }}>
+          <div className="relative flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); setMenuOpen(m => !m); }}
+              className="px-2 py-1 text-xs hover:bg-white/10 rounded"
+            >
+              帮助
+            </button>
+            <button
+              type="button"
+              onClick={() => openUrl(APP.github)}
+              className="p-1 rounded hover:bg-white/10 transition-colors"
+              title="GitHub"
+              style={{ color: 'var(--color-primary)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+            </button>
+            {menuOpen && (
+              <div
+                onClick={e => e.stopPropagation()}
+                className="absolute left-0 top-full mt-1 py-1 rounded shadow-lg z-50 min-w-[160px]"
+                style={{
+                  background: 'rgba(22,46,46,0.98)',
+                  border: '1px solid rgba(19,236,236,0.3)',
+                }}
+              >
+                <button
+                  type="button"
+                  className="w-full px-4 py-2 text-left text-xs hover:bg-white/10"
+                  onClick={() => { setMenuOpen(false); setAboutOpen(true); }}
+                >
+                  关于 {APP.name}
+                </button>
+              </div>
+            )}
+          </div>
 
-        <div className="flex items-center gap-3">
-          {/* Status badge */}
           <div
-            className="flex items-center gap-2 px-3 py-1 rounded"
+            className="flex items-center gap-2 px-2 py-0.5 rounded mr-2"
             style={{
               background: 'rgba(19,236,236,0.1)',
               border: '1px solid rgba(19,236,236,0.3)',
-              boxShadow: '0 0 10px rgba(19,236,236,0.2)',
             }}
           >
             <span
               className="inline-block rounded-full"
               style={{
-                width: 8, height: 8,
+                width: 6, height: 6,
                 background: 'var(--color-primary)',
-                boxShadow: '0 0 5px #13ecec',
+                boxShadow: '0 0 4px #13ecec',
                 animation: isAlive ? 'pulse-glow 2s ease-in-out infinite' : 'none',
               }}
             />
-            <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', letterSpacing: '0.08em' }}>
-              {t('status.label')}: {statusLabel()}
+            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>
+              {statusLabel()}
             </span>
           </div>
 
-          {/* Language toggle */}
           <button
             onClick={handleToggleLang}
-            className="px-2 py-1 rounded font-bold transition-all"
-            style={{
-              fontSize: 10,
-              fontFamily: 'var(--font-mono)',
-              background: 'rgba(19,236,236,0.08)',
-              border: '1px solid rgba(19,236,236,0.2)',
-              color: 'var(--color-primary)',
-              letterSpacing: '0.05em',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(19,236,236,0.18)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(19,236,236,0.08)')}
+            className="px-2 py-0.5 text-xs rounded hover:bg-white/10 mr-2"
+            style={{ color: 'var(--color-primary)' }}
             title={locale === 'en' ? '切换为中文' : 'Switch to English'}
           >
             {locale === 'en' ? '中文' : 'EN'}
           </button>
+
+          {btn(() => win.minimize(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>, '最小化')}
+          {btn(() => win.toggleMaximize(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>, '最大化')}
+          {btn(() => win.close(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>, '关闭')}
         </div>
       </header>
 
-      {/* ── Session Tabs ───────────────────────────────────── */}
       <div
         className="relative z-10 flex items-center gap-1.5 px-3 shrink-0 overflow-x-auto"
-        style={{ height: 36, background: 'rgba(16,34,34,0.95)', borderBottom: '1px solid rgba(19,236,236,0.1)' }}
+        style={{ height: 40, background: 'rgba(16,34,34,0.95)', borderBottom: '1px solid rgba(19,236,236,0.1)' }}
       >
         {sessions.map(sess => {
           const active = sess.id === activeId;
@@ -136,7 +202,7 @@ export default function AppLayout() {
               key={sess.id}
               className="flex items-center gap-1.5 px-3 rounded cursor-pointer shrink-0 group transition-all"
               style={{
-                height: 26, fontSize: 11, fontFamily: 'var(--font-mono)',
+                height: 28, fontSize: 11, fontFamily: 'var(--font-mono)',
                 background: active ? 'rgba(19,236,236,0.12)' : 'transparent',
                 border: active ? '1px solid rgba(19,236,236,0.4)' : '1px solid transparent',
                 color: active ? 'var(--color-primary)' : '#64748b',
@@ -147,7 +213,7 @@ export default function AppLayout() {
               <span>{t(`protocol.${sess.config.protocol}`)}</span>
               {sessions.length > 1 && (
                 <span
-                  className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   style={{ color: '#64748b', fontSize: 13 }}
                   onClick={e => { e.stopPropagation(); removeSession(sess.id); }}
                 >×</span>
@@ -157,13 +223,12 @@ export default function AppLayout() {
         })}
         <button
           className="px-2 rounded shrink-0"
-          style={{ height: 26, fontSize: 14, color: '#475569', border: '1px dashed rgba(19,236,236,0.15)' }}
+          style={{ height: 28, fontSize: 14, color: '#475569', border: '1px dashed rgba(19,236,236,0.15)' }}
           onClick={() => addSession()}
           title={t('header.newSession')}
         >+</button>
       </div>
 
-      {/* ── Main Body ──────────────────────────────────────── */}
       <main className="relative z-10 flex flex-1 min-h-0 gap-2 p-2 overflow-hidden">
 
         <aside className="sidebar-scroll w-64 shrink-0 flex flex-col gap-2 min-h-0">
@@ -217,6 +282,8 @@ export default function AppLayout() {
       </main>
 
       <StatusBar session={activeSession} />
+
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }
