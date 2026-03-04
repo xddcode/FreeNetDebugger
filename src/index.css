@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Design-spec color tokens ─────────────────────── */
+  --color-primary:        #13ecec;
+  --color-primary-dim:    rgba(19, 236, 236, 0.6);
+  --color-accent:         #ff00ff;
+  --color-accent-dim:     rgba(255, 0, 255, 0.6);
+  --color-success:        #00ff00;
+  --color-success-dim:    rgba(0, 255, 0, 0.6);
+
+  --color-bg-dark:        #102222;
+  --color-panel-dark:     #162e2e;
+
+  /* ── Semantic aliases ─────────────────────────────── */
+  --color-border:         rgba(19, 236, 236, 0.2);
+  --color-border-dim:     rgba(19, 236, 236, 0.1);
+
+  /* ── Fonts ────────────────────────────────────────── */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Consolas', monospace;
+}
+
+/* ── Reset ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: #e2e8f0;
+  background: var(--color-bg-dark);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ── Hex-dot grid background ─────────────────────────── */
+.hex-grid {
+  background-image: radial-gradient(
+    circle at 2px 2px,
+    rgba(19, 236, 236, 0.05) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
+}
+
+/* ── Brushed-metal base ──────────────────────────────── */
+.brushed-metal {
+  background: linear-gradient(135deg, #102222 0%, #162e2e 50%, #102222 100%);
+  position: relative;
+}
+.brushed-metal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.015) 2px,
+    rgba(255,255,255,0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Neon panel card ─────────────────────────────────── */
+.neon-card {
+  background: rgba(22, 46, 46, 0.8);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(19, 236, 236, 0.15);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+  border-radius: 4px;
+}
+
+/* ── Neon border glow ────────────────────────────────── */
+.neon-border {
+  box-shadow: 0 0 10px rgba(19,236,236,0.2), inset 0 0 5px rgba(19,236,236,0.1);
+  border: 1px solid rgba(19,236,236,0.3);
+}
+
+/* ── CRT scanline overlay ───────────────────────────── */
+.crt-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.2) 50%),
+    linear-gradient(90deg, rgba(255,0,0,0.01), rgba(0,255,0,0.01), rgba(0,0,255,0.01));
+  background-size: 100% 4px, 3px 100%;
+  opacity: 0.4;
+  z-index: 10;
+}
+
+/* ── Scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar           { width: 8px; height: 8px; }
+::-webkit-scrollbar-track     { background: rgba(19,236,236,0.05); border-left: 1px solid rgba(19,236,236,0.1); }
+::-webkit-scrollbar-thumb     { background: rgba(19,236,236,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(19,236,236,0.5); }
+
+/* ── Form controls ───────────────────────────────────── */
+input, select, textarea {
+  font-family: var(--font-mono);
+  color-scheme: dark;
+}
+
+.field-control {
+  width: 100%;
+  background: var(--color-bg-dark);
+  border: 1px solid rgba(19,236,236,0.3);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  outline: none;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-control:focus {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 0 1px var(--color-primary);
+}
+
+/* ── Custom checkbox ─────────────────────────────────── */
+.custom-check {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border: 1px solid rgba(19,236,236,0.3);
+  border-radius: 2px;
+  background: var(--color-bg-dark);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s;
+}
+.custom-check:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.custom-check:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 0px;
+  width: 5px; height: 8px;
+  border: 2px solid #102222;
+  border-top: none; border-left: none;
+  transform: rotate(45deg);
+}
+.custom-check.accent:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.custom-check.accent:checked::after {
+  border-color: #102222;
+}
+
+/* ── Custom radio ────────────────────────────────────── */
+.custom-radio {
+  appearance: none;
+  width: 13px; height: 13px;
+  flex-shrink: 0;
+  border: 1px solid rgba(19,236,236,0.3);
+  border-radius: 50%;
+  background: var(--color-bg-dark);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s;
+}
+.custom-radio:checked {
+  border-color: var(--color-primary);
+}
+.custom-radio:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+.custom-radio.accent:checked { border-color: var(--color-accent); }
+.custom-radio.accent:checked::after { background: var(--color-accent); }
+
+/* ── Cursor blink ────────────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.blink { animation: blink 1s step-end infinite; }
+
+/* ── Pulse glow ──────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px #13ecec; }
+  50%       { box-shadow: 0 0 12px #13ecec, 0 0 20px rgba(19,236,236,0.4); }
+}
+.pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
