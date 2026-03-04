@@ -14,8 +14,9 @@ export type ConnectionStatus =
   | 'error'
   | 'disconnecting';
 
-export type EncodingMode = 'ASCII' | 'HEX' | 'UTF8' | 'BASE64';
+export type EncodingMode = 'AUTO' | 'ASCII' | 'HEX' | 'HEX_TEXT' | 'UTF8' | 'BASE64';
 export type ChecksumType = 'CRC16' | 'LRC' | 'SUM8';
+export type AsciiNonPrintableMode = 'DOT' | 'HEX';
 
 export interface QuickCommand {
   id: string;
@@ -40,6 +41,7 @@ export interface ConnectionConfig {
 
 export interface ReceiveSettings {
   encoding: EncodingMode;
+  asciiNonPrintable: AsciiNonPrintableMode;
   showAsLog: boolean;
   autoNewline: boolean;
   saveToFile: boolean;

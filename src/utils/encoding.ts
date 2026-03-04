@@ -1,3 +1,5 @@
+import type { AsciiNonPrintableMode, EncodingMode } from '../types';
+
 export function bytesToHex(bytes: number[]): string {
   return bytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
 }
@@ -14,15 +16,79 @@ export function hexToBytes(hex: string): number[] {
   return bytes;
 }
 
-export function bytesToAscii(bytes: number[]): string {
-  return bytes.map(b => (b >= 32 && b < 127) ? String.fromCharCode(b) : '.').join('');
+export function bytesToAscii(bytes: number[], nonPrintable: AsciiNonPrintableMode = 'DOT'): string {
+  return bytes.map((b) => {
+    if (b >= 32 && b < 127) return String.fromCharCode(b);
+    return nonPrintable === 'HEX' ? `\\x${b.toString(16).padStart(2, '0').toUpperCase()}` : '.';
+  }).join('');
 }
 
-export function bytesToUtf8(bytes: number[]): string {
+export function bytesToUtf8(bytes: number[], nonPrintable: AsciiNonPrintableMode = 'DOT'): string {
   try {
     return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
   } catch {
-    return bytesToAscii(bytes);
+    return bytesToAscii(bytes, nonPrintable);
+  }
+}
+
+function tryDecodeUtf8Strict(bytes: number[]): string | null {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes));
+  } catch {
+    return null;
+  }
+}
+
+function isMostlyPrintableText(text: string): boolean {
+  if (!text) return false;
+  let nonPrintable = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text.charCodeAt(i);
+    const isCtrl = c < 32 || c === 127;
+    const isAllowedCtrl = c === 9 || c === 10 || c === 13;
+    if (isCtrl && !isAllowedCtrl) nonPrintable += 1;
+  }
+  return nonPrintable / text.length <= 0.1;
+}
+
+export function bytesToAuto(bytes: number[], _nonPrintable: AsciiNonPrintableMode = 'DOT'): string {
+  const decoded = tryDecodeUtf8Strict(bytes);
+  if (decoded && isMostlyPrintableText(decoded)) return decoded;
+  return bytesToHex(bytes);
+}
+
+export function bytesToHexText(
+  bytes: number[],
+  nonPrintable: AsciiNonPrintableMode = 'DOT',
+): { hex: string; text: string } {
+  const decoded = tryDecodeUtf8Strict(bytes);
+  return {
+    hex: bytesToHex(bytes),
+    text: decoded ?? bytesToAscii(bytes, nonPrintable),
+  };
+}
+
+export function bytesToDisplay(
+  bytes: number[],
+  encoding: EncodingMode,
+  nonPrintable: AsciiNonPrintableMode = 'DOT',
+): string {
+  switch (encoding) {
+    case 'HEX':
+      return bytesToHex(bytes);
+    case 'UTF8':
+      return bytesToUtf8(bytes, nonPrintable);
+    case 'BASE64':
+      return bytesToBase64(bytes);
+    case 'AUTO':
+      return bytesToAuto(bytes, nonPrintable);
+    case 'HEX_TEXT': {
+      const dual = bytesToHexText(bytes, nonPrintable);
+      return `${dual.hex}\n${dual.text}`;
+    }
+    case 'ASCII':
+    default:
+      return bytesToAscii(bytes, nonPrintable);
   }
 }
 

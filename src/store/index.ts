@@ -29,7 +29,7 @@ function defaultConfig(): ConnectionConfig {
   };
 }
 function defaultReceive(): ReceiveSettings {
-  return { encoding: 'ASCII', showAsLog: true, autoNewline: true, saveToFile: false, pauseReceiving: false };
+  return { encoding: 'AUTO', asciiNonPrintable: 'DOT', showAsLog: true, autoNewline: true, saveToFile: false, pauseReceiving: false };
 }
 function defaultSend(): SendSettings {
   return { encoding: 'ASCII', autoParseEscapes: true, autoCRLF: true, autoChecksum: false, checksumType: 'CRC16', periodicEnabled: false, periodicInterval: 1000 };
@@ -52,6 +52,7 @@ type PersistedState = {
     & { logs: []; trafficSamples: []; rxBytes: 0; txBytes: 0 }>;
   activeSessionId: string | null;
   quickCommands: QuickCommand[];
+  locale: 'en' | 'zh-CN';
 };
 
 interface AppState {
@@ -85,6 +86,9 @@ interface AppState {
   updateQuickCommand: (id: string, patch: Partial<Omit<QuickCommand, 'id'>>) => void;
 
   setLogFilter: (filter: string) => void;
+
+  locale: 'en' | 'zh-CN';
+  setLocale: (locale: 'en' | 'zh-CN') => void;
 }
 
 const find = (sessions: Session[], id: string) => sessions.find(s => s.id === id);
@@ -96,6 +100,7 @@ export const useAppStore = create<AppState>()(
       activeSessionId: null,
       logFilter: '',
       quickCommands: [],
+      locale: 'en',
 
       addSession: (protocol = 'TCP_CLIENT') =>
         set(s => { const ss = makeSession(protocol); s.sessions.push(ss); s.activeSessionId = ss.id; }),
@@ -198,6 +203,8 @@ export const useAppStore = create<AppState>()(
         }),
 
       setLogFilter: (filter) => set(s => { s.logFilter = filter; }),
+
+      setLocale: (locale) => set(s => { s.locale = locale; }),
     })),
     {
       name: 'fnd-store-v1',
@@ -207,7 +214,7 @@ export const useAppStore = create<AppState>()(
         sessions: state.sessions.map(s => ({
           id: s.id, name: s.name,
           config: s.config,
-          receiveSettings: s.receiveSettings,
+          receiveSettings: { ...s.receiveSettings, saveToFile: false },
           sendSettings: s.sendSettings,
           status: 'idle' as const, statusMsg: '',
           logs: [], rxBytes: 0, txBytes: 0,
@@ -216,6 +223,7 @@ export const useAppStore = create<AppState>()(
         })),
         activeSessionId: state.activeSessionId,
         quickCommands: state.quickCommands,
+        locale: state.locale,
       }),
     }
   )

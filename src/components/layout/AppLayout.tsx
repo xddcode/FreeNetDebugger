@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { useAppStore, getActiveSession } from '../../store';
 import ConnectionPanel from '../sidebar/ConnectionPanel';
 import DataLog from '../log/DataLog';
 import DataSend from '../send/DataSend';
 import StatusBar from '../status/StatusBar';
 import TrafficChart from '../traffic/TrafficChart';
-
-const PROTOCOL_LABELS: Record<string, string> = {
-  TCP_CLIENT: 'TCP Client', TCP_SERVER: 'TCP Server',
-  UDP_CLIENT: 'UDP Client', UDP_SERVER: 'UDP Server',
-  WEBSOCKET: 'WebSocket',  SERIAL: 'Serial Port',
-};
 
 function SessionDot({ status }: { status: string }) {
   const c = { connected: '#00ff00', listening: '#13ecec', connecting: '#fbbf24', error: '#f87171' }[status]
@@ -19,12 +15,16 @@ function SessionDot({ status }: { status: string }) {
 }
 
 export default function AppLayout() {
+  const { t } = useTranslation();
+
   const sessions      = useAppStore(s => s.sessions);
   const activeId      = useAppStore(s => s.activeSessionId);
   const setActive     = useAppStore(s => s.setActiveSession);
   const addSession    = useAppStore(s => s.addSession);
   const removeSession = useAppStore(s => s.removeSession);
   const activeSession = useAppStore(s => getActiveSession(s));
+  const locale        = useAppStore(s => s.locale);
+  const setLocale     = useAppStore(s => s.setLocale);
 
   const [trafficOpen, setTrafficOpen] = useState(true);
 
@@ -36,10 +36,20 @@ export default function AppLayout() {
 
   const statusLabel = () => {
     const m: Record<string, string> = {
-      idle: 'READY', connecting: 'CONNECTING', connected: 'CONNECTED',
-      listening: 'LISTENING', error: 'ERROR', disconnecting: 'CLOSING',
+      idle:          t('status.ready'),
+      connecting:    t('status.connecting'),
+      connected:     t('status.connected'),
+      listening:     t('status.listening'),
+      error:         t('status.error'),
+      disconnecting: t('status.closing'),
     };
-    return m[activeSession?.status ?? 'idle'] ?? 'READY';
+    return m[activeSession?.status ?? 'idle'] ?? t('status.ready');
+  };
+
+  const handleToggleLang = () => {
+    const next = locale === 'en' ? 'zh-CN' : 'en';
+    setLocale(next);
+    i18n.changeLanguage(next);
   };
 
   return (
@@ -64,11 +74,12 @@ export default function AppLayout() {
             <line x1="12" y1="15" x2="5" y2="17"/><line x1="12" y1="15" x2="19" y2="17"/>
           </svg>
           <h1 className="text-base font-bold tracking-tight uppercase" style={{ fontFamily: 'var(--font-display)' }}>
-            NetDebugger <span style={{ color: 'var(--color-accent)' }}>Pro</span>
+            FreeNetDebugger
           </h1>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Status badge */}
           <div
             className="flex items-center gap-2 px-3 py-1 rounded"
             style={{
@@ -87,20 +98,28 @@ export default function AppLayout() {
               }}
             />
             <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', letterSpacing: '0.08em' }}>
-              Status: {statusLabel()}
+              {t('status.label')}: {statusLabel()}
             </span>
           </div>
 
+          {/* Language toggle */}
           <button
-            className="p-1.5 rounded transition-all"
-            style={{ color: '#94a3b8' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-primary)')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
+            onClick={handleToggleLang}
+            className="px-2 py-1 rounded font-bold transition-all"
+            style={{
+              fontSize: 10,
+              fontFamily: 'var(--font-mono)',
+              background: 'rgba(19,236,236,0.08)',
+              border: '1px solid rgba(19,236,236,0.2)',
+              color: 'var(--color-primary)',
+              letterSpacing: '0.05em',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(19,236,236,0.18)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(19,236,236,0.08)')}
+            title={locale === 'en' ? '切换为中文' : 'Switch to English'}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
+            {locale === 'en' ? '中文' : 'EN'}
           </button>
         </div>
       </header>
@@ -108,11 +127,7 @@ export default function AppLayout() {
       {/* ── Session Tabs ───────────────────────────────────── */}
       <div
         className="relative z-10 flex items-center gap-1.5 px-3 shrink-0 overflow-x-auto"
-        style={{
-          height: 36,
-          background: 'rgba(16,34,34,0.95)',
-          borderBottom: '1px solid rgba(19,236,236,0.1)',
-        }}
+        style={{ height: 36, background: 'rgba(16,34,34,0.95)', borderBottom: '1px solid rgba(19,236,236,0.1)' }}
       >
         {sessions.map(sess => {
           const active = sess.id === activeId;
@@ -129,7 +144,7 @@ export default function AppLayout() {
               onClick={() => setActive(sess.id)}
             >
               <SessionDot status={sess.status} />
-              <span>{PROTOCOL_LABELS[sess.config.protocol] ?? sess.name}</span>
+              <span>{t(`protocol.${sess.config.protocol}`)}</span>
               {sessions.length > 1 && (
                 <span
                   className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -144,29 +159,25 @@ export default function AppLayout() {
           className="px-2 rounded shrink-0"
           style={{ height: 26, fontSize: 14, color: '#475569', border: '1px dashed rgba(19,236,236,0.15)' }}
           onClick={() => addSession()}
-          title="New Session"
+          title={t('header.newSession')}
         >+</button>
       </div>
 
       {/* ── Main Body ──────────────────────────────────────── */}
       <main className="relative z-10 flex flex-1 min-h-0 gap-2 p-2 overflow-hidden">
 
-        {/* Left sidebar — 3 separate cards */}
-        <aside className="w-64 shrink-0 flex flex-col gap-2 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+        <aside className="sidebar-scroll w-64 shrink-0 flex flex-col gap-2 min-h-0">
           {activeSession && <ConnectionPanel session={activeSession} />}
         </aside>
 
-        {/* Right content column */}
         <section className="flex-1 flex flex-col gap-2 min-w-0 min-h-0">
 
-          {/* Data Log — flex-1 */}
           <div className="flex-1 min-h-0 neon-card flex flex-col overflow-hidden">
             {activeSession && <DataLog session={activeSession} />}
           </div>
 
-          {/* Traffic Analysis — collapsible */}
+          {/* Traffic — collapsible */}
           <div className="shrink-0 neon-card overflow-hidden">
-            {/* Header */}
             <button
               className="w-full flex items-center justify-between px-3 py-2 transition-colors"
               style={{
@@ -176,18 +187,13 @@ export default function AppLayout() {
               onClick={() => setTrafficOpen(o => !o)}
             >
               <div className="flex items-center gap-2">
-                {/* bar-chart icon */}
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                  stroke="var(--color-accent)" strokeWidth="2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2">
                   <line x1="18" y1="20" x2="18" y2="10"/>
                   <line x1="12" y1="20" x2="12" y2="4"/>
                   <line x1="6"  y1="20" x2="6"  y2="14"/>
                 </svg>
-                <span
-                  className="text-xs font-bold uppercase tracking-wider"
-                  style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}
-                >
-                  Traffic Analysis
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}>
+                  {t('traffic.title')}
                 </span>
               </div>
               <svg
@@ -204,14 +210,12 @@ export default function AppLayout() {
             )}
           </div>
 
-          {/* Data Send */}
           <div className="shrink-0 neon-card overflow-hidden">
             {activeSession && <DataSend session={activeSession} />}
           </div>
         </section>
       </main>
 
-      {/* ── Status Bar ─────────────────────────────────────── */}
       <StatusBar session={activeSession} />
     </div>
   );

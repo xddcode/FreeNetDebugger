@@ -95,11 +95,28 @@ html, body, #root {
   z-index: 10;
 }
 
-/* ── Scrollbar ───────────────────────────────────────── */
-::-webkit-scrollbar           { width: 8px; height: 8px; }
-::-webkit-scrollbar-track     { background: rgba(19,236,236,0.05); border-left: 1px solid rgba(19,236,236,0.1); }
-::-webkit-scrollbar-thumb     { background: rgba(19,236,236,0.3); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(19,236,236,0.5); }
+/* ── Scrollbar ───────────────────────────────────────
+   Defining ::-webkit-scrollbar with a positive width forces
+   Chromium / WebView2 into "classic" (always-visible) mode.
+   Do NOT set `scrollbar-width: thin` globally — that switches
+   Chrome 121+ back to overlay (auto-hiding) mode.
+──────────────────────────────────────────────────── */
+::-webkit-scrollbar             { width: 6px; height: 6px; }
+::-webkit-scrollbar-track       { background: rgba(19,236,236,0.05); }
+::-webkit-scrollbar-thumb       { background: rgba(19,236,236,0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(19,236,236,0.65); }
+::-webkit-scrollbar-corner      { background: transparent; }
+
+/* Firefox only — does not affect Chromium scrollbar mode */
+@-moz-document url-prefix() {
+  * { scrollbar-width: thin; scrollbar-color: rgba(19,236,236,0.4) rgba(19,236,236,0.05); }
+}
+
+/* Sidebar panel container */
+.sidebar-scroll {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
 
 /* ── Form controls ───────────────────────────────────── */
 input, select, textarea {

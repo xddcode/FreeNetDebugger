@@ -19,7 +19,7 @@ Most network debuggers are either too simple or too slow. FreeNetDebugger is eng
 |-----------|-----|
 | **Extreme throughput** | Rust + Tokio async I/O with 64 KB read buffers; TCP_NODELAY for minimum latency; frontend batch-flushes events every 80 ms — UI stays fluid at 100 MB/s+ |
 | **Zero UI jank** | React 19 with virtual scrolling (no DOM node limit), `React.memo` row rendering, and a decoupled data pipeline that never blocks the render thread |
-| **Open & extensible** | Clean architecture with typed interfaces and reserved hooks for pro features (custom protocol parsers, script-driven visualizations) |
+| **Open & extensible** | Clean architecture with typed interfaces; modular component design makes adding new protocols or display modes straightforward |
 
 ---
 
@@ -163,7 +163,6 @@ FreeNetDebugger/
 - [ ] Serial Port full implementation
 - [ ] WebSocket Server mode
 - [ ] MQTT client
-- [ ] **Pro: Script-driven protocol parser** — user-defined JS/Lua scripts to decode frames into structured fields with custom visualizations *(architecture hooks reserved)*
 - [ ] Plugin API (community protocol decoders)
 - [ ] Session replay / recording
 - [ ] Dark / light theme toggle

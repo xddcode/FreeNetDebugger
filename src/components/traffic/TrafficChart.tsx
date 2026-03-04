@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TrafficSample } from '../../types';
 
 interface SparklineProps {
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export default function TrafficChart({ samples }: Props) {
+  const { t } = useTranslation();
   const W = 400;
   const H = 64;
   const CHART_W = W;
@@ -92,7 +94,7 @@ export default function TrafficChart({ samples }: Props) {
             fontWeight: 700,
           }}
         >
-          DATA FLOW VISUALIZER
+          {t('traffic.visualizer')}
         </div>
 
         {/* Grid lines */}
@@ -158,7 +160,7 @@ export default function TrafficChart({ samples }: Props) {
               className="inline-block rounded-full"
               style={{ width: 5, height: 5, background: '#00ff00', boxShadow: '0 0 4px #00ff00' }}
             />
-            Total In
+            {t('traffic.totalIn')}
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#00ff00', fontFamily: 'var(--font-mono)' }}>
             {formatTotal(rxTotal)}
@@ -184,7 +186,7 @@ export default function TrafficChart({ samples }: Props) {
               className="inline-block rounded-full"
               style={{ width: 5, height: 5, background: '#ff00ff', boxShadow: '0 0 4px #ff00ff' }}
             />
-            Total Out
+            {t('traffic.totalOut')}
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#ff00ff', fontFamily: 'var(--font-mono)' }}>
             {formatTotal(txTotal)}
