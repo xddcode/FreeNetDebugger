@@ -1,5 +1,7 @@
 <div align="center">
 
+<img alt="FreeNetDebugger Logo" src="./public/app-icon.png" width="100"/>
+
 ## FreeNetDebugger
 
 高性能、跨平台网络调试工具（Tauri + Rust + React）。

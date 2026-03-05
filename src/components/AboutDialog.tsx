@@ -37,17 +37,10 @@ export default function AboutDialog({ open, onClose }: Props) {
             <div
               className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
               style={{
-                background: 'rgba(19,236,236,0.15)',
-                border: '1px solid rgba(19,236,236,0.3)',
+                background: 'linear-gradient(135deg, rgba(19,236,236,0.12), rgba(255,0,255,0.08))'
               }}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.8">
-                <circle cx="12" cy="12" r="3"/>
-                <circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/>
-                <circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/>
-                <line x1="12" y1="9" x2="5" y2="7"/><line x1="12" y1="9" x2="19" y2="7"/>
-                <line x1="12" y1="15" x2="5" y2="17"/><line x1="12" y1="15" x2="19" y2="17"/>
-              </svg>
+              <img src="/app-icon.png" alt="FreeNetDebugger" width="30" height="30" style={{ borderRadius: 6, flexShrink: 0 }} />
             </div>
             <div>
               <h2

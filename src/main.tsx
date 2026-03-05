@@ -17,3 +17,16 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <App />
   </React.StrictMode>,
 );
+
+const hideStartupSplash = () => {
+  const splash = document.getElementById('startup-splash');
+  if (!splash) {
+    return;
+  }
+  splash.classList.add('fade-out');
+  window.setTimeout(() => splash.remove(), 260);
+};
+
+window.requestAnimationFrame(() => {
+  window.requestAnimationFrame(hideStartupSplash);
+});

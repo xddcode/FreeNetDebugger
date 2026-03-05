@@ -2,12 +2,79 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/app-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FreeNetDebugger</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #102222; }
+      #startup-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #102222 0%, #162e2e 55%, #102222 100%);
+        transition: opacity .24s ease;
+      }
+      #startup-splash.fade-out { opacity: 0; pointer-events: none; }
+      .startup-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 22px;
+        border-radius: 12px;
+        border: 1px solid rgba(19,236,236,.28);
+        background: rgba(15,30,30,.82);
+        box-shadow: 0 0 26px rgba(19,236,236,.14), inset 0 0 14px rgba(19,236,236,.08);
+        color: #d8f8f8;
+      }
+      .startup-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        border: 1px solid rgba(19,236,236,.35);
+      }
+      .startup-title {
+        font: 700 16px "Space Grotesk", system-ui, sans-serif;
+        letter-spacing: .04em;
+        color: #13ecec;
+      }
+      .startup-subtitle {
+        font: 500 11px "JetBrains Mono", monospace;
+        color: rgba(203,213,225,.85);
+      }
+      .startup-bar {
+        width: 170px;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba(148,163,184,.28);
+        overflow: hidden;
+      }
+      .startup-bar > span {
+        display: block;
+        width: 44%;
+        height: 100%;
+        background: linear-gradient(90deg, #13ecec, #ff00ff);
+        animation: startup-slide 1.1s ease-in-out infinite;
+      }
+      @keyframes startup-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(280%); }
+      }
+    </style>
   </head>
   <body>
+    <div id="startup-splash" aria-hidden="true">
+      <div class="startup-card">
+        <img class="startup-icon" src="/app-icon.png" alt="FreeNetDebugger" />
+        <div class="startup-title">FreeNetDebugger</div>
+        <div class="startup-subtitle">Initializing runtime...</div>
+        <div class="startup-bar"><span></span></div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

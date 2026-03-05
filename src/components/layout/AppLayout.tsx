@@ -156,13 +156,16 @@ export default function AppLayout() {
           className="flex items-center gap-2 flex-1 min-w-0 cursor-move"
           style={{ color: 'var(--color-primary)' }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <circle cx="12" cy="12" r="3"/>
-            <circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/>
-            <circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/>
-            <line x1="12" y1="9" x2="5" y2="7"/><line x1="12" y1="9" x2="19" y2="7"/>
-            <line x1="12" y1="15" x2="5" y2="17"/><line x1="12" y1="15" x2="19" y2="17"/>
-          </svg>
+          <span
+            className="inline-flex items-center justify-center rounded shrink-0"
+            style={{
+              width: 24,
+              height: 24,
+              background: 'linear-gradient(135deg, rgba(19,236,236,0.12), rgba(255,0,255,0.08))'
+            }}
+          >
+            <img src="/app-icon.png" alt="FreeNetDebugger" width="18" height="18" style={{ borderRadius: 4, flexShrink: 0 }} />
+          </span>
           <h1 className="text-sm font-bold tracking-tight uppercase" style={{ fontFamily: 'var(--font-display)' }}>
             {APP.name}
           </h1>

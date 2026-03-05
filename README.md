@@ -1,5 +1,7 @@
 <div align="center">
 
+<img alt="FreeNetDebugger Logo" src="./public/app-icon.png" width="100"/>
+
 ## FreeNetDebugger
 
 High-performance, cross-platform network debugging tool built with Tauri + Rust + React.
