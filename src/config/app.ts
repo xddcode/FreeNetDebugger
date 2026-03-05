@@ -4,7 +4,7 @@
 export const APP = {
   name: 'FreeNetDebugger',
   version: '0.1.0',
-  description: '跨平台网络调试助手',
+  description: '高颜值、高性能的跨平台网络调试助手',
   github: 'https://github.com/xddcode/free-net-debugger',
 } as const;
 

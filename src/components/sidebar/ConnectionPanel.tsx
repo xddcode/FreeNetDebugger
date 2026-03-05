@@ -1,9 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
 import { useAppStore } from '../../store';
 import type { Session, ProtocolType, EncodingMode, AsciiNonPrintableMode } from '../../types';
-import { sendPanelBus } from '../../utils/sendPanelBus';
 import { bytesToDisplay, formatTimestamp } from '../../utils/encoding';
 
 function PanelCard({ children }: { children: React.ReactNode }) {
@@ -65,112 +64,8 @@ function RadioGroup({ options, value, onChange, accent }: { options: string[]; v
   );
 }
 
-interface QSPanelProps {
-  onSend: (text: string, enc: EncodingMode) => void;
-}
-
-function QuickShortcutsPanel({ onSend }: QSPanelProps) {
-  const { t } = useTranslation();
-  const cmds             = useAppStore(s => s.quickCommands);
-  const addCmd           = useAppStore(s => s.addQuickCommand);
-  const removeCmd        = useAppStore(s => s.removeQuickCommand);
-  const [name, setName]  = useState('');
-  const [data, setData]  = useState('');
-  const [enc, setEnc]    = useState<EncodingMode>('ASCII');
-  const [adding, setAdding] = useState(false);
-
-  return (
-    <div className="px-3 pb-3 flex flex-col gap-2">
-      {cmds.length === 0 && !adding && (
-        <div style={{ color: '#1e3a3a', fontSize: 11, fontFamily: 'var(--font-mono)', textAlign: 'center', padding: '8px 0' }}>
-          {t('shortcuts.empty')}
-        </div>
-      )}
-
-      {cmds.map(cmd => (
-        <div key={cmd.id} className="flex items-center gap-1.5 rounded px-2 py-1.5"
-          style={{ background: 'rgba(16,34,34,0.6)', border: '1px solid rgba(19,236,236,0.1)' }}>
-          <div className="flex-1 min-w-0">
-            <div style={{ fontSize: 10, color: 'var(--color-primary)', fontWeight: 600 }}>{cmd.name}</div>
-            <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cmd.data}</div>
-          </div>
-          <button
-            className="px-2 py-0.5 rounded text-xs font-bold"
-            style={{ background: 'rgba(19,236,236,0.15)', border: '1px solid rgba(19,236,236,0.3)', color: 'var(--color-primary)', fontSize: 10, cursor: 'pointer' }}
-            onClick={() => onSend(cmd.data, cmd.encoding)}
-          >{t('shortcuts.send')}</button>
-          <button onClick={() => removeCmd(cmd.id)} style={{ color: '#475569', fontSize: 14, lineHeight: 1, cursor: 'pointer' }}>×</button>
-        </div>
-      ))}
-
-      {adding && (
-        <div className="flex flex-col gap-1.5 p-2 rounded" style={{ background: 'rgba(16,34,34,0.6)', border: '1px solid rgba(19,236,236,0.15)' }}>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder={t('shortcuts.namePlaceholder')} className="field-control w-full" style={{ height: 26, fontSize: 11 }} />
-          <textarea value={data} onChange={e => setData(e.target.value)} placeholder={t('shortcuts.dataPlaceholder')} rows={2}
-            style={{ width: '100%', background: 'var(--color-bg-dark)', border: '1px solid rgba(19,236,236,0.3)', borderRadius: 3, padding: '4px 6px', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', outline: 'none', resize: 'none' }} />
-          <div className="flex items-center gap-2">
-            <select value={enc} onChange={e => setEnc(e.target.value as EncodingMode)} className="field-control" style={{ height: 24, fontSize: 10, flex: 1 }}>
-              <option>ASCII</option><option>HEX</option>
-            </select>
-            <button
-              className="px-2 rounded text-xs font-bold"
-              style={{ height: 24, background: 'rgba(19,236,236,0.15)', border: '1px solid rgba(19,236,236,0.3)', color: 'var(--color-primary)', cursor: 'pointer', fontSize: 10 }}
-              onClick={() => {
-                if (!name.trim() || !data.trim()) {
-                  return;
-                }
-                addCmd({ name: name.trim(), data: data.trim(), encoding: enc });
-                setName(''); setData(''); setAdding(false);
-              }}
-            >{t('shortcuts.save')}</button>
-            <button onClick={() => setAdding(false)} style={{ color: '#475569', fontSize: 13, cursor: 'pointer' }}>✕</button>
-          </div>
-        </div>
-      )}
-
-      {!adding && (
-        <button
-          onClick={() => setAdding(true)}
-          className="w-full text-xs py-1 rounded"
-          style={{ border: '1px dashed rgba(19,236,236,0.2)', color: 'rgba(19,236,236,0.5)', cursor: 'pointer', fontSize: 10 }}
-        >{t('shortcuts.add')}</button>
-      )}
-    </div>
-  );
-}
-
-function SendHistoryPanel({ history, onSelect }: { history: string[]; onSelect: (t: string) => void }) {
-  const { t } = useTranslation();
-  if (history.length === 0) {
-    return <div style={{ color: '#1e3a3a', fontSize: 11, fontFamily: 'var(--font-mono)', textAlign: 'center', padding: '10px 12px' }}>{t('history.empty')}</div>;
-  }
-  return (
-    <div className="flex flex-col gap-1 px-3 pb-3 max-h-40 overflow-y-auto">
-      {history.map((text, i) => (
-        <button
-          key={i}
-          onClick={() => onSelect(text)}
-          className="text-left rounded px-2 py-1 transition-colors"
-          style={{
-            background: 'rgba(16,34,34,0.6)', border: '1px solid rgba(19,236,236,0.1)',
-            fontFamily: 'var(--font-mono)', fontSize: 10, color: '#94a3b8',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(19,236,236,0.3)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-primary)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(19,236,236,0.1)'; (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
-        >
-          {text.length > 60 ? text.slice(0, 60) + '…' : text}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 interface Props {
   session: Session;
-  onSendShortcut?: (text: string, enc: EncodingMode) => void;
-  onSelectHistory?: (text: string) => void;
 }
 
 export default function ConnectionPanel({ session }: Props) {
@@ -181,9 +76,6 @@ export default function ConnectionPanel({ session }: Props) {
   const setStatus          = useAppStore(s => s.setStatus);
   const appendLog          = useAppStore(s => s.appendLog);
   const clearLogs          = useAppStore(s => s.clearLogs);
-
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showHistory, setShowHistory]     = useState(false);
 
   const fileHandleRef = useRef<FileSystemFileHandle | null>(null);
   const writeChainRef = useRef<Promise<void>>(Promise.resolve());
@@ -257,6 +149,7 @@ export default function ConnectionPanel({ session }: Props) {
       }
 
       const asciiMode = live.receiveSettings.asciiNonPrintable ?? 'DOT';
+      const lineBreak = live.receiveSettings.autoNewline ? '\n' : '';
       const pendingRecvLines: string[] = [];
 
       for (const log of live.logs) {
@@ -268,7 +161,7 @@ export default function ConnectionPanel({ session }: Props) {
         }
         const line = `[${formatTimestamp(log.timestamp)}] RECV: ${
           bytesToDisplay(log.data, live.receiveSettings.encoding, asciiMode)
-        }\n`;
+        }${lineBreak}`;
         pendingRecvLines.push(line);
       }
 
@@ -285,7 +178,7 @@ export default function ConnectionPanel({ session }: Props) {
     };
   }, [session.id]);
 
-  const exportLog = () => {
+  const exportLog = async () => {
     const asciiMode = receiveSettings.asciiNonPrintable ?? 'DOT';
     const lines = session.logs.map(e => {
       const ts   = formatTimestamp(e.timestamp);
@@ -293,11 +186,55 @@ export default function ConnectionPanel({ session }: Props) {
       const text = bytesToDisplay(e.data, receiveSettings.encoding, asciiMode);
       return `[${ts}] ${dir}: ${text}`;
     });
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement('a'), { href: url, download: `log_${Date.now()}.txt` });
-    a.click();
-    URL.revokeObjectURL(url);
+    // Export keeps one log entry per line for readability.
+    const content = lines.join('\n');
+    if (!content) {
+      appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(t('receive.exportLogEmpty'))) });
+      return;
+    }
+
+    const fileName = `log_${Date.now()}.txt`;
+    try {
+      const showSaveFilePicker = (window as unknown as {
+        showSaveFilePicker?: (options: {
+          suggestedName?: string;
+          types?: Array<{ description?: string; accept: Record<string, string[]> }>;
+        }) => Promise<FileSystemFileHandle>;
+      }).showSaveFilePicker;
+
+      if (typeof showSaveFilePicker === 'function') {
+        const handle = await showSaveFilePicker({
+          suggestedName: fileName,
+          types: [{ description: 'Text', accept: { 'text/plain': ['.txt'] } }],
+        });
+        const writer = await handle.createWritable();
+        await writer.write(content);
+        await writer.close();
+        appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(t('receive.exportLogSaved'))) });
+        return;
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+    }
+
+    try {
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), {
+        href: url,
+        download: fileName,
+      });
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(t('receive.exportLogDownloaded'))) });
+    } catch {
+      appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(t('receive.exportLogFailed'))) });
+    }
   };
 
   const showRemote = ['TCP_CLIENT', 'UDP_CLIENT', 'WEBSOCKET'].includes(config.protocol);
@@ -438,26 +375,7 @@ export default function ConnectionPanel({ session }: Props) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid rgba(19,236,236,0.1)' }}>
-            <button style={linkStyle('var(--color-accent)')} onClick={() => { setShowShortcuts(v => !v); setShowHistory(false); }}>{t('sendSettings.quickShortcuts')}</button>
-            <button style={linkStyle('var(--color-accent)')} onClick={() => { setShowHistory(v => !v); setShowShortcuts(false); }}>{t('sendSettings.sendHistory')}</button>
-          </div>
         </div>
-
-        {showShortcuts && (
-          <div style={{ borderTop: '1px solid rgba(19,236,236,0.1)' }}>
-            <QuickShortcutsPanel onSend={(text, enc) => sendPanelBus.emit(text, enc)} />
-          </div>
-        )}
-
-        {showHistory && (
-          <div style={{ borderTop: '1px solid rgba(19,236,236,0.1)' }}>
-            <SendHistoryPanel
-              history={session.sendHistory}
-              onSelect={(text) => { sendPanelBus.emit(text, sendSettings.encoding); setShowHistory(false); }}
-            />
-          </div>
-        )}
       </PanelCard>
     </>
   );

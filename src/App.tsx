@@ -33,6 +33,7 @@ export default function App() {
   const appendLog        = useAppStore(s => s.appendLog);
   const appendLogs       = useAppStore(s => s.appendLogs);
   const addRxBytes       = useAppStore(s => s.addRxBytes);
+  const addTxBytes       = useAppStore(s => s.addTxBytes);
   const addTrafficSample = useAppStore(s => s.addTrafficSample);
   const setActiveSession = useAppStore(s => s.setActiveSession);
 
@@ -45,6 +46,7 @@ export default function App() {
   const FLUSH_INTERVAL_MS = 80;
   const pendingLogs  = useRef<Map<string, Omit<LogEntry, 'id'>[]>>(new Map());
   const pendingRx    = useRef<Map<string, number>>(new Map());
+  const pendingTx    = useRef<Map<string, number>>(new Map());
 
   // Init active session
   useEffect(() => {
@@ -71,6 +73,11 @@ export default function App() {
         pendingRx.current.set(
           connection_id,
           (pendingRx.current.get(connection_id) ?? 0) + data.length,
+        );
+      } else if (direction === 'send') {
+        pendingTx.current.set(
+          connection_id,
+          (pendingTx.current.get(connection_id) ?? 0) + data.length,
         );
       }
     });
@@ -100,15 +107,17 @@ export default function App() {
 
   useEffect(() => {
     const flush = () => {
-      if (pendingLogs.current.size === 0 && pendingRx.current.size === 0) {
+      if (pendingLogs.current.size === 0 && pendingRx.current.size === 0 && pendingTx.current.size === 0) {
         return;
       }
 
       // Drain buffers atomically
       const logsSnap = pendingLogs.current;
       const rxSnap   = pendingRx.current;
+      const txSnap   = pendingTx.current;
       pendingLogs.current = new Map();
       pendingRx.current   = new Map();
+      pendingTx.current   = new Map();
 
       // Single Zustand update per session (not per packet)
       for (const [id, entries] of logsSnap) {
@@ -121,11 +130,16 @@ export default function App() {
           addRxBytes(id, bytes);
         }
       }
+      for (const [id, bytes] of txSnap) {
+        if (bytes > 0) {
+          addTxBytes(id, bytes);
+        }
+      }
     };
 
     const timer = setInterval(flush, FLUSH_INTERVAL_MS);
     return () => { clearInterval(timer); flush(); }; // flush on unmount
-  }, [appendLogs, addRxBytes]);
+  }, [appendLogs, addRxBytes, addTxBytes]);
 
   const prevBytesRef = useRef<Map<string, { rx: number; tx: number }>>(new Map());
 

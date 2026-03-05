@@ -56,6 +56,15 @@ function formatTotal(n: number): string {
   return `${n} B`;
 }
 
+function averageTail(data: number[], windowSize: number): number {
+  if (data.length === 0) {
+    return 0;
+  }
+  const tail = data.slice(-windowSize);
+  const sum = tail.reduce((acc, v) => acc + v, 0);
+  return Math.round(sum / tail.length);
+}
+
 interface Props {
   samples: TrafficSample[];
 }
@@ -71,8 +80,13 @@ export default function TrafficChart({ samples }: Props) {
   const txData = samples.map(s => s.txRate);
 
   const lastSample = samples[samples.length - 1];
-  const rxRate  = lastSample?.rxRate  ?? 0;
-  const txRate  = lastSample?.txRate  ?? 0;
+  // Professional telemetry UX:
+  // - show smoothed current rate (3-second moving average)
+  // - show peak across current window (up to last 60 samples)
+  const rxRate = averageTail(rxData, 3);
+  const txRate = averageTail(txData, 3);
+  const rxPeak = rxData.length > 0 ? Math.max(...rxData) : 0;
+  const txPeak = txData.length > 0 ? Math.max(...txData) : 0;
   const rxTotal = lastSample?.rxTotal ?? 0;
   const txTotal = lastSample?.txTotal ?? 0;
 
@@ -178,7 +192,7 @@ export default function TrafficChart({ samples }: Props) {
             {formatTotal(rxTotal)}
           </div>
           <div style={{ fontSize: 10, color: 'rgba(0,255,0,0.5)', fontFamily: 'var(--font-mono)' }}>
-            ↓ {formatRate(rxRate)}
+            ↓ {formatRate(rxRate)} ({t('traffic.peak')} {formatRate(rxPeak)})
           </div>
         </div>
 
@@ -204,7 +218,7 @@ export default function TrafficChart({ samples }: Props) {
             {formatTotal(txTotal)}
           </div>
           <div style={{ fontSize: 10, color: 'rgba(255,0,255,0.5)', fontFamily: 'var(--font-mono)' }}>
-            ↑ {formatRate(txRate)}
+            ↑ {formatRate(txRate)} ({t('traffic.peak')} {formatRate(txPeak)})
           </div>
         </div>
       </div>

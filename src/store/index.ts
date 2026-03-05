@@ -7,7 +7,7 @@ import type {
 } from '../types';
 
 const TRAFFIC_MAX  = 60;
-const HISTORY_MAX  = 30;
+const HISTORY_MAX  = 100;
 const LOGS_CAP     = 100_000;
 const LOGS_TRIM    = 10_000;
 
@@ -81,6 +81,8 @@ interface AppState {
   addTrafficSample: (id: string, sample: TrafficSample) => void;
 
   addSendHistory: (id: string, text: string) => void;
+  removeSendHistory: (id: string, text: string) => void;
+  clearSendHistory: (id: string) => void;
 
   addQuickCommand: (cmd: Omit<QuickCommand, 'id'>) => void;
   removeQuickCommand: (id: string) => void;
@@ -211,11 +213,33 @@ export const useAppStore = create<AppState>()(
       addSendHistory: (id, text) =>
         set(s => {
           const ss = find(s.sessions, id);
-          if (!ss || !text.trim()) {
+          const normalized = text.trim();
+          if (!ss || !normalized) {
             return;
           }
-          // deduplicate + put latest at front
-          ss.sendHistory = [text, ...ss.sendHistory.filter(t => t !== text)].slice(0, HISTORY_MAX);
+          // Keep existing order stable: do not move an existing item to top on rerun.
+          if (ss.sendHistory.includes(normalized)) {
+            return;
+          }
+          ss.sendHistory = [normalized, ...ss.sendHistory].slice(0, HISTORY_MAX);
+        }),
+
+      removeSendHistory: (id, text) =>
+        set(s => {
+          const ss = find(s.sessions, id);
+          if (!ss) {
+            return;
+          }
+          ss.sendHistory = ss.sendHistory.filter(t => t !== text);
+        }),
+
+      clearSendHistory: (id) =>
+        set(s => {
+          const ss = find(s.sessions, id);
+          if (!ss) {
+            return;
+          }
+          ss.sendHistory = [];
         }),
 
       addQuickCommand: (cmd) =>

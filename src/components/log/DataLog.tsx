@@ -19,6 +19,8 @@ const LogRow = memo(function LogRow({
   entry,
   encoding,
   asciiMode,
+  showAsLog,
+  autoNewline,
   dirRecv,
   dirSend,
   dirSystem,
@@ -26,6 +28,8 @@ const LogRow = memo(function LogRow({
   entry: LogEntry;
   encoding: EncodingMode;
   asciiMode: AsciiNonPrintableMode;
+  showAsLog: boolean;
+  autoNewline: boolean;
   dirRecv: string;
   dirSend: string;
   dirSystem: string;
@@ -42,8 +46,37 @@ const LogRow = memo(function LogRow({
     ? 'var(--color-success)'
     : 'var(--color-accent)';
 
-  const text = renderData(entry, encoding, asciiMode);
+  const suffix = isRecv && autoNewline ? '\n' : '';
+  const text = renderData(entry, encoding, asciiMode) + suffix;
   const dual = encoding === 'HEX_TEXT' ? bytesToHexText(entry.data, asciiMode) : null;
+  const hexText = dual ? `${dual.hex}${suffix}` : null;
+  const plainText = dual ? `${dual.text}${suffix}` : null;
+
+  if (!showAsLog) {
+    const dataColor = isSys
+      ? '#94a3b8'
+      : isRecv
+      ? 'var(--color-success)'
+      : 'var(--color-accent)';
+    return (
+      <div className="px-3 py-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+        {dual ? (
+          <>
+            <div style={{ color: dataColor, fontSize: 12, fontWeight: 600, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+              {hexText}
+            </div>
+            <div style={{ color: '#a8b3c7', fontSize: 11, marginTop: 1, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+              {plainText}
+            </div>
+          </>
+        ) : (
+          <div style={{ color: dataColor, fontSize: 12, fontWeight: 600, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+            {text}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="px-3 py-1" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -55,10 +88,10 @@ const LogRow = memo(function LogRow({
       {dual ? (
         <>
           <div style={{ color: dataColor, fontSize: 12, fontWeight: 600, marginTop: 2, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
-            {dual.hex}
+            {hexText}
           </div>
           <div style={{ color: '#a8b3c7', fontSize: 11, marginTop: 2, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
-            {dual.text}
+            {plainText}
           </div>
         </>
       ) : (
@@ -72,6 +105,8 @@ const LogRow = memo(function LogRow({
   prev.entry.id === next.entry.id &&
   prev.encoding === next.encoding &&
   prev.asciiMode === next.asciiMode &&
+  prev.showAsLog === next.showAsLog &&
+  prev.autoNewline === next.autoNewline &&
   prev.dirRecv === next.dirRecv &&
   prev.dirSend === next.dirSend &&
   prev.dirSystem === next.dirSystem,
@@ -134,7 +169,7 @@ export default function DataLog({ session }: Props) {
   }, []);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'rgba(16,34,34,0.8)' }}>
+    <div className="flex flex-col h-full" style={{ background: 'rgba(16,34,34,0.8)', userSelect: 'text', WebkitUserSelect: 'text' }}>
       <div className="flex items-center justify-between px-3 py-1.5 shrink-0"
         style={{ background: 'linear-gradient(to right,rgba(19,236,236,0.1),transparent)', borderBottom: '1px solid rgba(19,236,236,0.2)' }}>
         <div className="flex items-center gap-2" style={{ borderLeft: '2px solid var(--color-primary)', paddingLeft: 8 }}>
@@ -184,7 +219,7 @@ export default function DataLog({ session }: Props) {
         ref={parentRef}
         className="flex-1 overflow-y-auto relative"
         onScroll={handleScroll}
-        style={{ background: 'rgba(16,34,34,0.95)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)' }}
+        style={{ background: 'rgba(16,34,34,0.95)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)', userSelect: 'text', WebkitUserSelect: 'text' }}
       >
         <div className="crt-scanlines" />
 
@@ -222,6 +257,8 @@ export default function DataLog({ session }: Props) {
                   entry={filteredLogs[vItem.index]}
                   encoding={session.receiveSettings.encoding}
                   asciiMode={asciiMode}
+                  showAsLog={session.receiveSettings.showAsLog}
+                  autoNewline={session.receiveSettings.autoNewline}
                   dirRecv={t('log.dirRecv')}
                   dirSend={t('log.dirSend')}
                   dirSystem={t('log.dirSystem')}

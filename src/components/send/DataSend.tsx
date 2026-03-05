@@ -3,18 +3,22 @@ import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
 import { useAppStore } from '../../store';
 import { sendPanelBus } from '../../utils/sendPanelBus';
-import type { Session } from '../../types';
+import type { EncodingMode, Session } from '../../types';
+import type { SendCenterTabKey } from './SendCenterDrawer';
 import { asciiToBytes, hexToBytes, parseEscapeSequences } from '../../utils/encoding';
 import { appendChecksum } from '../../utils/checksum';
 
-interface Props { session: Session }
+interface Props {
+  session: Session;
+  onOpenSendCenter?: (tab: SendCenterTabKey) => void;
+}
 
-export default function DataSend({ session }: Props) {
+export default function DataSend({ session, onOpenSendCenter }: Props) {
   const { t } = useTranslation();
   const text                    = session.sendContent;
   const updateSendContent        = useAppStore(s => s.updateSendContent);
+  const updateSendSettings       = useAppStore(s => s.updateSendSettings);
   const appendLog                = useAppStore(s => s.appendLog);
-  const addTxBytes               = useAppStore(s => s.addTxBytes);
   const addSendHistory           = useAppStore(s => s.addSendHistory);
   const fileInputRef             = useRef<HTMLInputElement>(null);
   const periodicRef              = useRef<number | null>(null);
@@ -31,14 +35,11 @@ export default function DataSend({ session }: Props) {
     }
   };
 
-  // Subscribe to shortcut / history bus
-  useEffect(() => {
-    const unsub = sendPanelBus.on((t) => updateSendContent(session.id, t));
-    return unsub;
-  }, [session.id, updateSendContent]);
-
-  const buildPayload = useCallback((input: string): number[] => {
-    if (sendSettings.encoding === 'HEX') {
+  const buildPayload = useCallback((input: string, overrideEncoding?: EncodingMode): number[] => {
+    const mode = overrideEncoding === 'HEX' || overrideEncoding === 'ASCII'
+      ? overrideEncoding
+      : sendSettings.encoding;
+    if (mode === 'HEX') {
       let b = hexToBytes(input);
       if (sendSettings.autoChecksum) {
         b = appendChecksum(b, sendSettings.checksumType);
@@ -59,24 +60,49 @@ export default function DataSend({ session }: Props) {
     return b;
   }, [sendSettings]);
 
-  const doSend = useCallback(async (overrideText?: string) => {
+  const doSend = useCallback(async (overrideText?: string, overrideEncoding?: EncodingMode) => {
     const raw = overrideText ?? text;
     if (!canSend || !raw.trim()) {
       return;
     }
-    const payload = buildPayload(raw);
+    const payload = buildPayload(raw, overrideEncoding);
     if (payload.length === 0) {
       return;
     }
     try {
       await invoke('send_data', { id: session.id, data: payload });
       appendLog(session.id, { timestamp: Date.now(), direction: 'send', data: payload });
-      addTxBytes(session.id, payload.length);
       addSendHistory(session.id, raw.trim());
     } catch (e) {
       appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(`${t('send.sendFailed')}: ${e}`)) });
     }
-  }, [text, canSend, session.id, buildPayload, appendLog, addTxBytes, addSendHistory, t]);
+  }, [text, canSend, session.id, buildPayload, appendLog, addSendHistory, t]);
+
+  // Subscribe to shortcut / history bus
+  useEffect(() => {
+    const unsub = sendPanelBus.on((nextText, enc, sendNow, append) => {
+      const effectiveEncoding: 'ASCII' | 'HEX' = enc === 'HEX' ? 'HEX' : 'ASCII';
+      if (effectiveEncoding !== sendSettings.encoding) {
+        updateSendSettings(session.id, { encoding: effectiveEncoding });
+      }
+      const mergedText = append
+        ? (() => {
+          const current = useAppStore.getState().sessions.find(s => s.id === session.id)?.sendContent ?? '';
+          if (!current.trim()) {
+            return nextText;
+          }
+          const separator = effectiveEncoding === 'HEX' ? ' ' : '\n';
+          return `${current}${separator}${nextText}`;
+        })()
+        : nextText;
+
+      updateSendContent(session.id, mergedText);
+      if (sendNow) {
+        void doSend(mergedText, effectiveEncoding);
+      }
+    });
+    return unsub;
+  }, [session.id, updateSendContent, updateSendSettings, doSend, sendSettings.encoding]);
 
   // Periodic send
   useEffect(() => {
@@ -128,6 +154,24 @@ export default function DataSend({ session }: Props) {
           <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#e2e8f0', fontFamily: 'var(--font-display)' }}>{t('send.title')}</h3>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            data-send-center-trigger="true"
+            className="px-2 py-0.5 rounded text-xs transition-colors"
+            style={{ color: 'var(--color-accent)', border: '1px solid rgba(255,0,255,0.2)', cursor: 'pointer' }}
+            onClick={() => onOpenSendCenter?.('shortcuts')}
+            title={t('sendSettings.quickShortcuts')}
+          >
+            {t('sendSettings.quickShortcuts')}
+          </button>
+          <button
+            data-send-center-trigger="true"
+            className="px-2 py-0.5 rounded text-xs transition-colors"
+            style={{ color: 'var(--color-primary)', border: '1px solid rgba(19,236,236,0.2)', cursor: 'pointer' }}
+            onClick={() => onOpenSendCenter?.('history')}
+            title={t('sendSettings.sendHistory')}
+          >
+            {t('sendSettings.sendHistory')}
+          </button>
           {/* Open File */}
           <button
             className="flex items-center gap-1 text-xs transition-colors"

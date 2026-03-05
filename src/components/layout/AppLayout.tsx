@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import i18n from '../../i18n';
 import { useAppStore, getActiveSession } from '../../store';
+import { invoke } from '../../utils/tauri';
 import ConnectionPanel from '../sidebar/ConnectionPanel';
 import DataLog from '../log/DataLog';
 import DataSend from '../send/DataSend';
+import SendCenterDrawer, { type SendCenterTabKey } from '../send/SendCenterDrawer';
 import StatusBar from '../status/StatusBar';
 import TrafficChart from '../traffic/TrafficChart';
 import AboutDialog from '../AboutDialog';
@@ -34,6 +36,9 @@ export default function AppLayout() {
   const [trafficOpen, setTrafficOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [sendCenterOpen, setSendCenterOpen] = useState(false);
+  const [sendCenterTab, setSendCenterTab] = useState<SendCenterTabKey>('history');
+  const sendCenterPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!activeId && sessions.length > 0) {
@@ -53,6 +58,36 @@ export default function AppLayout() {
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!sendCenterOpen) {
+      return;
+    }
+    const onDocMouseDown = (ev: MouseEvent) => {
+      const target = ev.target as HTMLElement | null;
+      if (!target) {
+        return;
+      }
+      if (sendCenterPanelRef.current?.contains(target)) {
+        return;
+      }
+      if (target.closest('[data-send-center-trigger="true"]')) {
+        return;
+      }
+      setSendCenterOpen(false);
+    };
+    const onDocKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') {
+        setSendCenterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onDocKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onDocKeyDown);
+    };
+  }, [sendCenterOpen]);
+
   const isAlive = activeSession?.status === 'connected' || activeSession?.status === 'listening';
 
   const statusLabel = () => {
@@ -71,6 +106,24 @@ export default function AppLayout() {
     const next = locale === 'en' ? 'zh-CN' : 'en';
     setLocale(next);
     i18n.changeLanguage(next);
+  };
+
+  const handleCloseSession = async (id: string) => {
+    const live = useAppStore.getState().sessions.find(s => s.id === id);
+    const shouldDisconnect = live && ['connecting', 'connected', 'listening', 'disconnecting'].includes(live.status);
+    if (shouldDisconnect) {
+      try {
+        await invoke('disconnect', { id });
+      } catch {
+        // Ignore disconnection errors and still allow tab closure.
+      }
+    }
+    removeSession(id);
+  };
+
+  const openSendCenter = (tab: SendCenterTabKey) => {
+    setSendCenterTab(tab);
+    setSendCenterOpen(true);
   };
 
   const win = getCurrentWindow();
@@ -177,6 +230,22 @@ export default function AppLayout() {
           </div>
 
           <button
+            data-send-center-trigger="true"
+            onClick={() => {
+              if (sendCenterOpen) {
+                setSendCenterOpen(false);
+              } else {
+                openSendCenter('history');
+              }
+            }}
+            className="px-2 py-0.5 text-xs rounded hover:bg-white/10 mr-2"
+            style={{ color: sendCenterOpen ? 'var(--color-accent)' : 'var(--color-primary)' }}
+            title={t('sendCenter.title')}
+          >
+            {t('sendCenter.title')}
+          </button>
+
+          <button
             onClick={handleToggleLang}
             className="px-2 py-0.5 text-xs rounded hover:bg-white/10 mr-2"
             style={{ color: 'var(--color-primary)' }}
@@ -215,7 +284,10 @@ export default function AppLayout() {
                 <span
                   className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   style={{ color: '#64748b', fontSize: 13 }}
-                  onClick={e => { e.stopPropagation(); removeSession(sess.id); }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    void handleCloseSession(sess.id);
+                  }}
                 >×</span>
               )}
             </div>
@@ -276,9 +348,23 @@ export default function AppLayout() {
           </div>
 
           <div className="shrink-0 neon-card overflow-hidden">
-            {activeSession && <DataSend session={activeSession} />}
+            {activeSession && <DataSend session={activeSession} onOpenSendCenter={openSendCenter} />}
           </div>
         </section>
+
+        <div
+          ref={sendCenterPanelRef}
+          className="shrink-0 min-h-0 overflow-hidden"
+          style={{ width: sendCenterOpen ? 340 : 0, transition: 'width 0.2s ease' }}
+        >
+          <SendCenterDrawer
+            open={sendCenterOpen}
+            session={activeSession}
+            activeTab={sendCenterTab}
+            onTabChange={setSendCenterTab}
+            onClose={() => setSendCenterOpen(false)}
+          />
+        </div>
       </main>
 
       <StatusBar session={activeSession} />
