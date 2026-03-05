@@ -34,10 +34,13 @@ Repository:
 
 ## Preview
 
-![Preview 1](_images/1.png)
-![Preview 2](_images/2.png)
-![Preview 3](_images/3.png)
-![Preview 4](_images/4.png)
+| Preview 1 | Preview 2 |
+| --------- | --------- |
+| <img alt="Preview 1" src="_images/1.png" width="420" /> | <img alt="Preview 2" src="_images/2.png" width="420" /> |
+
+| Preview 3 | Preview 4 |
+| --------- | --------- |
+| <img alt="Preview 3" src="_images/3.png" width="420" /> | <img alt="Preview 4" src="_images/4.png" width="420" /> |
 
 ## Tech Stack
 
@@ -45,29 +48,73 @@ Repository:
 - Backend: Rust, Tokio, Tauri v2
 - Build: Vite
 
-## Quick Start
+## Installation
 
-### Prerequisites
+### Option 1: Install Prebuilt Package (Recommended)
+
+For production use, download the latest installer/package from GitHub Releases:
+
+- [Download from GitHub Releases](https://github.com/xddcode/FreeNetDebugger/releases)
+- Choose the asset that matches your OS and architecture (for example, Windows `.msi`)
+- Install and launch directly
+
+### Option 2: Build and Install from Source
+
+Use this path when you need custom builds, local patching, or development debugging.
+
+#### Prerequisites
 
 - Rust >= 1.77
 - Node.js >= 20
 - Bun (or npm/pnpm)
 - Tauri prerequisites: <https://tauri.app/start/prerequisites/>
 
-### Development
+#### Build Installer/Bundle
+
+```bash
+bun install
+bun tauri build
+```
+
+Output: `src-tauri/target/release/bundle/`
+
+#### Development Mode
 
 ```bash
 bun install
 bun tauri dev
 ```
 
-### Build
+## Contact
 
-```bash
-bun tauri build
-```
+- GitHub: [@Freedom](https://github.com/xddcode)
+- Gitee: [@Freedom](https://gitee.com/xddcode)
+- Email: xddcodec@gmail.com
+- WeChat:
 
-Package output: `src-tauri/target/release/bundle/`
+  **Please include your purpose when adding me on WeChat**
+
+<img alt="wx.png" height="300" src="https://gitee.com/dromara/free-fs/raw/master/.images/wx.png" width="250"/>
+
+- WeChat Official Account:
+
+<img alt="wp.png" src="https://gitee.com/dromara/free-fs/raw/master/.images/mp.png"/>
+
+---
+
+## ❤ Donation
+
+If FreeNetDebugger helps your work, gives you convenience, inspiration, or you simply support this project, you are welcome to sponsor its continued development.
+
+Please leave a ⭐️ to support the project!
+
+<img alt="pay.png" height="300" src="https://gitee.com/dromara/free-fs/raw/master/.images/pay.png" width="250"/>
+
+<div align="center">
+
+Made with ❤️ by [@xddcode](https://gitee.com/xddcode)
+
+</div>
 
 ## License
 
