@@ -14,7 +14,7 @@ High-performance, cross-platform network debugging tool built with Tauri + Rust 
 [![License: Apache_2.0](https://img.shields.io/badge/License-Apache_2.0-cyan.svg)](LICENSE)
 [![Built with Tauri](https://img.shields.io/badge/Built_with-Tauri_v2-cyan)](https://tauri.app)
 
-[问题反馈](https://github.com/xddcode/FreeNetDebugger/issues) · [功能请求](https://github.com/xddcode/FreeNetDebugger/issues/new)
+[Report Issue](https://github.com/xddcode/FreeNetDebugger/issues) · [Request Feature](https://github.com/xddcode/FreeNetDebugger/issues/new)
 
 Repository:
 [Gitee](https://gitee.com/xddcode/free-net-debugger) · [GitHub](https://github.com/xddcode/FreeNetDebugger)
