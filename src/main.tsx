@@ -23,8 +23,14 @@ const hideStartupSplash = () => {
   if (!splash) {
     return;
   }
-  splash.classList.add('fade-out');
-  window.setTimeout(() => splash.remove(), 260);
+  const splashAt = (window as Window & { __startupSplashAt?: number }).__startupSplashAt ?? Date.now();
+  const minVisibleMs = 900;
+  const elapsed = Date.now() - splashAt;
+  const waitMs = Math.max(0, minVisibleMs - elapsed);
+  window.setTimeout(() => {
+    splash.classList.add('fade-out');
+    window.setTimeout(() => splash.remove(), 260);
+  }, waitMs);
 };
 
 window.requestAnimationFrame(() => {
