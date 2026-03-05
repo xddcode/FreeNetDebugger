@@ -16,6 +16,9 @@ High-performance, cross-platform network debugging tool built with Tauri + Rust 
 
 [问题反馈](https://github.com/xddcode/FreeNetDebugger/issues) · [功能请求](https://github.com/xddcode/FreeNetDebugger/issues/new)
 
+Repository:
+[Gitee](https://gitee.com/xddcode/free-net-debugger) · [GitHub](https://github.com/xddcode/FreeNetDebugger)
+
 **English | [中文](README.zh-CN.md)**
 
 </div>

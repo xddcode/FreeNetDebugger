@@ -16,6 +16,9 @@
 
 [问题反馈](https://gitee.com/xddcode/free-net-debugger/issues) · [功能请求](https://gitee.com/xddcode/free-net-debugger/issues/new)
 
+仓库地址：
+[Gitee](https://gitee.com/xddcode/free-net-debugger) · [GitHub](https://github.com/xddcode/FreeNetDebugger)
+
 **[English](README.md) | 中文**
 
 </div>
