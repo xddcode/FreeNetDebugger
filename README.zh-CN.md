@@ -86,6 +86,14 @@ bun install
 bun tauri dev
 ```
 
+## 路线图（Roadmap）
+
+- [ ] 串口调试支持（端口扫描、波特率/校验位配置、收发链路）
+- [ ] TLS/SSL 支持（TCP Client 安全连接）
+- [ ] WebSocket 高级能力（自定义 Header、子协议）
+- [ ] 会话导入/导出与模板化管理
+- [ ] 脚本化协议解析（结构化视图、字段提取）
+
 ## 开源许可
 
 Apache License 2.0

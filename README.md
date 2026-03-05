@@ -88,6 +88,14 @@ bun install
 bun tauri dev
 ```
 
+## Roadmap
+
+- [ ] Serial debugging support (port scan, baud/parity options, Rx/Tx pipeline)
+- [ ] TLS/SSL support for TCP Client secure connections
+- [ ] Advanced WebSocket options (custom headers, subprotocols)
+- [ ] Session import/export and template management
+- [ ] Script-based protocol parser (structured view and field extraction)
+
 ## Contact
 
 - GitHub: [@Freedom](https://github.com/xddcode)
