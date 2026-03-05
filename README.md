@@ -94,21 +94,21 @@ bun tauri dev
 
   **Please include your purpose when adding me on WeChat**
 
-<img alt="wx.png" height="300" src="https://gitee.com/dromara/free-fs/raw/master/.images/wx.png" width="250"/>
+<img alt="wx.png" height="300" src="./_images/wx.png" width="250"/>
 
 - WeChat Official Account:
 
-<img alt="wp.png" src="https://gitee.com/dromara/free-fs/raw/master/.images/mp.png"/>
+<img alt="wp.png" src="./_images/mp.png"/>
 
 ---
 
-## ❤ Donation
+## Donation
 
 If FreeNetDebugger helps your work, gives you convenience, inspiration, or you simply support this project, you are welcome to sponsor its continued development.
 
 Please leave a ⭐️ to support the project!
 
-<img alt="pay.png" height="300" src="https://gitee.com/dromara/free-fs/raw/master/.images/pay.png" width="250"/>
+<img alt="pay.png" height="300" src="./_images/pay.png" width="250"/>
 
 <div align="center">
 

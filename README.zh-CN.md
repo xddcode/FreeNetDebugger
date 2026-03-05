@@ -99,21 +99,21 @@ Apache License 2.0
 
   **添加微信，请注明来意**
 
-<img alt="wx.png" height="300" src="https://gitee.com/dromara/free-fs/raw/master/.images/wx.png" width="250"/>
+<img alt="wx.png" height="300" src="./_images/wx.png" width="250"/>
 
 - 微信公众号：
 
-<img alt="wp.png" src="https://gitee.com/dromara/free-fs/raw/master/.images/mp.png"/>
+<img alt="wp.png" src="./_images/mp.png"/>
 
 ---
 
-## ❤ 捐赠
+## 捐赠
 
-如果你认为 free-fs 项目可以为你提供帮助，或者给你带来方便和灵感，或者你认同这个项目，可以为我的付出赞助一下哦！
+如果你认为 FreeNetDebugger 项目可以为你提供帮助，或者给你带来方便和灵感，或者你认同这个项目，可以为我的付出赞助一下哦！
 
 请给一个 ⭐️ 支持一下！
 
-<img alt="pay.png" height="300" src="https://gitee.com/dromara/free-fs/raw/master/.images/pay.png" width="250"/>
+<img alt="pay.png" height="300" src="./_images/pay.png" width="250"/>
 
 <div align="center">
 
