@@ -6,8 +6,8 @@
 
 [![star](https://gitee.com/xddcode/free-net-debugger/badge/star.svg?theme=dark)](https://gitee.com/xddcode/free-net-debugger/stargazers)
 [![fork](https://gitee.com/xddcode/free-net-debugger/badge/fork.svg?theme=dark)](https://gitee.com/xddcode/free-net-debugger/members)
-[![GitHub stars](https://img.shields.io/github/stars/xddcode/free-net-debugger?logo=github)](https://github.com/xddcode/free-net-debugger/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/xddcode/free-net-debugger?logo=github)](https://github.com/xddcode/free-net-debugger/network)
+[![GitHub stars](https://img.shields.io/github/stars/xddcode/FreeNetDebugger?logo=github)](https://github.com/xddcode/FreeNetDebugger/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/xddcode/FreeNetDebugger?logo=github)](https://github.com/xddcode/FreeNetDebugger/network)
 [![AUR](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](https://gitee.com/dromara/free-fs/blob/master/LICENSE)
 [![License: Apache_2.0](https://img.shields.io/badge/License-Apache_2.0-cyan.svg)](LICENSE)
 [![Built with Tauri](https://img.shields.io/badge/Built_with-Tauri_v2-cyan)](https://tauri.app)
