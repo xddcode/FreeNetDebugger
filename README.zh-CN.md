@@ -52,10 +52,11 @@
 
 ### 方式一：下载安装包（推荐）
 
-面向日常使用，直接从 GitHub Releases 下载对应安装包：
+[![Download FreeNetDebugger](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/freenetdebugger/files/)
 
 - [前往 GitHub Releases 下载](https://github.com/xddcode/FreeNetDebugger/releases)
-- 根据系统和架构选择对应资产（例如 Windows `.msi`）
+- [前往 SourceForge 下载](https://sourceforge.net/projects/freenetdebugger/files/)
+- 根据系统和架构选择对应资产（例如 Windows `.msi`，Macos `.dmg`）
 - 下载后直接安装运行
 
 ### 方式二：源码构建安装
@@ -120,3 +121,4 @@ Apache License 2.0
 Made with ❤️ by [@xddcode](https://gitee.com/xddcode)
 
 </div>
+

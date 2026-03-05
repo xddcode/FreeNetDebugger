@@ -52,11 +52,14 @@ Repository:
 
 ### Option 1: Install Prebuilt Package (Recommended)
 
-For production use, download the latest installer/package from GitHub Releases:
+For production use, download the installer/package from the official release channels:
 
 - [Download from GitHub Releases](https://github.com/xddcode/FreeNetDebugger/releases)
-- Choose the asset that matches your OS and architecture (for example, Windows `.msi`)
+- [Download from SourceForge](https://sourceforge.net/projects/freenetdebugger/files/)
+- Choose the asset that matches your OS and architecture (for example, Windows `.msi`, macOS `.dmg`)
 - Install and launch directly
+
+[![Download FreeNetDebugger](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/freenetdebugger/files/)
 
 ### Option 2: Build and Install from Source
 
