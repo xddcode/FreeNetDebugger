@@ -10,8 +10,8 @@ import {
   STORAGE_KEY,
 } from '../config/constants';
 
-let _logId = 0;
-const nextLogId = () => ++_logId;
+let _logIdCounter = 0;
+const nextLogId = () => Date.now() * 1000 + ((_logIdCounter++) % 1000);
 
 const newSessionId = () => `sess_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`;
 
