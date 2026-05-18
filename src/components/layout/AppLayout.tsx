@@ -8,6 +8,7 @@ import { useSessionStore, useSettingsStore, getActiveSession } from '../../store
 import { invoke } from '../../utils/tauri';
 import ConnectionPanel from '../sidebar/ConnectionPanel';
 import DataLog from '../log/DataLog';
+import DataToolsPanel from '../log/DataToolsPanel';
 import DataSend from '../send/DataSend';
 import SendCenterDrawer, { type SendCenterTabKey } from '../send/SendCenterDrawer';
 import StatusBar from '../status/StatusBar';
@@ -284,6 +285,9 @@ export default function AppLayout() {
           <div className="flex-1 min-h-0 neon-card flex flex-col overflow-hidden">
             {activeSession && <DataLog session={activeSession} />}
           </div>
+
+          {/* Data Tools — collapsible */}
+          <DataToolsPanel />
 
           {/* Traffic — collapsible */}
           <div className="shrink-0 neon-card overflow-hidden">
