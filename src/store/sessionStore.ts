@@ -3,11 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type {
   Session, ConnectionConfig, ReceiveSettings, SendSettings,
-  LogEntry, ProtocolType, TrafficSample,
+  LogEntry, ProtocolType, TrafficSample, SessionProfile,
 } from '../types';
 import {
   TRAFFIC_MAX_SAMPLES, SEND_HISTORY_MAX, LOGS_CAP, LOGS_TRIM,
-  STORAGE_KEY,
+  STORAGE_KEY, SESSION_PROFILE_KEY, SESSION_PROFILES_MAX,
 } from '../config/constants';
 
 let _logIdCounter = 0;
@@ -80,15 +80,46 @@ interface SessionState {
   addSendHistory: (id: string, text: string) => void;
   removeSendHistory: (id: string, text: string) => void;
   clearSendHistory: (id: string) => void;
+
+  // Session profiles
+  profiles: SessionProfile[];
+  saveProfile: (fromSessionId: string, name?: string) => SessionProfile | null;
+  deleteProfile: (profileId: string) => void;
+  applyProfile: (profileId: string, toSessionId: string) => boolean;
+  renameProfile: (profileId: string, name: string) => void;
 }
 
 const find = (sessions: Session[], id: string) => sessions.find(s => s.id === id);
+
+function loadProfiles(): SessionProfile[] {
+  try {
+    const raw = localStorage.getItem(SESSION_PROFILE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as SessionProfile[];
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return [];
+}
+
+function saveProfiles(profiles: SessionProfile[]) {
+  try {
+    localStorage.setItem(SESSION_PROFILE_KEY, JSON.stringify(profiles));
+  } catch {
+    // ignore storage errors
+  }
+}
 
 export const useSessionStore = create<SessionState>()(
   persist(
     immer((set) => ({
       sessions: [makeSession('TCP_CLIENT')],
       activeSessionId: null,
+      profiles: loadProfiles(),
 
       addSession: (protocol = 'TCP_CLIENT') =>
         set(s => { const ss = makeSession(protocol); s.sessions.push(ss); s.activeSessionId = ss.id; }),
@@ -196,6 +227,55 @@ export const useSessionStore = create<SessionState>()(
           const ss = find(s.sessions, id);
           if (!ss) {return;}
           ss.sendHistory = [];
+        }),
+
+      saveProfile: (fromSessionId, name) => {
+        let result: SessionProfile | null = null;
+        set(s => {
+          const ss = find(s.sessions, fromSessionId);
+          if (!ss) {return;}
+          const profile: SessionProfile = {
+            id: `prof_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
+            name: name?.trim() || ss.name || `${ss.config.protocol} Profile`,
+            config: { ...ss.config },
+            receiveSettings: { ...ss.receiveSettings },
+            sendSettings: { ...ss.sendSettings },
+            createdAt: Date.now(),
+          };
+          s.profiles = [profile, ...s.profiles].slice(0, SESSION_PROFILES_MAX);
+          saveProfiles(s.profiles);
+          result = profile;
+        });
+        return result;
+      },
+
+      deleteProfile: (profileId) =>
+        set(s => {
+          s.profiles = s.profiles.filter(p => p.id !== profileId);
+          saveProfiles(s.profiles);
+        }),
+
+      applyProfile: (profileId, toSessionId) => {
+        let ok = false;
+        set(s => {
+          const profile = s.profiles.find(p => p.id === profileId);
+          const ss = find(s.sessions, toSessionId);
+          if (!profile || !ss) {return;}
+          ss.config = { ...profile.config };
+          ss.receiveSettings = { ...profile.receiveSettings };
+          ss.sendSettings = { ...profile.sendSettings };
+          ok = true;
+        });
+        return ok;
+      },
+
+      renameProfile: (profileId, name) =>
+        set(s => {
+          const p = s.profiles.find(pr => pr.id === profileId);
+          if (p) {
+            p.name = name.trim() || p.name;
+            saveProfiles(s.profiles);
+          }
         }),
     })),
     {

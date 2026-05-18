@@ -160,6 +160,16 @@ const zhCN: Translations = {
     totalOut:   '总发送',
     peak:       '峰值',
   },
+  profile: {
+    title:           '配置模板',
+    namePlaceholder: '模板名称...',
+    save:            '保存',
+    empty:           '暂无保存的配置模板',
+    rename:          '重命名',
+    delete:          '删除',
+    export:          '导出',
+    import:          '导入',
+  },
   validation: {
     invalidIp:     'IP 地址格式错误',
     invalidPort:   '端口必须为 1-65535',

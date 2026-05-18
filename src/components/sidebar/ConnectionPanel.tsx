@@ -4,6 +4,7 @@ import ReceivePanel from './ReceivePanel';
 import SendSettingsPanel from './SendSettingsPanel';
 import HttpPanel from './HttpPanel';
 import HttpResponsePanel from './HttpResponsePanel';
+import ProfilePanel from './ProfilePanel';
 
 interface Props {
   session: Session;
@@ -17,6 +18,7 @@ export default function ConnectionPanel({ session }: Props) {
       {session.config.protocol === 'HTTP' && <HttpResponsePanel session={session} />}
       <ReceivePanel session={session} />
       <SendSettingsPanel session={session} />
+      <ProfilePanel session={session} />
     </>
   );
 }

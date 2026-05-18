@@ -158,6 +158,16 @@ const en = {
     response:   'Response',
     invalidUrl: 'URL must start with http:// or https://',
   },
+  profile: {
+    title:           'Profiles',
+    namePlaceholder: 'Profile name...',
+    save:            'Save',
+    empty:           'No saved profiles',
+    rename:          'Rename',
+    delete:          'Delete',
+    export:          'Export',
+    import:          'Import',
+  },
   validation: {
     invalidIp:     'Invalid IP address',
     invalidPort:   'Port must be 1-65535',

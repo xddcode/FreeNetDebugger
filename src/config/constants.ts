@@ -27,5 +27,9 @@ export const DEFAULT_LOCAL_HOST = '0.0.0.0';
 export const DEFAULT_WS_URL = 'ws://127.0.0.1:8080';
 export const DEFAULT_BAUD_RATE = 115200;
 
+// ── Session Profiles ──
+export const SESSION_PROFILES_MAX = 50;
+export const SESSION_PROFILE_KEY = 'fnd-session-profiles';
+
 // ── Persistence ──
 export const STORAGE_KEY = 'fnd-store-v1';

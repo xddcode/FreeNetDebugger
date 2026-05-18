@@ -146,6 +146,15 @@ export interface Session {
   parser?: ProtocolParser;
 }
 
+export interface SessionProfile {
+  id: string;
+  name: string;
+  config: ConnectionConfig;
+  receiveSettings: ReceiveSettings;
+  sendSettings: SendSettings;
+  createdAt: number;
+}
+
 export interface TauriDataEvent {
   connection_id: string;
   direction: 'send' | 'recv' | 'system';
