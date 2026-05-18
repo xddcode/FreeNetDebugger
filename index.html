@@ -5,9 +5,8 @@
     <link rel="icon" type="image/png" href="/app-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FreeNetDebugger</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <style>
-      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #102222; }
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0a0f14; }
       #startup-splash {
         position: fixed;
         inset: 0;
@@ -15,7 +14,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #102222 0%, #162e2e 55%, #102222 100%);
+        background: linear-gradient(135deg, #0a0f14 0%, #111827 55%, #0a0f14 100%);
         transition: opacity .24s ease;
       }
       #startup-splash.fade-out { opacity: 0; pointer-events: none; }
@@ -26,25 +25,25 @@
         gap: 10px;
         padding: 20px 22px;
         border-radius: 12px;
-        border: 1px solid rgba(19,236,236,.28);
-        background: rgba(15,30,30,.82);
-        box-shadow: 0 0 26px rgba(19,236,236,.14), inset 0 0 14px rgba(19,236,236,.08);
-        color: #d8f8f8;
+        border: 1px solid rgba(45,212,191,.28);
+        background: rgba(17,24,39,.82);
+        box-shadow: 0 0 26px rgba(45,212,191,.14), inset 0 0 14px rgba(45,212,191,.08);
+        color: #f1f5f9;
       }
       .startup-icon {
         width: 44px;
         height: 44px;
         border-radius: 10px;
-        border: 1px solid rgba(19,236,236,.35);
+        border: 1px solid rgba(45,212,191,.35);
       }
       .startup-title {
-        font: 700 16px "Space Grotesk", system-ui, sans-serif;
+        font: 700 16px "Inter", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         letter-spacing: .04em;
-        color: #13ecec;
+        color: #2dd4bf;
       }
       .startup-subtitle {
-        font: 500 11px "JetBrains Mono", monospace;
-        color: rgba(203,213,225,.85);
+        font: 500 11px "JetBrains Mono", "Consolas", monospace;
+        color: rgba(148,163,184,.85);
       }
       .startup-bar {
         width: 170px;
@@ -57,7 +56,7 @@
         display: block;
         width: 44%;
         height: 100%;
-        background: linear-gradient(90deg, #13ecec, #ff00ff);
+        background: linear-gradient(90deg, #2dd4bf, #818cf8);
         animation: startup-slide 1.1s ease-in-out infinite;
       }
       @keyframes startup-slide {
