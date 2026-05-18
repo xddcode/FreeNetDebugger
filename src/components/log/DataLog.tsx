@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useCallback, memo } from 'react';
+import React, { useRef, useMemo, useCallback, useState, useEffect, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Plug, Clock } from 'lucide-react';
@@ -8,7 +8,10 @@ import {
   bytesToDisplay, bytesToHexText, formatTimestamp,
 } from '../../utils/encoding';
 import { APP_DISPLAY } from '../../config/app';
-import { LOG_VIRTUALIZER_OVERSCAN, LOG_ESTIMATE_SIZE, LOG_SCROLL_BOTTOM_THRESHOLD } from '../../config/constants';
+import {
+  LOG_VIRTUALIZER_OVERSCAN, LOG_ESTIMATE_SIZE, LOG_SCROLL_BOTTOM_THRESHOLD,
+  LOG_FILTER_DEBOUNCE_MS,
+} from '../../config/constants';
 
 interface Props { session: Session }
 
@@ -114,6 +117,17 @@ export default function DataLog({ session }: Props) {
   const setLogFilter = useLogStore(s => s.setLogFilter);
   const clearLogs    = useSessionStore(s => s.clearLogs);
 
+  const [inputValue, setInputValue] = useState(logFilter);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLogFilter(inputValue), LOG_FILTER_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [inputValue, setLogFilter]);
+
+  useEffect(() => {
+    setInputValue(logFilter);
+  }, [logFilter]);
+
   const parentRef = useRef<HTMLDivElement>(null);
   const atBottom  = useRef(true);
 
@@ -204,13 +218,13 @@ export default function DataLog({ session }: Props) {
         </svg>
         <input
           type="text"
-          value={logFilter}
-          onChange={e => setLogFilter(e.target.value)}
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
           placeholder={t('log.searchPlaceholder')}
           className="field-control flex-1 min-w-0"
         />
-        {logFilter && (
-          <button onClick={() => setLogFilter('')} className="btn-interactive hover-text-primary focus-ring px-1 text-[var(--color-text-muted)] text-sm leading-none" aria-label={t('log.clear')}>×</button>
+        {inputValue && (
+          <button onClick={() => setInputValue('')} className="btn-interactive hover-text-primary focus-ring px-1 text-[var(--color-text-muted)] text-sm leading-none" aria-label={t('log.clear')}>×</button>
         )}
       </div>
 
