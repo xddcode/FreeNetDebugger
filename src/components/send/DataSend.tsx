@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
-import { useAppStore } from '../../store';
+import { useSessionStore } from '../../store';
 import { sendPanelBus } from '../../utils/sendPanelBus';
 import type { EncodingMode, Session } from '../../types';
 import type { SendCenterTabKey } from './SendCenterDrawer';
@@ -16,10 +16,10 @@ interface Props {
 export default function DataSend({ session, onOpenSendCenter }: Props) {
   const { t } = useTranslation();
   const text                    = session.sendContent;
-  const updateSendContent        = useAppStore(s => s.updateSendContent);
-  const updateSendSettings       = useAppStore(s => s.updateSendSettings);
-  const appendLog                = useAppStore(s => s.appendLog);
-  const addSendHistory           = useAppStore(s => s.addSendHistory);
+  const updateSendContent        = useSessionStore(s => s.updateSendContent);
+  const updateSendSettings       = useSessionStore(s => s.updateSendSettings);
+  const appendLog                = useSessionStore(s => s.appendLog);
+  const addSendHistory           = useSessionStore(s => s.addSendHistory);
   const fileInputRef             = useRef<HTMLInputElement>(null);
   const periodicRef              = useRef<number | null>(null);
 
@@ -87,7 +87,7 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
       }
       const mergedText = append
         ? (() => {
-          const current = useAppStore.getState().sessions.find(s => s.id === session.id)?.sendContent ?? '';
+          const current = useSessionStore.getState().sessions.find(s => s.id === session.id)?.sendContent ?? '';
           if (!current.trim()) {
             return nextText;
           }

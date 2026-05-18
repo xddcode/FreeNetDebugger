@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAppStore } from '../../store';
+import { useSessionStore, useSettingsStore } from '../../store';
 import { sendPanelBus } from '../../utils/sendPanelBus';
 import type { EncodingMode, Session } from '../../types';
 
@@ -16,11 +16,11 @@ interface Props {
 
 export default function SendCenterDrawer({ open, session, activeTab, onTabChange, onClose }: Props) {
   const { t } = useTranslation();
-  const quickCommands = useAppStore(s => s.quickCommands);
-  const addQuickCommand = useAppStore(s => s.addQuickCommand);
-  const removeQuickCommand = useAppStore(s => s.removeQuickCommand);
-  const removeSendHistory = useAppStore(s => s.removeSendHistory);
-  const clearSendHistory = useAppStore(s => s.clearSendHistory);
+  const quickCommands = useSettingsStore(s => s.quickCommands);
+  const addQuickCommand = useSettingsStore(s => s.addQuickCommand);
+  const removeQuickCommand = useSettingsStore(s => s.removeQuickCommand);
+  const removeSendHistory = useSessionStore(s => s.removeSendHistory);
+  const clearSendHistory = useSessionStore(s => s.clearSendHistory);
 
   const [query, setQuery] = useState('');
   const [addingShortcut, setAddingShortcut] = useState(false);

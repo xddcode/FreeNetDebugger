@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import i18n from '../../i18n';
-import { useAppStore, getActiveSession } from '../../store';
+import { useSessionStore, useSettingsStore, getActiveSession } from '../../store';
 import { invoke } from '../../utils/tauri';
 import ConnectionPanel from '../sidebar/ConnectionPanel';
 import DataLog from '../log/DataLog';
@@ -28,14 +28,14 @@ function SessionDot({ status }: { status: string }) {
 export default function AppLayout() {
   const { t } = useTranslation();
 
-  const sessions      = useAppStore(s => s.sessions);
-  const activeId      = useAppStore(s => s.activeSessionId);
-  const setActive     = useAppStore(s => s.setActiveSession);
-  const addSession    = useAppStore(s => s.addSession);
-  const removeSession = useAppStore(s => s.removeSession);
-  const activeSession = useAppStore(s => getActiveSession(s));
-  const locale        = useAppStore(s => s.locale);
-  const setLocale     = useAppStore(s => s.setLocale);
+  const sessions      = useSessionStore(s => s.sessions);
+  const activeId      = useSessionStore(s => s.activeSessionId);
+  const setActive     = useSessionStore(s => s.setActiveSession);
+  const addSession    = useSessionStore(s => s.addSession);
+  const removeSession = useSessionStore(s => s.removeSession);
+  const activeSession = useSessionStore(s => getActiveSession(s));
+  const locale        = useSettingsStore(s => s.locale);
+  const setLocale     = useSettingsStore(s => s.setLocale);
 
   const [trafficOpen, setTrafficOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -113,7 +113,7 @@ export default function AppLayout() {
   };
 
   const handleCloseSession = async (id: string) => {
-    const live = useAppStore.getState().sessions.find(s => s.id === id);
+    const live = useSessionStore.getState().sessions.find(s => s.id === id);
     const shouldDisconnect = live && ['connecting', 'connected', 'listening', 'disconnecting'].includes(live.status);
     if (shouldDisconnect) {
       try {

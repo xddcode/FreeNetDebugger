@@ -4,16 +4,16 @@ import App from './App';
 import './index.css';
 import './i18n';              // initialise i18next (side-effect import)
 import i18n from './i18n';
-import { useAppStore } from './store';
+import { useSettingsStore } from './store';
 
 // Apply persisted locale before first render so there's no flash of wrong language
-const savedLocale = useAppStore.getState().locale;
+const savedLocale = useSettingsStore.getState().locale;
 if (savedLocale && savedLocale !== i18n.language) {
   i18n.changeLanguage(savedLocale);
 }
 
 // Apply persisted theme before first render so there's no flash of wrong theme
-const savedTheme = useAppStore.getState().theme ?? 'dark';
+const savedTheme = useSettingsStore.getState().theme ?? 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

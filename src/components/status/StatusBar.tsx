@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useAppStore } from '../../store';
+import { useSessionStore, useSettingsStore } from '../../store';
 import type { Session } from '../../types';
 
 interface Props { session: Session | null }
@@ -16,9 +16,9 @@ function fmt(n: number): string {
 
 export default function StatusBar({ session }: Props) {
   const { t } = useTranslation();
-  const resetCounts = useAppStore(s => s.resetCounts);
-  const theme = useAppStore(s => s.theme);
-  const setTheme = useAppStore(s => s.setTheme);
+  const resetCounts = useSessionStore(s => s.resetCounts);
+  const theme = useSettingsStore(s => s.theme);
+  const setTheme = useSettingsStore(s => s.setTheme);
 
   const isConn   = session?.status === 'connected';
   const isListen = session?.status === 'listening';

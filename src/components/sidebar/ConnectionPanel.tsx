@@ -1,9 +1,10 @@
 import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
-import { useAppStore } from '../../store';
+import { useSessionStore } from '../../store';
 import type { Session, ProtocolType, EncodingMode, AsciiNonPrintableMode } from '../../types';
 import { bytesToDisplay, formatTimestamp } from '../../utils/encoding';
+import { FILE_FLUSH_INTERVAL } from '../../config/constants';
 
 function PanelCard({ children }: { children: React.ReactNode }) {
   return <div className="neon-card flex flex-col overflow-hidden shrink-0">{children}</div>;
@@ -70,12 +71,12 @@ interface Props {
 
 export default function ConnectionPanel({ session }: Props) {
   const { t } = useTranslation();
-  const updateConfig       = useAppStore(s => s.updateConfig);
-  const updateReceive      = useAppStore(s => s.updateReceiveSettings);
-  const updateSend         = useAppStore(s => s.updateSendSettings);
-  const setStatus          = useAppStore(s => s.setStatus);
-  const appendLog          = useAppStore(s => s.appendLog);
-  const clearLogs          = useAppStore(s => s.clearLogs);
+  const updateConfig       = useSessionStore(s => s.updateConfig);
+  const updateReceive      = useSessionStore(s => s.updateReceiveSettings);
+  const updateSend         = useSessionStore(s => s.updateSendSettings);
+  const setStatus          = useSessionStore(s => s.setStatus);
+  const appendLog          = useSessionStore(s => s.appendLog);
+  const clearLogs          = useSessionStore(s => s.clearLogs);
 
   const fileHandleRef = useRef<FileSystemFileHandle | null>(null);
   const writeChainRef = useRef<Promise<void>>(Promise.resolve());
@@ -142,7 +143,7 @@ export default function ConnectionPanel({ session }: Props) {
 
   React.useEffect(() => {
     const flushToFile = () => {
-      const st = useAppStore.getState();
+      const st = useSessionStore.getState();
       const live = st.sessions.find(s => s.id === session.id);
       if (!live || !live.receiveSettings.saveToFile || !fileHandleRef.current || live.logs.length === 0) {
         return;
@@ -171,7 +172,7 @@ export default function ConnectionPanel({ session }: Props) {
       }
     };
 
-    const timer = setInterval(flushToFile, 120);
+    const timer = setInterval(flushToFile, FILE_FLUSH_INTERVAL);
     return () => {
       clearInterval(timer);
       flushToFile();

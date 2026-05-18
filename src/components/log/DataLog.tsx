@@ -2,12 +2,13 @@ import React, { useRef, useMemo, useCallback, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Plug, Clock } from 'lucide-react';
-import { useAppStore } from '../../store';
+import { useSessionStore, useLogStore } from '../../store';
 import type { Session, LogEntry, EncodingMode, AsciiNonPrintableMode } from '../../types';
 import {
   bytesToDisplay, bytesToHexText, formatTimestamp,
 } from '../../utils/encoding';
 import { APP_DISPLAY } from '../../config/app';
+import { LOG_VIRTUALIZER_OVERSCAN, LOG_ESTIMATE_SIZE, LOG_SCROLL_BOTTOM_THRESHOLD } from '../../config/constants';
 
 interface Props { session: Session }
 
@@ -109,9 +110,9 @@ const LogRow = memo(function LogRow({
 
 export default function DataLog({ session }: Props) {
   const { t } = useTranslation();
-  const logFilter    = useAppStore(s => s.logFilter);
-  const setLogFilter = useAppStore(s => s.setLogFilter);
-  const clearLogs    = useAppStore(s => s.clearLogs);
+  const logFilter    = useLogStore(s => s.logFilter);
+  const setLogFilter = useLogStore(s => s.setLogFilter);
+  const clearLogs    = useSessionStore(s => s.clearLogs);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const atBottom  = useRef(true);
@@ -129,7 +130,7 @@ export default function DataLog({ session }: Props) {
   }, [session.logs, logFilter, session.receiveSettings.encoding, asciiMode]);
 
   // Stable callbacks so virtualizer doesn't recreate on every render
-  const getEstimateSize = useCallback(() => 50, []);
+  const getEstimateSize = useCallback(() => LOG_ESTIMATE_SIZE, []);
   const getItemKey      = useCallback(
     (i: number) => filteredLogs[i]?.id ?? i,
     [filteredLogs],
@@ -141,7 +142,7 @@ export default function DataLog({ session }: Props) {
     getScrollElement: () => parentRef.current,
     estimateSize: getEstimateSize,
     getItemKey,
-    overscan: 15,
+    overscan: LOG_VIRTUALIZER_OVERSCAN,
   });
 
   // Auto-scroll to bottom when new data arrives and user hasn't scrolled up
@@ -160,7 +161,7 @@ export default function DataLog({ session }: Props) {
     if (!el) {
       return;
     }
-    atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < LOG_SCROLL_BOTTOM_THRESHOLD;
   }, []);
 
   return (

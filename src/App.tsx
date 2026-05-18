@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useAppStore } from './store';
+import { useSessionStore } from './store';
 import type { ConnectionStatus, TauriDataEvent, TauriStatusEvent, LogEntry } from './types';
 import AppLayout from './components/layout/AppLayout';
 
@@ -29,13 +29,13 @@ function statusLogText(raw: string, message: string): string | null {
 }
 
 export default function App() {
-  const setStatus        = useAppStore(s => s.setStatus);
-  const appendLog        = useAppStore(s => s.appendLog);
-  const appendLogs       = useAppStore(s => s.appendLogs);
-  const addRxBytes       = useAppStore(s => s.addRxBytes);
-  const addTxBytes       = useAppStore(s => s.addTxBytes);
-  const addTrafficSample = useAppStore(s => s.addTrafficSample);
-  const setActiveSession = useAppStore(s => s.setActiveSession);
+  const setStatus        = useSessionStore(s => s.setStatus);
+  const appendLog        = useSessionStore(s => s.appendLog);
+  const appendLogs       = useSessionStore(s => s.appendLogs);
+  const addRxBytes       = useSessionStore(s => s.addRxBytes);
+  const addTxBytes       = useSessionStore(s => s.addTxBytes);
+  const addTrafficSample = useSessionStore(s => s.addTrafficSample);
+  const setActiveSession = useSessionStore(s => s.setActiveSession);
 
   /**
    * High-throughput data buffer.
@@ -50,7 +50,7 @@ export default function App() {
 
   // Init active session
   useEffect(() => {
-    const store = useAppStore.getState();
+    const store = useSessionStore.getState();
     if (!store.activeSessionId && store.sessions.length > 0) {
       setActiveSession(store.sessions[0].id);
     }
@@ -145,7 +145,7 @@ export default function App() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const sessions = useAppStore.getState().sessions;
+      const sessions = useSessionStore.getState().sessions;
       const now = Date.now();
       for (const sess of sessions) {
         const prev = prevBytesRef.current.get(sess.id) ?? { rx: 0, tx: 0 };
