@@ -138,6 +138,11 @@ const zhCN: Translations = {
     totalOut:   '总发送',
     peak:       '峰值',
   },
+  validation: {
+    invalidIp:     'IP 地址格式错误',
+    invalidPort:   '端口必须为 1-65535',
+    invalidWsUrl:  '地址必须以 ws:// 或 wss:// 开头',
+  },
 };
 
 export default zhCN;

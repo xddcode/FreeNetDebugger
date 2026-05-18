@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
 import { useSessionStore } from '../../store';
 import type { Session, ProtocolType } from '../../types';
+import { isValidIPv4, isValidPort, isValidWsUrl } from '../../utils/validation';
 import { PanelCard, PanelHeader, FieldLabel, FieldInput, FieldSelect } from './ui';
 
 interface Props {
@@ -14,15 +16,49 @@ export default function NetworkPanel({ session }: Props) {
   const setStatus = useSessionStore(s => s.setStatus);
   const appendLog = useSessionStore(s => s.appendLog);
 
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+
   const { config } = session;
   const isActive = session.status === 'connected' || session.status === 'listening';
   const isBusy = session.status === 'connecting' || session.status === 'disconnecting';
+
+  const validate = (field: string, valid: boolean) => {
+    setErrors(prev => (prev[field] === valid ? prev : { ...prev, [field]: !valid }));
+  };
 
   const handleConnect = async () => {
     if (isActive || isBusy) {
       await invoke('disconnect', { id: session.id });
       return;
     }
+
+    // Validate all visible fields before connecting
+    const newErrors: Record<string, boolean> = {};
+    const showRemote = ['TCP_CLIENT', 'UDP_CLIENT', 'WEBSOCKET'].includes(config.protocol);
+    const showLocal = ['TCP_SERVER', 'UDP_SERVER', 'UDP_CLIENT'].includes(config.protocol);
+    const showWs = config.protocol === 'WEBSOCKET';
+    const isSrv = config.protocol === 'TCP_SERVER';
+
+    if (showRemote && !showWs) {
+      newErrors.remoteHost = !isValidIPv4(config.remoteHost);
+      newErrors.remotePort = !isValidPort(config.remotePort);
+    }
+    if (isSrv) {
+      newErrors.localHost = !isValidIPv4(config.localHost);
+      newErrors.localPort = !isValidPort(config.localPort);
+    }
+    if (showLocal && !isSrv) {
+      newErrors.localPort = !isValidPort(config.localPort, true);
+    }
+    if (showWs) {
+      newErrors.wsUrl = !isValidWsUrl(config.wsUrl);
+    }
+
+    setErrors(newErrors);
+    if (Object.values(newErrors).some(Boolean)) {
+      return;
+    }
+
     const proto = config.protocol;
     const cfg = {
       protocol: proto,
@@ -84,22 +120,64 @@ export default function NetworkPanel({ session }: Props) {
             <FieldLabel seq={2} label={t('network.wsUrl')} />
             <FieldInput
               value={config.wsUrl}
-              onChange={v => updateConfig(session.id, { wsUrl: v })}
+              onChange={v => { updateConfig(session.id, { wsUrl: v }); validate('wsUrl', isValidWsUrl(v)); }}
               placeholder="ws://127.0.0.1:8080"
               disabled={isActive || isBusy}
+              error={errors.wsUrl}
             />
+            {errors.wsUrl && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidWsUrl')}</span>}
           </div>
         )}
         {isSrv && (
           <>
-            <div><FieldLabel seq={2} label={t('network.listenAddress')} /><FieldInput value={config.localHost} onChange={v => updateConfig(session.id, { localHost: v })} placeholder="0.0.0.0" disabled={isActive || isBusy} /></div>
-            <div><FieldLabel seq={3} label={t('network.listenPort')} /><FieldInput value={String(config.localPort)} onChange={v => updateConfig(session.id, { localPort: Number(v) })} type="number" disabled={isActive || isBusy} /></div>
+            <div>
+              <FieldLabel seq={2} label={t('network.listenAddress')} />
+              <FieldInput
+                value={config.localHost}
+                onChange={v => { updateConfig(session.id, { localHost: v }); validate('localHost', isValidIPv4(v)); }}
+                placeholder="0.0.0.0"
+                disabled={isActive || isBusy}
+                error={errors.localHost}
+              />
+              {errors.localHost && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidIp')}</span>}
+            </div>
+            <div>
+              <FieldLabel seq={3} label={t('network.listenPort')} />
+              <FieldInput
+                value={String(config.localPort)}
+                onChange={v => { updateConfig(session.id, { localPort: Number(v) }); validate('localPort', isValidPort(Number(v))); }}
+                type="number"
+                disabled={isActive || isBusy}
+                error={errors.localPort}
+              />
+              {errors.localPort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidPort')}</span>}
+            </div>
           </>
         )}
         {showRemote && !showWs && (
           <>
-            <div><FieldLabel seq={2} label={t('network.remoteIp')} /><FieldInput value={config.remoteHost} onChange={v => updateConfig(session.id, { remoteHost: v })} placeholder="127.0.0.1" disabled={isActive || isBusy} /></div>
-            <div><FieldLabel seq={3} label={t('network.remotePort')} /><FieldInput value={String(config.remotePort)} onChange={v => updateConfig(session.id, { remotePort: Number(v) })} type="number" disabled={isActive || isBusy} /></div>
+            <div>
+              <FieldLabel seq={2} label={t('network.remoteIp')} />
+              <FieldInput
+                value={config.remoteHost}
+                onChange={v => { updateConfig(session.id, { remoteHost: v }); validate('remoteHost', isValidIPv4(v)); }}
+                placeholder="127.0.0.1"
+                disabled={isActive || isBusy}
+                error={errors.remoteHost}
+              />
+              {errors.remoteHost && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidIp')}</span>}
+            </div>
+            <div>
+              <FieldLabel seq={3} label={t('network.remotePort')} />
+              <FieldInput
+                value={String(config.remotePort)}
+                onChange={v => { updateConfig(session.id, { remotePort: Number(v) }); validate('remotePort', isValidPort(Number(v))); }}
+                type="number"
+                disabled={isActive || isBusy}
+                error={errors.remotePort}
+              />
+              {errors.remotePort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidPort')}</span>}
+            </div>
           </>
         )}
         {showLocal && !isSrv && (
@@ -107,11 +185,13 @@ export default function NetworkPanel({ session }: Props) {
             <FieldLabel seq={4} label={t('network.localPort')} />
             <FieldInput
               value={String(config.localPort)}
-              onChange={v => updateConfig(session.id, { localPort: Number(v) })}
+              onChange={v => { updateConfig(session.id, { localPort: Number(v) }); validate('localPort', isValidPort(Number(v), true)); }}
               placeholder={t('network.localPortAuto')}
               type="number"
               disabled={isActive || isBusy}
+              error={errors.localPort}
             />
+            {errors.localPort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidPort')}</span>}
           </div>
         )}
         <button

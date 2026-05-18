@@ -136,6 +136,11 @@ const en = {
     totalOut:   'Total Out',
     peak:       'Peak',
   },
+  validation: {
+    invalidIp:     'Invalid IP address',
+    invalidPort:   'Port must be 1-65535',
+    invalidWsUrl:  'URL must start with ws:// or wss://',
+  },
 };
 
 export default en;

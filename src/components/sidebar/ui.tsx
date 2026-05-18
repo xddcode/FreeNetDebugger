@@ -23,8 +23,8 @@ export function FieldLabel({ seq, label }: { seq?: number; label: string }) {
   );
 }
 
-export function FieldInput({ value, onChange, placeholder, type = 'text', disabled }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean }) {
-  return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} className="field-control w-full disabled:opacity-50 disabled:cursor-not-allowed" />;
+export function FieldInput({ value, onChange, placeholder, type = 'text', disabled, error }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean; error?: boolean }) {
+  return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} className={`field-control w-full disabled:opacity-50 disabled:cursor-not-allowed ${error ? 'border-[var(--color-error)] !shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_0_0_1px_rgba(251,113,133,0.4)]' : ''}`} />;
 }
 
 export function FieldSelect({ value, onChange, options, disabled }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; disabled?: boolean }) {
