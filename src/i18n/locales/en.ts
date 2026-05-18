@@ -18,6 +18,11 @@ const en = {
   },
   header: {
     newSession: 'New Session',
+    help:       'Help',
+    about:      'About',
+    close:      'Close',
+    minimize:   'Minimize',
+    maximize:   'Maximize',
   },
   network: {
     title:          'Network Settings',
@@ -120,6 +125,9 @@ const en = {
     rx:          'RX',
     tx:          'TX',
     resetCounts: 'Reset',
+  },
+  about: {
+    confirm: 'OK',
   },
   traffic: {
     title:      'Traffic Analysis',

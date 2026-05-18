@@ -127,12 +127,12 @@ export default function AppLayout() {
   };
 
   const win = getCurrentWindow();
-  const btn = (onClick: () => void, icon: ReactNode, title: string) => (
+  const winBtn = (onClick: () => void, icon: ReactNode, title: string) => (
     <button
       type="button"
       onClick={onClick}
       title={title}
-      className="w-11 h-10 flex items-center justify-center transition-colors hover:bg-white/10"
+      className="w-11 h-10 flex items-center justify-center btn-interactive rounded-sm hover:bg-white/10 focus-ring"
       style={{ color: 'var(--color-primary)' }}
     >
       {icon}
@@ -176,14 +176,14 @@ export default function AppLayout() {
             <button
               type="button"
               onClick={e => { e.stopPropagation(); setMenuOpen(m => !m); }}
-              className="px-2 py-1 text-xs hover:bg-white/10 rounded"
+              className="px-2 py-1 text-xs btn-interactive rounded hover:bg-white/10 focus-ring"
             >
-              帮助
+              {t('header.help')}
             </button>
             <button
               type="button"
               onClick={() => openUrl(APP.github)}
-              className="p-1 rounded hover:bg-white/10 transition-colors"
+              className="p-1 rounded btn-interactive hover:bg-white/10 focus-ring"
               title="GitHub"
               style={{ color: 'var(--color-primary)' }}
             >
@@ -200,13 +200,13 @@ export default function AppLayout() {
                   border: '1px solid rgba(19,236,236,0.3)',
                 }}
               >
-                <button
-                  type="button"
-                  className="w-full px-4 py-2 text-left text-xs hover:bg-white/10"
-                  onClick={() => { setMenuOpen(false); setAboutOpen(true); }}
-                >
-                  关于 {APP.name}
-                </button>
+            <button
+              type="button"
+              className="w-full px-4 py-2 text-left text-xs btn-interactive hover:bg-white/10 rounded focus-ring"
+              onClick={() => { setMenuOpen(false); setAboutOpen(true); }}
+            >
+              {t('header.about')} {APP.name}
+            </button>
               </div>
             )}
           </div>
@@ -241,7 +241,7 @@ export default function AppLayout() {
                 openSendCenter('history');
               }
             }}
-            className="px-2 py-0.5 text-xs rounded hover:bg-white/10 mr-2"
+            className="px-2 py-0.5 text-xs rounded btn-interactive hover:bg-white/10 mr-2 focus-ring"
             style={{ color: sendCenterOpen ? 'var(--color-accent)' : 'var(--color-primary)' }}
             title={t('sendCenter.title')}
           >
@@ -250,16 +250,16 @@ export default function AppLayout() {
 
           <button
             onClick={handleToggleLang}
-            className="px-2 py-0.5 text-xs rounded hover:bg-white/10 mr-2"
+            className="px-2 py-0.5 text-xs rounded btn-interactive hover:bg-white/10 mr-2 focus-ring"
             style={{ color: 'var(--color-primary)' }}
             title={locale === 'en' ? '切换为中文' : 'Switch to English'}
           >
             {locale === 'en' ? '中文' : 'EN'}
           </button>
 
-          {btn(() => win.minimize(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>, '最小化')}
-          {btn(() => win.toggleMaximize(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>, '最大化')}
-          {btn(() => win.close(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>, '关闭')}
+          {winBtn(() => win.minimize(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>, t('header.minimize'))}
+          {winBtn(() => win.toggleMaximize(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>, t('header.maximize'))}
+          {winBtn(() => win.close(), <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>, t('header.close'))}
         </div>
       </header>
 
@@ -272,7 +272,9 @@ export default function AppLayout() {
           return (
             <div
               key={sess.id}
-              className="flex items-center gap-1.5 px-3 rounded cursor-pointer shrink-0 group transition-all"
+              role="button"
+              tabIndex={0}
+              className="flex items-center gap-1.5 px-3 rounded shrink-0 group tab-interactive focus-ring"
               style={{
                 height: 28, fontSize: 11, fontFamily: 'var(--font-mono)',
                 background: active ? 'rgba(19,236,236,0.12)' : 'transparent',
@@ -280,6 +282,7 @@ export default function AppLayout() {
                 color: active ? 'var(--color-primary)' : '#64748b',
               }}
               onClick={() => setActive(sess.id)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActive(sess.id); } }}
             >
               <SessionDot status={sess.status} />
               <span>{t(`protocol.${sess.config.protocol}`)}</span>
@@ -297,7 +300,7 @@ export default function AppLayout() {
           );
         })}
         <button
-          className="px-2 rounded shrink-0"
+          className="px-2 rounded shrink-0 btn-interactive hover:bg-white/5 focus-ring"
           style={{ height: 28, fontSize: 14, color: '#475569', border: '1px dashed rgba(19,236,236,0.15)' }}
           onClick={() => addSession()}
           title={t('header.newSession')}
@@ -319,7 +322,7 @@ export default function AppLayout() {
           {/* Traffic — collapsible */}
           <div className="shrink-0 neon-card overflow-hidden">
             <button
-              className="w-full flex items-center justify-between px-3 py-2 transition-colors"
+              className="w-full flex items-center justify-between px-3 py-2 btn-interactive"
               style={{
                 background: 'linear-gradient(to right, rgba(255,0,255,0.08), transparent)',
                 borderBottom: trafficOpen ? '1px solid rgba(19,236,236,0.15)' : 'none',

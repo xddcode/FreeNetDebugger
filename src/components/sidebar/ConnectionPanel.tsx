@@ -27,14 +27,14 @@ function FieldLabel({ seq, label }: { seq?: number; label: string }) {
   );
 }
 
-function FieldInput({ value, onChange, placeholder, type = 'text' }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
-  return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="field-control w-full" />;
+function FieldInput({ value, onChange, placeholder, type = 'text', disabled }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean }) {
+  return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} className="field-control w-full disabled:opacity-50 disabled:cursor-not-allowed" />;
 }
 
-function FieldSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+function FieldSelect({ value, onChange, options, disabled }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; disabled?: boolean }) {
   return (
     <div className="relative">
-      <select value={value} onChange={e => onChange(e.target.value)} className="field-control pr-6 appearance-none cursor-pointer w-full">
+      <select value={value} onChange={e => onChange(e.target.value)} disabled={disabled} className="field-control pr-6 appearance-none cursor-pointer w-full disabled:opacity-50 disabled:cursor-not-allowed">
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       <svg width="10" height="10" viewBox="0 0 10 10" className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="rgba(19,236,236,0.5)" strokeWidth="1.5"><polyline points="2,3 5,7 8,3" /></svg>
@@ -247,9 +247,7 @@ export default function ConnectionPanel({ session }: Props) {
     ? 'linear-gradient(to bottom,rgba(248,113,113,0.15),rgba(248,113,113,0.05))'
     : 'linear-gradient(to bottom,rgba(19,236,236,0.2),rgba(19,236,236,0.05))';
 
-  const linkStyle = (color = 'var(--color-primary)'): React.CSSProperties => ({
-    color, fontSize: 10, cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-display)',
-  });
+  const linkClass = 'text-[10px] bg-transparent border-0 p-0 btn-interactive hover:opacity-90 focus-ring';
 
   // Protocol options translated
   const PROTOCOLS: { value: ProtocolType; label: string }[] = [
@@ -282,37 +280,37 @@ export default function ConnectionPanel({ session }: Props) {
         <div className="p-3 flex flex-col gap-3">
           <div>
             <FieldLabel seq={1} label={t('network.protocolType')} />
-            <FieldSelect value={config.protocol} onChange={v => updateConfig(session.id, { protocol: v as ProtocolType })} options={PROTOCOLS} />
+            <FieldSelect value={config.protocol} onChange={v => updateConfig(session.id, { protocol: v as ProtocolType })} options={PROTOCOLS} disabled={isActive || isBusy} />
           </div>
           {showWs && (
             <div>
               <FieldLabel seq={2} label={t('network.wsUrl')} />
-              <FieldInput value={config.wsUrl} onChange={v => updateConfig(session.id, { wsUrl: v })} placeholder="ws://127.0.0.1:8080" />
+              <FieldInput value={config.wsUrl} onChange={v => updateConfig(session.id, { wsUrl: v })} placeholder="ws://127.0.0.1:8080" disabled={isActive || isBusy} />
             </div>
           )}
           {isSrv && (
             <>
-              <div><FieldLabel seq={2} label={t('network.listenAddress')} /><FieldInput value={config.localHost} onChange={v => updateConfig(session.id, { localHost: v })} placeholder="0.0.0.0" /></div>
-              <div><FieldLabel seq={3} label={t('network.listenPort')} /><FieldInput value={String(config.localPort)} onChange={v => updateConfig(session.id, { localPort: Number(v) })} type="number" /></div>
+              <div><FieldLabel seq={2} label={t('network.listenAddress')} /><FieldInput value={config.localHost} onChange={v => updateConfig(session.id, { localHost: v })} placeholder="0.0.0.0" disabled={isActive || isBusy} /></div>
+              <div><FieldLabel seq={3} label={t('network.listenPort')} /><FieldInput value={String(config.localPort)} onChange={v => updateConfig(session.id, { localPort: Number(v) })} type="number" disabled={isActive || isBusy} /></div>
             </>
           )}
           {showRemote && !showWs && (
             <>
-              <div><FieldLabel seq={2} label={t('network.remoteIp')} /><FieldInput value={config.remoteHost} onChange={v => updateConfig(session.id, { remoteHost: v })} placeholder="127.0.0.1" /></div>
-              <div><FieldLabel seq={3} label={t('network.remotePort')} /><FieldInput value={String(config.remotePort)} onChange={v => updateConfig(session.id, { remotePort: Number(v) })} type="number" /></div>
+              <div><FieldLabel seq={2} label={t('network.remoteIp')} /><FieldInput value={config.remoteHost} onChange={v => updateConfig(session.id, { remoteHost: v })} placeholder="127.0.0.1" disabled={isActive || isBusy} /></div>
+              <div><FieldLabel seq={3} label={t('network.remotePort')} /><FieldInput value={String(config.remotePort)} onChange={v => updateConfig(session.id, { remotePort: Number(v) })} type="number" disabled={isActive || isBusy} /></div>
             </>
           )}
           {showLocal && !isSrv && (
             <div>
               <FieldLabel seq={4} label={t('network.localPort')} />
-              <FieldInput value={String(config.localPort)} onChange={v => updateConfig(session.id, { localPort: Number(v) })} placeholder={t('network.localPortAuto')} type="number" />
+              <FieldInput value={String(config.localPort)} onChange={v => updateConfig(session.id, { localPort: Number(v) })} placeholder={t('network.localPortAuto')} type="number" disabled={isActive || isBusy} />
             </div>
           )}
           <button
             onClick={handleConnect}
             disabled={isBusy}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded font-bold uppercase tracking-wider"
-            style={{ fontSize: 11, fontFamily: 'var(--font-display)', background: btnBg, border: `1px solid ${btnColor.replace('0.8', '0.25')}`, color: btnColor, boxShadow: `0 0 6px ${btnColor.replace('0.8', '0.06')}`, cursor: isBusy ? 'wait' : 'pointer', opacity: isBusy ? 0.7 : 1 }}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded font-bold uppercase tracking-wider btn-interactive focus-ring disabled:opacity-70 disabled:cursor-wait"
+            style={{ fontSize: 11, fontFamily: 'var(--font-display)', background: btnBg, border: `1px solid ${btnColor.replace('0.8', '0.25')}`, color: btnColor, boxShadow: `0 0 6px ${btnColor.replace('0.8', '0.06')}` }}
           >
             <span className="inline-block rounded-full" style={{ width: 7, height: 7, background: isActive ? 'rgba(248,113,113,0.8)' : '#334155', boxShadow: isActive ? '0 0 5px rgba(248,113,113,0.8)' : 'none' }} />
             {isActive ? t('network.disconnect') : isBusy ? t('network.connecting') : t('network.connect')}
@@ -343,8 +341,8 @@ export default function ConnectionPanel({ session }: Props) {
             <CheckRow checked={receiveSettings.pauseReceiving} onChange={v => updateReceive(session.id, { pauseReceiving: v })} label={t('receive.pauseReceiving')} />
           </div>
           <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid rgba(19,236,236,0.1)' }}>
-            <button style={linkStyle()} onClick={exportLog}>{t('receive.exportLog')}</button>
-            <button style={linkStyle()} onClick={() => clearLogs(session.id)}>{t('receive.clearRx')}</button>
+            <button className={linkClass} style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }} onClick={exportLog}>{t('receive.exportLog')}</button>
+            <button className={linkClass} style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }} onClick={() => clearLogs(session.id)}>{t('receive.clearRx')}</button>
           </div>
         </div>
       </PanelCard>

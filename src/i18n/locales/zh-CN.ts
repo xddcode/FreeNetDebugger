@@ -20,6 +20,11 @@ const zhCN: Translations = {
   },
   header: {
     newSession: '新建会话',
+    help:       '帮助',
+    about:      '关于',
+    close:      '关闭',
+    minimize:   '最小化',
+    maximize:   '最大化',
   },
   network: {
     title:         '网络设置',
@@ -122,6 +127,9 @@ const zhCN: Translations = {
     rx:          '接收',
     tx:          '发送',
     resetCounts: '重置',
+  },
+  about: {
+    confirm: '确定',
   },
   traffic: {
     title:      '流量分析',

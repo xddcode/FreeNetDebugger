@@ -187,7 +187,7 @@ export default function DataLog({ session }: Props) {
             {APP_DISPLAY}
           </span>
           <button
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase btn-interactive hover:bg-white/10 focus-ring"
             style={{ background: 'rgba(19,236,236,0.1)', border: '1px solid rgba(19,236,236,0.2)', color: 'var(--color-primary)', fontSize: 10 }}
             onClick={() => clearLogs(session.id)}
           >
@@ -206,12 +206,10 @@ export default function DataLog({ session }: Props) {
           value={logFilter}
           onChange={e => setLogFilter(e.target.value)}
           placeholder={t('log.searchPlaceholder')}
-          style={{ flex: 1, background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(19,236,236,0.2)', borderRadius: 4, padding: '4px 8px', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', outline: 'none', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)' }}
-          onFocus={e => (e.target.style.borderColor = 'var(--color-primary)')}
-          onBlur={e => (e.target.style.borderColor = 'rgba(19,236,236,0.2)')}
+          className="field-control flex-1 min-w-0"
         />
         {logFilter && (
-          <button onClick={() => setLogFilter('')} style={{ color: '#64748b', fontSize: 14, lineHeight: 1 }}>×</button>
+          <button onClick={() => setLogFilter('')} className="btn-interactive hover-text-primary focus-ring px-1" style={{ color: '#64748b', fontSize: 14, lineHeight: 1 }} aria-label={t('log.clear')}>×</button>
         )}
       </div>
 

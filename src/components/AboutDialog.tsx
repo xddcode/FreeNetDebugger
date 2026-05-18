@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { APP } from '../config/app';
 
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function AboutDialog({ open, onClose }: Props) {
+  const { t } = useTranslation();
   if (!open) {
     return null;
   }
@@ -63,17 +65,11 @@ export default function AboutDialog({ open, onClose }: Props) {
           <button
             type="button"
             onClick={() => openUrl(APP.github)}
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded transition-colors mb-5"
+            className="flex items-center gap-2 w-full px-4 py-2.5 rounded btn-interactive hover:bg-white/10 focus-ring mb-5"
             style={{
               background: 'rgba(19,236,236,0.1)',
               border: '1px solid rgba(19,236,236,0.3)',
               color: 'var(--color-primary)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(19,236,236,0.2)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(19,236,236,0.1)';
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -85,20 +81,14 @@ export default function AboutDialog({ open, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 rounded text-sm font-medium transition-colors"
+            className="w-full py-2.5 rounded text-sm font-medium btn-interactive hover:bg-white/10 focus-ring"
             style={{
               background: 'rgba(19,236,236,0.2)',
               border: '1px solid rgba(19,236,236,0.4)',
               color: 'var(--color-primary)',
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(19,236,236,0.3)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(19,236,236,0.2)';
-            }}
           >
-            确定
+            {t('about.confirm')}
           </button>
         </div>
       </div>

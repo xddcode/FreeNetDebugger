@@ -135,7 +135,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }}>
           {t('sendCenter.title')}
         </div>
-        <button onClick={onClose} style={{ color: '#64748b', fontSize: 15, cursor: 'pointer' }}>×</button>
+        <button onClick={onClose} className="btn-interactive hover-text-primary focus-ring p-1 -m-1" style={{ color: '#64748b', fontSize: 15 }} aria-label={t('header.close')}>×</button>
       </div>
 
       <div className="p-2 shrink-0" style={{ borderBottom: '1px solid rgba(19,236,236,0.1)' }}>
@@ -146,7 +146,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
               <button
                 key={k}
                 onClick={() => onTabChange(k)}
-                className="flex-1 rounded py-1"
+                className="flex-1 rounded py-1 btn-interactive focus-ring"
                 style={{
                   fontSize: 11,
                   color: active ? 'var(--color-primary)' : '#64748b',
@@ -178,7 +178,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
               {!!session?.sendHistory.length && (
                 <button
                   onClick={() => session && clearSendHistory(session.id)}
-                  style={{ fontSize: 10, color: '#94a3b8', cursor: 'pointer' }}
+                  className="btn-interactive hover-text-primary focus-ring"
+                  style={{ fontSize: 10, color: '#94a3b8' }}
                 >
                   {t('sendCenter.clearAll')}
                 </button>
@@ -229,7 +230,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                           }}
                           title={t('sendCenter.fill')}
                           aria-label={t('sendCenter.fill')}
-                          style={{ color: 'var(--color-primary)', cursor: 'pointer', fontSize: 10, fontWeight: 600 }}
+                          className="btn-interactive hover:opacity-80 focus-ring"
+                          style={{ color: 'var(--color-primary)', fontSize: 10, fontWeight: 600 }}
                         >
                           {t('sendCenter.fill')}
                         </button>
@@ -240,7 +242,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                           }}
                           title={t('sendCenter.sendNow')}
                           aria-label={t('sendCenter.sendNow')}
-                          style={{ color: 'var(--color-accent)', cursor: 'pointer', fontSize: 10, fontWeight: 600 }}
+                          className="btn-interactive hover:opacity-80 focus-ring"
+                          style={{ color: 'var(--color-accent)', fontSize: 10, fontWeight: 600 }}
                         >
                           {t('sendCenter.sendNow')}
                         </button>
@@ -251,7 +254,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                           }}
                           title={starred ? t('sendCenter.unstar') : t('sendCenter.star')}
                           aria-label={starred ? t('sendCenter.unstar') : t('sendCenter.star')}
-                          style={{ color: starred ? '#fbbf24' : '#94a3b8', cursor: 'pointer', fontSize: 10, fontWeight: 600 }}
+                          className="btn-interactive hover:opacity-80 focus-ring"
+                          style={{ color: starred ? '#fbbf24' : '#94a3b8', fontSize: 10, fontWeight: 600 }}
                         >
                           {starred ? t('sendCenter.unstar') : t('sendCenter.star')}
                         </button>
@@ -263,7 +267,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                             }}
                             title={t('sendCenter.delete')}
                             aria-label={t('sendCenter.delete')}
-                            style={{ color: '#94a3b8', cursor: 'pointer', fontSize: 10, fontWeight: 600 }}
+                            className="btn-interactive hover:opacity-80 focus-ring"
+                            style={{ color: '#94a3b8', fontSize: 10, fontWeight: 600 }}
                           >
                             {t('sendCenter.delete')}
                           </button>
@@ -283,7 +288,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
               {!addingShortcut && (
                 <button
                   onClick={startAddShortcut}
-                  style={{ fontSize: 10, color: 'var(--color-accent)', cursor: 'pointer' }}
+                  className="btn-interactive hover:opacity-90 focus-ring"
+                  style={{ fontSize: 10, color: 'var(--color-accent)' }}
                 >
                   + {t('shortcuts.add')}
                 </button>
@@ -307,7 +313,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                   onChange={e => setShortcutData(e.target.value)}
                   placeholder={t('shortcuts.dataPlaceholder')}
                   rows={3}
-                  style={{ width: '100%', marginTop: 6, background: 'var(--color-bg-dark)', border: '1px solid rgba(19,236,236,0.3)', borderRadius: 4, padding: '6px', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', outline: 'none', resize: 'vertical' }}
+                  className="field-control mt-1.5 w-full resize-y"
+                  style={{ minHeight: 72 }}
                 />
                 <div className="flex items-center gap-2 mt-2">
                   <select
@@ -319,8 +326,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                     <option value="ASCII">ASCII</option>
                     <option value="HEX">HEX</option>
                   </select>
-                  <button onClick={saveShortcut} style={{ fontSize: 10, color: 'var(--color-primary)', cursor: 'pointer' }}>{t('shortcuts.save')}</button>
-                  <button onClick={() => setAddingShortcut(false)} style={{ fontSize: 10, color: '#64748b', cursor: 'pointer' }}>✕</button>
+                  <button onClick={saveShortcut} className="btn-interactive hover:opacity-90 focus-ring" style={{ fontSize: 10, color: 'var(--color-primary)' }}>{t('shortcuts.save')}</button>
+                  <button onClick={() => setAddingShortcut(false)} className="btn-interactive hover-text-primary focus-ring" style={{ fontSize: 10, color: '#64748b' }}>✕</button>
                 </div>
               </div>
             )}
@@ -372,7 +379,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                         }}
                         title={t('sendCenter.fill')}
                         aria-label={t('sendCenter.fill')}
-                        style={{ color: 'var(--color-primary)', cursor: 'pointer', fontSize: 10, fontWeight: 600 }}
+                        className="btn-interactive hover:opacity-80 focus-ring"
+                        style={{ color: 'var(--color-primary)', fontSize: 10, fontWeight: 600 }}
                       >
                         {t('sendCenter.fill')}
                       </button>
@@ -383,7 +391,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                         }}
                         title={t('sendCenter.sendNow')}
                         aria-label={t('sendCenter.sendNow')}
-                        style={{ color: 'var(--color-accent)', cursor: 'pointer', fontSize: 10, fontWeight: 600 }}
+                        className="btn-interactive hover:opacity-80 focus-ring"
+                        style={{ color: 'var(--color-accent)', fontSize: 10, fontWeight: 600 }}
                       >
                         {t('sendCenter.sendNow')}
                       </button>
@@ -394,7 +403,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                         }}
                         title={t('sendCenter.delete')}
                         aria-label={t('sendCenter.delete')}
-                        style={{ color: '#94a3b8', cursor: 'pointer', fontSize: 10, fontWeight: 600 }}
+                        className="btn-interactive hover:opacity-80 focus-ring"
+                        style={{ color: '#94a3b8', fontSize: 10, fontWeight: 600 }}
                       >
                         {t('sendCenter.delete')}
                       </button>

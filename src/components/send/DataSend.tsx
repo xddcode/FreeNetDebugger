@@ -156,8 +156,8 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
         <div className="flex items-center gap-3">
           <button
             data-send-center-trigger="true"
-            className="px-2 py-0.5 rounded text-xs transition-colors"
-            style={{ color: 'var(--color-accent)', border: '1px solid rgba(255,0,255,0.2)', cursor: 'pointer' }}
+            className="px-2 py-0.5 rounded text-xs btn-interactive hover:bg-white/5 focus-ring"
+            style={{ color: 'var(--color-accent)', border: '1px solid rgba(255,0,255,0.2)' }}
             onClick={() => onOpenSendCenter?.('shortcuts')}
             title={t('sendSettings.quickShortcuts')}
           >
@@ -165,8 +165,8 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
           </button>
           <button
             data-send-center-trigger="true"
-            className="px-2 py-0.5 rounded text-xs transition-colors"
-            style={{ color: 'var(--color-primary)', border: '1px solid rgba(19,236,236,0.2)', cursor: 'pointer' }}
+            className="px-2 py-0.5 rounded text-xs btn-interactive hover:bg-white/5 focus-ring"
+            style={{ color: 'var(--color-primary)', border: '1px solid rgba(19,236,236,0.2)' }}
             onClick={() => onOpenSendCenter?.('history')}
             title={t('sendSettings.sendHistory')}
           >
@@ -174,10 +174,8 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
           </button>
           {/* Open File */}
           <button
-            className="flex items-center gap-1 text-xs transition-colors"
-            style={{ color: '#64748b', cursor: 'pointer' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-primary)')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
+            className="flex items-center gap-1 text-xs btn-interactive hover-text-primary focus-ring"
+            style={{ color: '#64748b' }}
             onClick={() => fileInputRef.current?.click()}
             title={t('send.openFile')}
           >
@@ -191,10 +189,8 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
 
           {/* Clear */}
           <button
-            className="flex items-center gap-1 text-xs transition-colors"
-            style={{ color: '#64748b', cursor: 'pointer' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-primary)')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
+            className="flex items-center gap-1 text-xs btn-interactive hover-text-primary focus-ring"
+            style={{ color: '#64748b' }}
             onClick={() => updateSendContent(session.id, '')}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -227,7 +223,7 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
         <button
           onClick={() => doSend()}
           disabled={!canSend}
-          className="w-24 shrink-0 flex flex-col items-center justify-center gap-1 rounded"
+          className="w-24 shrink-0 flex flex-col items-center justify-center gap-1 rounded btn-interactive focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             background: canSend ? 'linear-gradient(135deg,rgba(19,236,236,0.2),rgba(19,236,236,0.05))' : 'rgba(22,46,46,0.5)',
             border: `1px solid ${canSend ? 'rgba(19,236,236,0.5)' : 'rgba(19,236,236,0.1)'}`,

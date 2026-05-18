@@ -106,10 +106,8 @@ export default function StatusBar({ session }: Props) {
           </span>
           <button
             onClick={() => resetCounts(session.id)}
-            className="px-2 py-0.5 rounded uppercase transition-colors"
+            className="px-2 py-0.5 rounded uppercase btn-interactive hover:bg-white/10 focus-ring"
             style={{ background: '#1e293b', border: '1px solid #334155', color: '#94a3b8', fontSize: 9, letterSpacing: '0.05em' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#293548')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#1e293b')}
           >
             {t('statusBar.resetCounts')}
           </button>
