@@ -170,6 +170,14 @@ const zhCN: Translations = {
     export:          '导出',
     import:          '导入',
   },
+  sidebar: {
+    tabs: {
+      network: '网络',
+      receive: '接收',
+      send:    '发送',
+      profile: '模板',
+    },
+  },
   validation: {
     invalidIp:     'IP 地址格式错误',
     invalidPort:   '端口必须为 1-65535',

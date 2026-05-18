@@ -116,8 +116,8 @@ export default function NetworkPanel({ session }: Props) {
   const isHttp = config.protocol === 'HTTP';
 
   const btnClass = isActive
-    ? 'bg-[linear-gradient(to_bottom,rgba(248,113,113,0.15),rgba(248,113,113,0.05))] border border-[rgba(248,113,113,0.25)] text-[rgba(248,113,113,0.8)] shadow-[0_0_6px_rgba(248,113,113,0.06)]'
-    : 'bg-[linear-gradient(to_bottom,rgba(45,212,191,0.2),rgba(45,212,191,0.05))] border border-[rgba(45,212,191,0.25)] text-[var(--color-primary)] shadow-[0_0_6px_rgba(45,212,191,0.06)]';
+    ? 'bg-[linear-gradient(to_bottom,rgba(248,113,113,0.12),rgba(248,113,113,0.04))] border border-[rgba(248,113,113,0.2)] text-[rgba(248,113,113,0.85)]'
+    : 'bg-[linear-gradient(to_bottom,rgba(45,212,191,0.15),rgba(45,212,191,0.04))] border border-[rgba(45,212,191,0.2)] text-[var(--color-primary)]';
 
   const PROTOCOLS: { value: ProtocolType; label: string }[] = [
     { value: 'TCP_CLIENT', label: t('protocol.TCP_CLIENT') },
@@ -171,7 +171,7 @@ export default function NetworkPanel({ session }: Props) {
               disabled={isActive || isBusy}
               error={errors.wsUrl}
             />
-            {errors.wsUrl && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidWsUrl')}</span>}
+            {errors.wsUrl && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('validation.invalidWsUrl')}</span>}
           </div>
         )}
         {isSrv && (
@@ -185,7 +185,7 @@ export default function NetworkPanel({ session }: Props) {
                 disabled={isActive || isBusy}
                 error={errors.localHost}
               />
-              {errors.localHost && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidIp')}</span>}
+              {errors.localHost && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('validation.invalidIp')}</span>}
             </div>
             <div>
               <FieldLabel seq={3} label={t('network.listenPort')} />
@@ -196,7 +196,7 @@ export default function NetworkPanel({ session }: Props) {
                 disabled={isActive || isBusy}
                 error={errors.localPort}
               />
-              {errors.localPort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidPort')}</span>}
+              {errors.localPort && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('validation.invalidPort')}</span>}
             </div>
           </>
         )}
@@ -211,7 +211,7 @@ export default function NetworkPanel({ session }: Props) {
                 disabled={isActive || isBusy}
                 error={errors.remoteHost}
               />
-              {errors.remoteHost && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidIp')}</span>}
+              {errors.remoteHost && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('validation.invalidIp')}</span>}
             </div>
             <div>
               <FieldLabel seq={3} label={t('network.remotePort')} />
@@ -222,7 +222,7 @@ export default function NetworkPanel({ session }: Props) {
                 disabled={isActive || isBusy}
                 error={errors.remotePort}
               />
-              {errors.remotePort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidPort')}</span>}
+              {errors.remotePort && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('validation.invalidPort')}</span>}
             </div>
           </>
         )}
@@ -237,7 +237,7 @@ export default function NetworkPanel({ session }: Props) {
               disabled={isActive || isBusy}
               error={errors.localPort}
             />
-            {errors.localPort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidPort')}</span>}
+            {errors.localPort && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('validation.invalidPort')}</span>}
           </div>
         )}
         {isSerial && (
@@ -255,12 +255,12 @@ export default function NetworkPanel({ session }: Props) {
               <button
                 onClick={refreshPorts}
                 disabled={portsLoading}
-                className="px-2 py-1.5 rounded text-[10px] btn-interactive focus-ring border border-[var(--color-primary)]/20 text-[var(--color-primary)] font-[family-name:var(--font-mono)] disabled:opacity-50"
+                className="px-2 py-1.5 rounded text-[11px] btn-interactive focus-ring border border-[var(--color-primary)]/20 text-[var(--color-primary)] font-[family-name:var(--font-mono)] disabled:opacity-50"
               >
                 {portsLoading ? '...' : t('serial.refresh')}
               </button>
             </div>
-            {errors.serialPort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('serial.selectPort')}</span>}
+            {errors.serialPort && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('serial.selectPort')}</span>}
             <div>
               <FieldLabel seq={3} label={t('serial.baudRate')} />
               <FieldSelect
@@ -304,7 +304,7 @@ export default function NetworkPanel({ session }: Props) {
         {isHttp && (
           <>
             <div className="flex items-end gap-2">
-              <div className="w-[100px]">
+              <div className="w-[110px]">
                 <FieldLabel seq={2} label={t('http.method')} />
                 <FieldSelect
                   value={config.httpMethod}
@@ -332,13 +332,13 @@ export default function NetworkPanel({ session }: Props) {
                 />
               </div>
             </div>
-            {errors.httpUrl && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('http.invalidUrl')}</span>}
+            {errors.httpUrl && <span className="text-[11px] text-[var(--color-error)] mt-1 block">{t('http.invalidUrl')}</span>}
           </>
         )}
         <button
           onClick={handleConnect}
           disabled={isBusy}
-          className={`w-full flex items-center justify-center gap-2 py-2 rounded font-bold uppercase tracking-wider btn-interactive focus-ring disabled:opacity-70 disabled:cursor-wait text-[11px] font-[family-name:var(--font-display)] ${btnClass}`}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded font-bold uppercase tracking-wider btn-interactive focus-ring disabled:opacity-70 disabled:cursor-wait text-[12px] font-[family-name:var(--font-display)] ${btnClass}`}
         >
           <span className={`inline-block rounded-full w-[7px] h-[7px] ${isActive ? 'bg-[rgba(248,113,113,0.8)] shadow-[0_0_5px_rgba(248,113,113,0.8)]' : 'bg-[#334155]'}`} />
           {isActive ? t('network.disconnect') : isBusy ? t('network.connecting') : t('network.connect')}

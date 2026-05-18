@@ -103,11 +103,11 @@ export default function ProfilePanel({ session }: Props) {
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder={t('profile.namePlaceholder')}
-            className="field-control flex-1 min-w-0 text-[11px] px-2 py-1"
+            className="field-control flex-1 min-w-0 text-[12px] px-2 py-1"
           />
           <button
             onClick={handleSave}
-            className="px-2 py-1 text-[10px] btn-interactive focus-ring text-[var(--color-primary)] border border-[var(--color-primary)]/20 rounded font-[family-name:var(--font-mono)]"
+            className="px-2 py-1 text-[11px] btn-interactive focus-ring text-[var(--color-primary)] border border-[var(--color-primary)]/20 rounded font-[family-name:var(--font-mono)]"
           >
             {t('profile.save')}
           </button>
@@ -115,7 +115,7 @@ export default function ProfilePanel({ session }: Props) {
 
         {/* Profile list */}
         {profiles.length === 0 ? (
-          <div className="text-[11px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)] py-1">
+          <div className="text-[12px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)] py-1">
             {t('profile.empty')}
           </div>
         ) : (
@@ -133,12 +133,12 @@ export default function ProfilePanel({ session }: Props) {
                     onBlur={commitRename}
                     onKeyDown={e => { if (e.key === 'Enter') { commitRename(); } }}
                     autoFocus
-                    className="field-control flex-1 min-w-0 text-[10px] px-1 py-0.5"
+                    className="field-control flex-1 min-w-0 text-[11px] px-1 py-0.5"
                   />
                 ) : (
                   <button
                     onClick={() => handleApply(p.id)}
-                    className="flex-1 min-w-0 text-left text-[10px] font-[family-name:var(--font-mono)] text-[var(--color-text-primary)] btn-interactive truncate"
+                    className="flex-1 min-w-0 text-left text-[11px] font-[family-name:var(--font-mono)] text-[var(--color-text-primary)] btn-interactive truncate"
                     title={`${p.name} (${p.config.protocol})`}
                   >
                     <span className="text-[var(--color-primary)]">{p.config.protocol}</span>{' '}
@@ -147,14 +147,14 @@ export default function ProfilePanel({ session }: Props) {
                 )}
                 <button
                   onClick={() => startRename(p)}
-                  className="opacity-0 group-hover:opacity-100 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] text-[10px] px-0.5 btn-interactive transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] text-[11px] px-0.5 btn-interactive transition-opacity"
                   title={t('profile.rename')}
                 >
                   ✎
                 </button>
                 <button
                   onClick={() => handleDelete(p.id)}
-                  className="opacity-0 group-hover:opacity-100 text-[var(--color-error)]/70 hover:text-[var(--color-error)] text-[10px] px-0.5 btn-interactive transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 text-[var(--color-error)]/70 hover:text-[var(--color-error)] text-[11px] px-0.5 btn-interactive transition-opacity"
                   title={t('profile.delete')}
                 >
                   ×
@@ -169,14 +169,14 @@ export default function ProfilePanel({ session }: Props) {
           <button
             onClick={handleExport}
             disabled={profiles.length === 0}
-            className="flex items-center gap-1 text-[10px] btn-interactive focus-ring text-[var(--color-secondary)] disabled:opacity-50 font-[family-name:var(--font-mono)]"
+            className="flex items-center gap-1 text-[11px] btn-interactive focus-ring text-[var(--color-secondary)] disabled:opacity-50 font-[family-name:var(--font-mono)]"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             {t('profile.export')}
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 text-[10px] btn-interactive focus-ring text-[var(--color-secondary)] font-[family-name:var(--font-mono)]"
+            className="flex items-center gap-1 text-[11px] btn-interactive focus-ring text-[var(--color-secondary)] font-[family-name:var(--font-mono)]"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
             {t('profile.import')}

@@ -6,17 +6,17 @@ export function PanelCard({ children }: { children: ReactNode }) {
 
 export function PanelHeader({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 bg-[linear-gradient(to_right,rgba(45,212,191,0.1),transparent)] border-b border-[var(--color-primary)]/20"
+    <div className="flex items-center gap-2 px-3 py-2.5 shrink-0 bg-[linear-gradient(to_right,rgba(45,212,191,0.08),transparent)] border-b border-[var(--color-primary)]/15"
     >
       <span className="text-[var(--color-primary)] flex items-center">{icon}</span>
-      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] font-[family-name:var(--font-display)]">{label}</h3>
+      <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--color-primary)] font-[family-name:var(--font-display)]">{label}</h3>
     </div>
   );
 }
 
 export function FieldLabel({ seq, label }: { seq?: number; label: string }) {
   return (
-    <label className="block mb-1 uppercase font-bold tracking-wider text-[var(--color-text-muted)] text-[10px]"
+    <label className="block mb-1.5 uppercase font-bold tracking-wider text-[var(--color-text-muted)] text-[11px]"
     >
       {seq && <span className="text-[var(--color-text-muted)]">({seq}) </span>}{label}
     </label>
@@ -43,7 +43,7 @@ export function CheckRow({ checked, onChange, label, accent }: { checked: boolea
   return (
     <label className="flex items-center gap-2 cursor-pointer select-none">
       <input type="checkbox" className={`custom-check ${accent ? 'accent' : ''}`} checked={checked} onChange={e => onChange(e.target.checked)} />
-      <span className="text-xs transition-colors text-[var(--color-text-secondary)] text-[11px]">{label}</span>
+      <span className="text-[12px] transition-colors text-[var(--color-text-secondary)]">{label}</span>
     </label>
   );
 }
@@ -56,7 +56,7 @@ export function RadioGroup({ options, value, onChange, accent }: { options: stri
         <label key={opt} className="flex items-center gap-1.5 cursor-pointer select-none"
         >
           <input type="radio" className={`custom-radio ${accent ? 'accent' : ''}`} checked={value === opt} onChange={() => onChange(opt)} />
-          <span className="text-[11px] font-[family-name:var(--font-mono)] text-[var(--color-text-secondary)]">{opt}</span>
+          <span className="text-[12px] font-[family-name:var(--font-mono)] text-[var(--color-text-secondary)]">{opt}</span>
         </label>
       ))}
     </div>

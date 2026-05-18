@@ -276,7 +276,7 @@ export default function AppLayout() {
 
       <main className="relative z-10 flex flex-1 min-h-0 gap-2 p-2 overflow-hidden">
 
-        <aside className="sidebar-scroll w-64 shrink-0 flex flex-col gap-2 min-h-0">
+        <aside className="w-80 shrink-0 flex flex-col min-h-0 bg-[var(--color-surface)]/50 border-r border-[var(--color-border)]">
           {activeSession && <ConnectionPanel session={activeSession} />}
         </aside>
 

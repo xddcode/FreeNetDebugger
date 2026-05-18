@@ -43,21 +43,21 @@ export default function SendSettingsPanel({ session }: Props) {
               ]}
             />
           )}
-          <div className="flex items-center gap-2 mt-1 p-1.5 rounded bg-[rgba(16,34,34,0.3)] border border-[var(--color-primary)]/[0.05]">
+          <div className="flex items-center gap-2 mt-1 p-2 rounded bg-[rgba(16,34,34,0.3)] border border-[var(--color-primary)]/[0.05]">
             <input
               type="checkbox"
               className="custom-check accent"
               checked={sendSettings.periodicEnabled}
               onChange={e => updateSend(session.id, { periodicEnabled: e.target.checked })}
             />
-            <span className="text-[11px] text-[var(--color-text-secondary)]">{t('sendSettings.periodic')}</span>
+            <span className="text-[12px] text-[var(--color-text-secondary)]">{t('sendSettings.periodic')}</span>
             <input
               type="text"
               value={sendSettings.periodicInterval}
               onChange={e => updateSend(session.id, { periodicInterval: Number(e.target.value) })}
-              className="field-control text-center w-[52px] px-1 py-0.5 h-6 text-[10px]"
+              className="field-control text-center w-[56px] px-1 py-0.5 h-6 text-[11px]"
             />
-            <span className="text-[10px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">ms</span>
+            <span className="text-[11px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">ms</span>
           </div>
         </div>
       </div>

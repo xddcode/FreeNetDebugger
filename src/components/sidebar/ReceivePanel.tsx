@@ -94,7 +94,7 @@ export default function ReceivePanel({ session }: Props) {
     { value: 'HEX', label: t('receive.nonPrintableHex') },
   ];
 
-  const linkClass = 'text-[10px] bg-transparent border-0 p-0 btn-interactive hover:opacity-90 focus-ring';
+  const linkClass = 'text-[11px] bg-transparent border-0 p-0 btn-interactive hover:opacity-90 focus-ring';
 
   return (
     <PanelCard>

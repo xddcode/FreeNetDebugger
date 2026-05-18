@@ -168,6 +168,14 @@ const en = {
     export:          'Export',
     import:          'Import',
   },
+  sidebar: {
+    tabs: {
+      network: 'Network',
+      receive: 'Receive',
+      send:    'Send',
+      profile: 'Profiles',
+    },
+  },
   validation: {
     invalidIp:     'Invalid IP address',
     invalidPort:   'Port must be 1-65535',
