@@ -22,4 +22,5 @@ tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 serialport = "4"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+rquickjs = { version = "0.6", features = ["macro", "parallel"] }
 log = "0.4"

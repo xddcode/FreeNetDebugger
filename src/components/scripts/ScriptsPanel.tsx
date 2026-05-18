@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
 import { useScriptStore } from '../../store';
+import { runScript } from '../../services/scriptService';
 import type { Script } from '../../types';
 
 interface Props {
@@ -54,15 +55,18 @@ export default function ScriptsPanel({ sessionId }: Props) {
     }
   };
 
-  const handleRun = () => {
-    if (!activeScript) { return; }
+  const handleRun = async () => {
+    if (!activeScript || !sessionId) { return; }
     setIsRunning(true);
     setOutput((prev) => [...prev, `> Running "${activeScript.name}"...`]);
-    // TODO: invoke backend script execution when backend is ready
-    window.setTimeout(() => {
+    try {
+      const result = await runScript(sessionId, activeScript.source);
+      setOutput((prev) => [...prev, ...result.map((line) => `  ${line}`), '> Done.']);
+    } catch (e) {
+      setOutput((prev) => [...prev, `> Error: ${e}`]);
+    } finally {
       setIsRunning(false);
-      setOutput((prev) => [...prev, '> Script execution not yet implemented in backend.']);
-    }, 500);
+    }
   };
 
   const handleStop = () => {

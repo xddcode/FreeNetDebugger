@@ -78,3 +78,11 @@ pub fn list_serial_ports() -> Vec<String> {
         .map(|ports| ports.into_iter().map(|p| p.port_name).collect())
         .unwrap_or_default()
 }
+
+#[tauri::command]
+pub fn run_script(app: AppHandle, session_id: String, source: String) -> Result<Vec<String>, String> {
+    let engine = crate::script_engine::ScriptEngine::new(app, session_id)
+        .map_err(|e| format!("Engine init failed: {}", e))?;
+    let output = engine.run(&source)?;
+    Ok(output)
+}
