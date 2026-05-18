@@ -1,4 +1,5 @@
 pub mod handler;
+pub mod http;
 pub mod serial;
 pub mod tcp;
 pub mod udp;
@@ -8,6 +9,7 @@ use tauri::AppHandle;
 use tokio::sync::mpsc;
 
 use self::handler::ProtocolHandler;
+use self::http::HttpHandler;
 use self::serial::SerialHandler;
 use self::tcp::{TcpClientHandler, TcpServerHandler};
 use self::udp::UdpHandler;
@@ -56,6 +58,7 @@ pub fn build_handler(config: ConnectionConfig) -> Result<Box<dyn ProtocolHandler
             let parity = config.parity.unwrap_or_else(|| "none".to_string());
             Ok(Box::new(SerialHandler { port_name, baud_rate, data_bits, stop_bits, parity }))
         }
+        "HTTP" => Ok(Box::new(HttpHandler::new())),
         proto => Err(format!("Unsupported protocol: {}", proto)),
     }
 }

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, type KeyboardEvent, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '../../utils/tauri';
 import { useSessionStore } from '../../store';
@@ -65,6 +65,31 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
     if (!canSend || !raw.trim()) {
       return;
     }
+
+    // HTTP protocol: send request config as JSON
+    if (session.config.protocol === 'HTTP') {
+      const enabledHeaders = session.config.httpHeaders.filter(h => h.enabled);
+      const headerMap: Record<string, string> = {};
+      for (const h of enabledHeaders) {
+        headerMap[h.key] = h.value;
+      }
+      const httpPayload = {
+        method: session.config.httpMethod,
+        url: session.config.httpUrl,
+        headers: headerMap,
+        body: raw.trim() || undefined,
+      };
+      const jsonBytes = Array.from(new TextEncoder().encode(JSON.stringify(httpPayload)));
+      try {
+        await invoke('send_data', { id: session.id, data: jsonBytes });
+        appendLog(session.id, { timestamp: Date.now(), direction: 'send', data: jsonBytes });
+        addSendHistory(session.id, `${session.config.httpMethod} ${session.config.httpUrl}`);
+      } catch (e) {
+        appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(`${t('send.sendFailed')}: ${e}`)) });
+      }
+      return;
+    }
+
     const payload = buildPayload(raw, overrideEncoding);
     if (payload.length === 0) {
       return;
@@ -76,7 +101,7 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
     } catch (e) {
       appendLog(session.id, { timestamp: Date.now(), direction: 'system', data: Array.from(new TextEncoder().encode(`${t('send.sendFailed')}: ${e}`)) });
     }
-  }, [text, canSend, session.id, buildPayload, appendLog, addSendHistory, t]);
+  }, [text, canSend, session.id, session.config, buildPayload, appendLog, addSendHistory, t]);
 
   // Subscribe to shortcut / history bus
   useEffect(() => {
@@ -115,12 +140,12 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
     return () => { stopPeriodic(); };
   }, [sendSettings.periodicEnabled, sendSettings.periodicInterval, canSend, doSend]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSend(); }
   };
 
   // Open File Data Source
-  const handleFileOpen = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileOpen = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
       return;

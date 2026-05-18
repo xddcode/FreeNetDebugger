@@ -13,4 +13,16 @@ pub struct ConnectionConfig {
     pub data_bits: Option<u8>,
     pub stop_bits: Option<u8>,
     pub parity: Option<String>,
+    pub http_url: Option<String>,
+    pub http_method: Option<String>,
+    #[serde(default)]
+    pub http_headers: Vec<HttpHeader>,
+    pub http_body: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HttpHeader {
+    pub key: String,
+    pub value: String,
+    pub enabled: bool,
 }

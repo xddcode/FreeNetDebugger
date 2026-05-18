@@ -49,6 +49,7 @@ export default function NetworkPanel({ session }: Props) {
     const showWs = config.protocol === 'WEBSOCKET';
     const isSrv = config.protocol === 'TCP_SERVER';
     const isSerial = config.protocol === 'SERIAL';
+    const isHttp = config.protocol === 'HTTP';
 
     if (showRemote && !showWs) {
       newErrors.remoteHost = !isValidIPv4(config.remoteHost);
@@ -66,6 +67,9 @@ export default function NetworkPanel({ session }: Props) {
     }
     if (isSerial) {
       newErrors.serialPort = !config.serialPort;
+    }
+    if (isHttp) {
+      newErrors.httpUrl = !config.httpUrl || !config.httpUrl.startsWith('http');
     }
 
     setErrors(newErrors);
@@ -86,6 +90,10 @@ export default function NetworkPanel({ session }: Props) {
       data_bits: proto === 'SERIAL' ? config.dataBits : undefined,
       stop_bits: proto === 'SERIAL' ? config.stopBits : undefined,
       parity: proto === 'SERIAL' ? config.parity : undefined,
+      http_url: proto === 'HTTP' ? config.httpUrl : undefined,
+      http_method: proto === 'HTTP' ? config.httpMethod : undefined,
+      http_headers: proto === 'HTTP' ? config.httpHeaders : undefined,
+      http_body: proto === 'HTTP' ? config.httpBody : undefined,
     };
     try {
       setStatus(session.id, 'connecting');
@@ -105,6 +113,7 @@ export default function NetworkPanel({ session }: Props) {
   const showWs = config.protocol === 'WEBSOCKET';
   const isSrv = config.protocol === 'TCP_SERVER';
   const isSerial = config.protocol === 'SERIAL';
+  const isHttp = config.protocol === 'HTTP';
 
   const btnClass = isActive
     ? 'bg-[linear-gradient(to_bottom,rgba(248,113,113,0.15),rgba(248,113,113,0.05))] border border-[rgba(248,113,113,0.25)] text-[rgba(248,113,113,0.8)] shadow-[0_0_6px_rgba(248,113,113,0.06)]'
@@ -117,6 +126,7 @@ export default function NetworkPanel({ session }: Props) {
     { value: 'UDP_SERVER', label: t('protocol.UDP_SERVER') },
     { value: 'WEBSOCKET', label: t('protocol.WEBSOCKET') },
     { value: 'SERIAL', label: t('protocol.SERIAL') },
+    { value: 'HTTP', label: 'HTTP' },
   ];
 
   const BAUD_RATES = [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
@@ -289,6 +299,40 @@ export default function NetworkPanel({ session }: Props) {
                 />
               </div>
             </div>
+          </>
+        )}
+        {isHttp && (
+          <>
+            <div className="flex items-end gap-2">
+              <div className="w-[100px]">
+                <FieldLabel seq={2} label={t('http.method')} />
+                <FieldSelect
+                  value={config.httpMethod}
+                  onChange={v => updateConfig(session.id, { httpMethod: v as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' })}
+                  options={[
+                    { value: 'GET', label: 'GET' },
+                    { value: 'POST', label: 'POST' },
+                    { value: 'PUT', label: 'PUT' },
+                    { value: 'DELETE', label: 'DELETE' },
+                    { value: 'PATCH', label: 'PATCH' },
+                    { value: 'HEAD', label: 'HEAD' },
+                    { value: 'OPTIONS', label: 'OPTIONS' },
+                  ]}
+                  disabled={isActive || isBusy}
+                />
+              </div>
+              <div className="flex-1">
+                <FieldLabel seq={3} label={t('http.url')} />
+                <FieldInput
+                  value={config.httpUrl}
+                  onChange={v => { updateConfig(session.id, { httpUrl: v }); validate('httpUrl', !!v && v.startsWith('http')); }}
+                  placeholder="https://api.example.com"
+                  disabled={isActive || isBusy}
+                  error={errors.httpUrl}
+                />
+              </div>
+            </div>
+            {errors.httpUrl && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('http.invalidUrl')}</span>}
           </>
         )}
         <button

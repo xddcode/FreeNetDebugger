@@ -23,6 +23,10 @@ function defaultConfig(): ConnectionConfig {
     wsUrl: 'ws://127.0.0.1:8080',
     serialPort: '', baudRate: 115200,
     dataBits: 8, stopBits: 1, parity: 'none',
+    httpUrl: 'https://httpbin.org/get',
+    httpMethod: 'GET',
+    httpHeaders: [],
+    httpBody: '',
   };
 }
 function defaultReceive(): ReceiveSettings {

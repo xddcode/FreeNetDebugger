@@ -149,6 +149,14 @@ const en = {
     noPorts:     'No ports found',
     selectPort:  'Please select a serial port',
   },
+  http: {
+    method:     'Method',
+    url:        'URL',
+    headers:    'Headers',
+    body:       'Body',
+    send:       'Send Request',
+    invalidUrl: 'URL must start with http:// or https://',
+  },
   validation: {
     invalidIp:     'Invalid IP address',
     invalidPort:   'Port must be 1-65535',

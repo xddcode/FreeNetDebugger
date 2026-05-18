@@ -4,7 +4,8 @@ export type ProtocolType =
   | 'UDP_CLIENT'
   | 'UDP_SERVER'
   | 'WEBSOCKET'
-  | 'SERIAL';
+  | 'SERIAL'
+  | 'HTTP';
 
 export type ConnectionStatus =
   | 'idle'
@@ -25,6 +26,14 @@ export interface QuickCommand {
   encoding: EncodingMode;
 }
 
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+
+export interface HttpHeader {
+  key: string;
+  value: string;
+  enabled: boolean;
+}
+
 export interface ConnectionConfig {
   protocol: ProtocolType;
   remoteHost: string;
@@ -37,6 +46,10 @@ export interface ConnectionConfig {
   dataBits: 5 | 6 | 7 | 8;
   stopBits: 1 | 2;
   parity: 'none' | 'odd' | 'even';
+  httpUrl: string;
+  httpMethod: HttpMethod;
+  httpHeaders: HttpHeader[];
+  httpBody: string;
 }
 
 export interface ReceiveSettings {

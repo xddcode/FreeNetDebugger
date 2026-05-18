@@ -144,6 +144,14 @@ const zhCN: Translations = {
     noPorts:     '未找到串口',
     selectPort:  '请选择串口',
   },
+  http: {
+    method:     '方法',
+    url:        '地址',
+    headers:    '请求头',
+    body:       '请求体',
+    send:       '发送请求',
+    invalidUrl: '地址必须以 http:// 或 https:// 开头',
+  },
   traffic: {
     title:      '流量分析',
     visualizer: '实时流量监控',
