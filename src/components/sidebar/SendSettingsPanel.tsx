@@ -32,8 +32,15 @@ export default function SendSettingsPanel({ session }: Props) {
           {sendSettings.autoChecksum && (
             <FieldSelect
               value={sendSettings.checksumType}
-              onChange={v => updateSend(session.id, { checksumType: v as 'CRC16' | 'LRC' | 'SUM8' })}
-              options={[{ value: 'CRC16', label: 'CRC16 Modbus' }, { value: 'LRC', label: 'LRC' }, { value: 'SUM8', label: 'Checksum-8' }]}
+              onChange={v => updateSend(session.id, { checksumType: v as 'CRC8' | 'CRC16' | 'CRC32' | 'LRC' | 'XOR' | 'SUM8' })}
+              options={[
+                { value: 'CRC8', label: 'CRC-8' },
+                { value: 'CRC16', label: 'CRC-16 Modbus' },
+                { value: 'CRC32', label: 'CRC-32' },
+                { value: 'LRC', label: 'LRC' },
+                { value: 'XOR', label: 'XOR' },
+                { value: 'SUM8', label: 'SUM-8' },
+              ]}
             />
           )}
           <div className="flex items-center gap-2 mt-1 p-1.5 rounded bg-[rgba(16,34,34,0.3)] border border-[var(--color-primary)]/[0.05]">

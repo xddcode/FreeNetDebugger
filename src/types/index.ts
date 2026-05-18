@@ -16,7 +16,7 @@ export type ConnectionStatus =
   | 'disconnecting';
 
 export type EncodingMode = 'AUTO' | 'ASCII' | 'HEX' | 'HEX_TEXT' | 'UTF8' | 'BASE64';
-export type ChecksumType = 'CRC16' | 'LRC' | 'SUM8';
+export type ChecksumType = 'CRC8' | 'CRC16' | 'CRC32' | 'LRC' | 'XOR' | 'SUM8';
 export type AsciiNonPrintableMode = 'DOT' | 'HEX';
 
 export interface QuickCommand {
