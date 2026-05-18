@@ -155,6 +155,7 @@ const en = {
     headers:    'Headers',
     body:       'Body',
     send:       'Send Request',
+    response:   'Response',
     invalidUrl: 'URL must start with http:// or https://',
   },
   validation: {

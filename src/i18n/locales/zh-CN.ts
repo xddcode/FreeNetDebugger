@@ -150,6 +150,7 @@ const zhCN: Translations = {
     headers:    '请求头',
     body:       '请求体',
     send:       '发送请求',
+    response:   '响应',
     invalidUrl: '地址必须以 http:// 或 https:// 开头',
   },
   traffic: {
