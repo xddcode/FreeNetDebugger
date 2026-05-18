@@ -11,18 +11,18 @@ function PanelCard({ children }: { children: React.ReactNode }) {
 
 function PanelHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 shrink-0"
-      style={{ background: 'linear-gradient(to right,rgba(19,236,236,0.1),transparent)', borderBottom: '1px solid rgba(19,236,236,0.2)' }}>
-      <span style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center' }}>{icon}</span>
-      <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }}>{label}</h3>
+    <div className="flex items-center gap-1.5 px-3 py-2 shrink-0 bg-[linear-gradient(to_right,rgba(45,212,191,0.1),transparent)] border-b border-[var(--color-primary)]/20"
+    >
+      <span className="text-[var(--color-primary)] flex items-center">{icon}</span>
+      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] font-[family-name:var(--font-display)]">{label}</h3>
     </div>
   );
 }
 
 function FieldLabel({ seq, label }: { seq?: number; label: string }) {
   return (
-    <label className="block mb-1 uppercase font-bold tracking-wider" style={{ color: '#94a3b8', fontSize: 10 }}>
-      {seq && <span style={{ color: '#475569' }}>({seq}) </span>}{label}
+    <label className="block mb-1 uppercase font-bold tracking-wider text-[var(--color-text-muted)] text-[10px]">
+      {seq && <span className="text-[var(--color-text-muted)]">({seq}) </span>}{label}
     </label>
   );
 }
@@ -46,18 +46,18 @@ function CheckRow({ checked, onChange, label, accent }: { checked: boolean; onCh
   return (
     <label className="flex items-center gap-2 cursor-pointer select-none">
       <input type="checkbox" className={`custom-check ${accent ? 'accent' : ''}`} checked={checked} onChange={e => onChange(e.target.checked)} />
-      <span className="text-xs transition-colors" style={{ color: '#cbd5e1', fontSize: 11 }}>{label}</span>
+      <span className="text-xs transition-colors text-[var(--color-text-secondary)] text-[11px]">{label}</span>
     </label>
   );
 }
 
 function RadioGroup({ options, value, onChange, accent }: { options: string[]; value: string; onChange: (v: string) => void; accent?: boolean }) {
   return (
-    <div className="flex items-center gap-4 p-1.5 rounded" style={{ background: 'rgba(16,34,34,0.5)', border: '1px solid rgba(19,236,236,0.1)' }}>
+    <div className="flex items-center gap-4 p-1.5 rounded bg-[rgba(16,34,34,0.5)] border border-[var(--color-primary)]/10">
       {options.map(opt => (
         <label key={opt} className="flex items-center gap-1.5 cursor-pointer select-none">
           <input type="radio" className={`custom-radio ${accent ? 'accent' : ''}`} checked={value === opt} onChange={() => onChange(opt)} />
-          <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#cbd5e1' }}>{opt}</span>
+          <span className="text-[11px] font-[family-name:var(--font-mono)] text-[var(--color-text-secondary)]">{opt}</span>
         </label>
       ))}
     </div>
@@ -242,10 +242,9 @@ export default function ConnectionPanel({ session }: Props) {
   const showWs     = config.protocol === 'WEBSOCKET';
   const isSrv      = config.protocol === 'TCP_SERVER';
 
-  const btnColor = isActive ? 'rgba(248,113,113,0.8)' : 'var(--color-primary)';
-  const btnBg    = isActive
-    ? 'linear-gradient(to bottom,rgba(248,113,113,0.15),rgba(248,113,113,0.05))'
-    : 'linear-gradient(to bottom,rgba(19,236,236,0.2),rgba(19,236,236,0.05))';
+  const btnClass = isActive
+    ? 'bg-[linear-gradient(to_bottom,rgba(248,113,113,0.15),rgba(248,113,113,0.05))] border border-[rgba(248,113,113,0.25)] text-[rgba(248,113,113,0.8)] shadow-[0_0_6px_rgba(248,113,113,0.06)]'
+    : 'bg-[linear-gradient(to_bottom,rgba(45,212,191,0.2),rgba(45,212,191,0.05))] border border-[rgba(45,212,191,0.25)] text-[var(--color-primary)] shadow-[0_0_6px_rgba(45,212,191,0.06)]';
 
   const linkClass = 'text-[10px] bg-transparent border-0 p-0 btn-interactive hover:opacity-90 focus-ring';
 
@@ -309,10 +308,9 @@ export default function ConnectionPanel({ session }: Props) {
           <button
             onClick={handleConnect}
             disabled={isBusy}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded font-bold uppercase tracking-wider btn-interactive focus-ring disabled:opacity-70 disabled:cursor-wait"
-            style={{ fontSize: 11, fontFamily: 'var(--font-display)', background: btnBg, border: `1px solid ${btnColor.replace('0.8', '0.25')}`, color: btnColor, boxShadow: `0 0 6px ${btnColor.replace('0.8', '0.06')}` }}
+            className={`w-full flex items-center justify-center gap-2 py-2 rounded font-bold uppercase tracking-wider btn-interactive focus-ring disabled:opacity-70 disabled:cursor-wait text-[11px] font-[family-name:var(--font-display)] ${btnClass}`}
           >
-            <span className="inline-block rounded-full" style={{ width: 7, height: 7, background: isActive ? 'rgba(248,113,113,0.8)' : '#334155', boxShadow: isActive ? '0 0 5px rgba(248,113,113,0.8)' : 'none' }} />
+            <span className={`inline-block rounded-full w-[7px] h-[7px] ${isActive ? 'bg-[rgba(248,113,113,0.8)] shadow-[0_0_5px_rgba(248,113,113,0.8)]' : 'bg-[#334155]'}`} />
             {isActive ? t('network.disconnect') : isBusy ? t('network.connecting') : t('network.connect')}
           </button>
         </div>
@@ -340,9 +338,9 @@ export default function ConnectionPanel({ session }: Props) {
             <CheckRow checked={receiveSettings.saveToFile}     onChange={handleSaveToFile}                                      label={t('receive.saveToFile')} />
             <CheckRow checked={receiveSettings.pauseReceiving} onChange={v => updateReceive(session.id, { pauseReceiving: v })} label={t('receive.pauseReceiving')} />
           </div>
-          <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid rgba(19,236,236,0.1)' }}>
-            <button className={linkClass} style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }} onClick={exportLog}>{t('receive.exportLog')}</button>
-            <button className={linkClass} style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }} onClick={() => clearLogs(session.id)}>{t('receive.clearRx')}</button>
+          <div className="flex items-center justify-between pt-2 border-t border-[var(--color-primary)]/10">
+            <button className={`${linkClass} text-[var(--color-primary)] font-[family-name:var(--font-display)]`} onClick={exportLog}>{t('receive.exportLog')}</button>
+            <button className={`${linkClass} text-[var(--color-primary)] font-[family-name:var(--font-display)]`} onClick={() => clearLogs(session.id)}>{t('receive.clearRx')}</button>
           </div>
         </div>
       </PanelCard>
@@ -365,11 +363,11 @@ export default function ConnectionPanel({ session }: Props) {
                 options={[{ value: 'CRC16', label: 'CRC16 Modbus' }, { value: 'LRC', label: 'LRC' }, { value: 'SUM8', label: 'Checksum-8' }]}
               />
             )}
-            <div className="flex items-center gap-2 mt-1 p-1.5 rounded" style={{ background: 'rgba(16,34,34,0.3)', border: '1px solid rgba(19,236,236,0.05)' }}>
+            <div className="flex items-center gap-2 mt-1 p-1.5 rounded bg-[rgba(16,34,34,0.3)] border border-[var(--color-primary)]/[0.05]">
               <input type="checkbox" className="custom-check accent" checked={sendSettings.periodicEnabled} onChange={e => updateSend(session.id, { periodicEnabled: e.target.checked })} />
-              <span style={{ fontSize: 11, color: '#cbd5e1' }}>{t('sendSettings.periodic')}</span>
-              <input type="text" value={sendSettings.periodicInterval} onChange={e => updateSend(session.id, { periodicInterval: Number(e.target.value) })} className="field-control text-center" style={{ width: 52, padding: '2px 4px', height: 24, fontSize: 10 }} />
-              <span style={{ fontSize: 10, color: '#64748b', fontFamily: 'var(--font-mono)' }}>ms</span>
+              <span className="text-[11px] text-[var(--color-text-secondary)]">{t('sendSettings.periodic')}</span>
+              <input type="text" value={sendSettings.periodicInterval} onChange={e => updateSend(session.id, { periodicInterval: Number(e.target.value) })} className="field-control text-center w-[52px] px-1 py-0.5 h-6 text-[10px]" />
+              <span className="text-[10px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">ms</span>
             </div>
           </div>
 

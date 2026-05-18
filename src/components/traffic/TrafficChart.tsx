@@ -97,28 +97,15 @@ export default function TrafficChart({ samples }: Props) {
 
   return (
     <div
-      className="flex flex-col gap-2 p-3"
-      style={{ background: 'rgba(16,34,34,0.6)' }}
+      className="flex flex-col gap-2 p-3 bg-[rgba(16,34,34,0.6)]"
     >
       {/* SVG chart */}
       <div
-        className="relative rounded overflow-hidden"
-        style={{
-          border: '1px solid rgba(19,236,236,0.15)',
-          background: 'rgba(10,20,20,0.8)',
-          boxShadow: 'inset 0 0 12px rgba(0,0,0,0.6)',
-        }}
+        className="relative rounded overflow-hidden border border-[var(--color-primary)]/15 bg-[rgba(10,20,20,0.8)] shadow-[inset_0_0_12px_rgba(0,0,0,0.6)]"
       >
         {/* Watermark label */}
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-          style={{
-            fontSize: 10,
-            fontFamily: 'var(--font-mono)',
-            letterSpacing: '0.2em',
-            color: 'rgba(19,236,236,0.08)',
-            fontWeight: 700,
-          }}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none text-[10px] font-[family-name:var(--font-mono)] tracking-[0.2em] text-[var(--color-primary)]/[0.08] font-bold"
         >
           {t('traffic.visualizer')}
         </div>
@@ -128,7 +115,7 @@ export default function TrafficChart({ samples }: Props) {
           width="100%" height={H}
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
-          style={{ display: 'block' }}
+          className="block"
         >
           {/* Horizontal grid */}
           {[0.25, 0.5, 0.75].map(f => (
@@ -172,52 +159,40 @@ export default function TrafficChart({ samples }: Props) {
       <div className="grid grid-cols-2 gap-2">
         {/* RX stat */}
         <div
-          className="flex flex-col gap-0.5 p-2 rounded"
-          style={{
-            background: 'rgba(0,255,0,0.05)',
-            border: '1px solid rgba(0,255,0,0.15)',
-          }}
+          className="flex flex-col gap-0.5 p-2 rounded bg-[rgba(0,255,0,0.05)] border border-[rgba(0,255,0,0.15)]"
         >
           <div
-            className="flex items-center gap-1 uppercase"
-            style={{ fontSize: 9, letterSpacing: '0.12em', color: 'rgba(0,255,0,0.6)', fontFamily: 'var(--font-mono)' }}
+            className="flex items-center gap-1 uppercase text-[9px] tracking-[0.12em] text-[rgba(0,255,0,0.6)] font-[family-name:var(--font-mono)]"
           >
             <span
-              className="inline-block rounded-full"
-              style={{ width: 5, height: 5, background: '#00ff00', boxShadow: '0 0 4px #00ff00' }}
+              className="inline-block rounded-full w-[5px] h-[5px] bg-[#00ff00] shadow-[0_0_4px_#00ff00]"
             />
             {t('traffic.totalIn')}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#00ff00', fontFamily: 'var(--font-mono)' }}>
+          <div className="text-[15px] font-bold text-[#00ff00] font-[family-name:var(--font-mono)]">
             {formatTotal(rxTotal)}
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(0,255,0,0.5)', fontFamily: 'var(--font-mono)' }}>
+          <div className="text-[10px] text-[rgba(0,255,0,0.5)] font-[family-name:var(--font-mono)]">
             ↓ {formatRate(rxRate)} ({t('traffic.peak')} {formatRate(rxPeak)})
           </div>
         </div>
 
         {/* TX stat */}
         <div
-          className="flex flex-col gap-0.5 p-2 rounded"
-          style={{
-            background: 'rgba(255,0,255,0.05)',
-            border: '1px solid rgba(255,0,255,0.15)',
-          }}
+          className="flex flex-col gap-0.5 p-2 rounded bg-[rgba(255,0,255,0.05)] border border-[rgba(255,0,255,0.15)]"
         >
           <div
-            className="flex items-center gap-1 uppercase"
-            style={{ fontSize: 9, letterSpacing: '0.12em', color: 'rgba(255,0,255,0.6)', fontFamily: 'var(--font-mono)' }}
+            className="flex items-center gap-1 uppercase text-[9px] tracking-[0.12em] text-[rgba(255,0,255,0.6)] font-[family-name:var(--font-mono)]"
           >
             <span
-              className="inline-block rounded-full"
-              style={{ width: 5, height: 5, background: '#ff00ff', boxShadow: '0 0 4px #ff00ff' }}
+              className="inline-block rounded-full w-[5px] h-[5px] bg-[#ff00ff] shadow-[0_0_4px_#ff00ff]"
             />
             {t('traffic.totalOut')}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#ff00ff', fontFamily: 'var(--font-mono)' }}>
+          <div className="text-[15px] font-bold text-[#ff00ff] font-[family-name:var(--font-mono)]">
             {formatTotal(txTotal)}
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(255,0,255,0.5)', fontFamily: 'var(--font-mono)' }}>
+          <div className="text-[10px] text-[rgba(255,0,255,0.5)] font-[family-name:var(--font-mono)]">
             ↑ {formatRate(txRate)} ({t('traffic.peak')} {formatRate(txPeak)})
           </div>
         </div>

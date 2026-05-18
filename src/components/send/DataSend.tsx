@@ -145,19 +145,21 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
     e.target.value = '';
   };
 
+  const sendBtnClass = canSend
+    ? 'bg-[linear-gradient(135deg,rgba(45,212,191,0.2),rgba(45,212,191,0.05))] border border-[var(--color-primary)]/50 shadow-[0_0_15px_rgba(45,212,191,0.1)] text-[var(--color-primary)] cursor-pointer'
+    : 'bg-[var(--color-surface)]/50 border border-[var(--color-border)] text-[var(--color-text-muted)] cursor-not-allowed';
+
   return (
-    <div style={{ background: 'rgba(22,46,46,0.8)' }}>
+    <div className="bg-[var(--color-surface)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5"
-        style={{ background: 'linear-gradient(to right,rgba(19,236,236,0.1),transparent)', borderBottom: '1px solid rgba(19,236,236,0.2)' }}>
-        <div className="flex items-center gap-2" style={{ borderLeft: '2px solid var(--color-primary)', paddingLeft: 8 }}>
-          <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#e2e8f0', fontFamily: 'var(--font-display)' }}>{t('send.title')}</h3>
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[linear-gradient(to_right,rgba(45,212,191,0.1),transparent)] border-b border-[var(--color-border)]">
+        <div className="flex items-center gap-2 border-l-2 border-[var(--color-primary)] pl-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)]">{t('send.title')}</h3>
         </div>
         <div className="flex items-center gap-3">
           <button
             data-send-center-trigger="true"
-            className="px-2 py-0.5 rounded text-xs btn-interactive hover:bg-white/5 focus-ring"
-            style={{ color: 'var(--color-accent)', border: '1px solid rgba(255,0,255,0.2)' }}
+            className="px-2 py-0.5 rounded text-xs btn-interactive hover:bg-white/5 focus-ring text-[var(--color-secondary)] border border-[var(--color-secondary)]/20"
             onClick={() => onOpenSendCenter?.('shortcuts')}
             title={t('sendSettings.quickShortcuts')}
           >
@@ -165,8 +167,7 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
           </button>
           <button
             data-send-center-trigger="true"
-            className="px-2 py-0.5 rounded text-xs btn-interactive hover:bg-white/5 focus-ring"
-            style={{ color: 'var(--color-primary)', border: '1px solid rgba(19,236,236,0.2)' }}
+            className="px-2 py-0.5 rounded text-xs btn-interactive hover:bg-white/5 focus-ring text-[var(--color-primary)] border border-[var(--color-primary)]/20"
             onClick={() => onOpenSendCenter?.('history')}
             title={t('sendSettings.sendHistory')}
           >
@@ -174,8 +175,7 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
           </button>
           {/* Open File */}
           <button
-            className="flex items-center gap-1 text-xs btn-interactive hover-text-primary focus-ring"
-            style={{ color: '#64748b' }}
+            className="flex items-center gap-1 text-xs btn-interactive hover-text-primary focus-ring text-[var(--color-text-muted)]"
             onClick={() => fileInputRef.current?.click()}
             title={t('send.openFile')}
           >
@@ -183,31 +183,27 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
             </svg>
-            <span style={{ fontSize: 10 }}>{t('send.openFile')}</span>
+            <span className="text-[10px]">{t('send.openFile')}</span>
           </button>
-          <input ref={fileInputRef} type="file" style={{ display: 'none' }} onChange={handleFileOpen} />
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileOpen} />
 
           {/* Clear */}
           <button
-            className="flex items-center gap-1 text-xs btn-interactive hover-text-primary focus-ring"
-            style={{ color: '#64748b' }}
+            className="flex items-center gap-1 text-xs btn-interactive hover-text-primary focus-ring text-[var(--color-text-muted)]"
             onClick={() => updateSendContent(session.id, '')}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
               <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
             </svg>
-            <span style={{ fontSize: 10 }}>{t('send.clear')}</span>
+            <span className="text-[10px]">{t('send.clear')}</span>
           </button>
         </div>
       </div>
 
       {/* Input row */}
-      <div className="flex gap-2 p-2" style={{ background: 'rgba(16,34,34,0.8)' }}>
-        <div className="flex-1 rounded transition-all"
-          style={{ border: '1px solid rgba(19,236,236,0.3)', boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.5)', background: 'var(--color-bg-dark)' }}
-          onFocusCapture={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)'; }}
-          onBlurCapture={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(19,236,236,0.3)'; }}
+      <div className="flex gap-2 p-2 bg-[var(--color-bg)]">
+        <div className="flex-1 rounded transition-all border border-[var(--color-border)] shadow-[inset_0_2px_5px_rgba(0,0,0,0.5)] bg-[var(--color-bg)] focus-within:border-[var(--color-primary)]"
         >
           <textarea
             value={text ?? ''}
@@ -215,7 +211,7 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
             onKeyDown={handleKeyDown}
             placeholder={sendSettings.encoding === 'HEX' ? t('send.hexPlaceholder') : t('send.asciiPlaceholder')}
             spellCheck={false}
-            style={{ width: '100%', height: 76, background: 'transparent', border: 'none', padding: '8px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-primary)', resize: 'none', outline: 'none' }}
+            className="w-full h-[76px] bg-transparent border-0 p-2 font-[family-name:var(--font-mono)] text-xs text-[var(--color-primary)] resize-none outline-none"
           />
         </div>
 
@@ -223,21 +219,13 @@ export default function DataSend({ session, onOpenSendCenter }: Props) {
         <button
           onClick={() => doSend()}
           disabled={!canSend}
-          className="w-24 shrink-0 flex flex-col items-center justify-center gap-1 rounded btn-interactive focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            background: canSend ? 'linear-gradient(135deg,rgba(19,236,236,0.2),rgba(19,236,236,0.05))' : 'rgba(22,46,46,0.5)',
-            border: `1px solid ${canSend ? 'rgba(19,236,236,0.5)' : 'rgba(19,236,236,0.1)'}`,
-            boxShadow: canSend ? '0 0 15px rgba(19,236,236,0.1)' : 'none',
-            color: canSend ? 'var(--color-primary)' : '#1e3a3a',
-            cursor: canSend ? 'pointer' : 'not-allowed',
-            fontFamily: 'var(--font-display)',
-          }}
+          className={`w-24 shrink-0 flex flex-col items-center justify-center gap-1 rounded btn-interactive focus-ring disabled:opacity-50 font-[family-name:var(--font-body)] ${sendBtnClass}`}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em' }}>{t('send.sendBtn')}</span>
+          <span className="text-[11px] font-bold tracking-[0.15em]">{t('send.sendBtn')}</span>
         </button>
       </div>
     </div>

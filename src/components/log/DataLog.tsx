@@ -40,11 +40,11 @@ const LogRow = memo(function LogRow({
   const encLabel = encoding;
   const dirLabel = isSys ? `# ${dirSystem}` : isRecv ? `# ${dirRecv} ${encLabel}>` : `# ${dirSend} ${encLabel}>`;
 
-  const dataColor = isSys
-    ? '#94a3b8'
+  const dataColorClass = isSys
+    ? 'text-[var(--color-text-muted)]'
     : isRecv
-    ? 'var(--color-success)'
-    : 'var(--color-accent)';
+    ? 'text-[var(--color-success)]'
+    : 'text-[var(--color-accent)]';
 
   const suffix = isRecv && autoNewline ? '\n' : '';
   const text = renderData(entry, encoding, asciiMode) + suffix;
@@ -53,24 +53,19 @@ const LogRow = memo(function LogRow({
   const plainText = dual ? `${dual.text}${suffix}` : null;
 
   if (!showAsLog) {
-    const dataColor = isSys
-      ? '#94a3b8'
-      : isRecv
-      ? 'var(--color-success)'
-      : 'var(--color-accent)';
     return (
-      <div className="px-3 py-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+      <div className="px-3 py-0.5 font-[family-name:var(--font-mono)]">
         {dual ? (
           <>
-            <div style={{ color: dataColor, fontSize: 12, fontWeight: 600, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+            <div className={`text-xs font-semibold break-all whitespace-pre-wrap ${dataColorClass}`}>
               {hexText}
             </div>
-            <div style={{ color: '#a8b3c7', fontSize: 11, marginTop: 1, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+            <div className="text-[11px] mt-px text-[var(--color-text-secondary)] break-all whitespace-pre-wrap">
               {plainText}
             </div>
           </>
         ) : (
-          <div style={{ color: dataColor, fontSize: 12, fontWeight: 600, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+          <div className={`text-xs font-semibold break-all whitespace-pre-wrap ${dataColorClass}`}>
             {text}
           </div>
         )}
@@ -79,23 +74,23 @@ const LogRow = memo(function LogRow({
   }
 
   return (
-    <div className="px-3 py-1" style={{ fontFamily: 'var(--font-mono)' }}>
-      <div style={{ color: '#475569', fontSize: 11 }}>
+    <div className="px-3 py-1 font-[family-name:var(--font-mono)]">
+      <div className="text-[11px] text-[var(--color-text-muted)]">
         [{formatTimestamp(entry.timestamp)}]
         {entry.source && ` [${entry.source}]`}
         {' '}{dirLabel}
       </div>
       {dual ? (
         <>
-          <div style={{ color: dataColor, fontSize: 12, fontWeight: 600, marginTop: 2, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+          <div className={`text-xs font-semibold mt-0.5 break-all whitespace-pre-wrap ${dataColorClass}`}>
             {hexText}
           </div>
-          <div style={{ color: '#a8b3c7', fontSize: 11, marginTop: 2, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+          <div className="text-[11px] mt-0.5 text-[var(--color-text-secondary)] break-all whitespace-pre-wrap">
             {plainText}
           </div>
         </>
       ) : (
-        <div style={{ color: dataColor, fontSize: 12, fontWeight: 600, marginTop: 2, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
+        <div className={`text-xs font-semibold mt-0.5 break-all whitespace-pre-wrap ${dataColorClass}`}>
           {text}
         </div>
       )}
@@ -169,26 +164,30 @@ export default function DataLog({ session }: Props) {
   }, []);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'rgba(16,34,34,0.8)', userSelect: 'text', WebkitUserSelect: 'text' }}>
-      <div className="flex items-center justify-between px-3 py-1.5 shrink-0"
-        style={{ background: 'linear-gradient(to right,rgba(19,236,236,0.1),transparent)', borderBottom: '1px solid rgba(19,236,236,0.2)' }}>
-        <div className="flex items-center gap-2" style={{ borderLeft: '2px solid var(--color-primary)', paddingLeft: 8 }}>
-          <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#e2e8f0', fontFamily: 'var(--font-display)' }}>
+    <div className="flex flex-col h-full bg-[rgba(16,34,34,0.8)] select-text"
+    >
+      <div className="flex items-center justify-between px-3 py-1.5 shrink-0 bg-[linear-gradient(to_right,rgba(45,212,191,0.1),transparent)] border-b border-[var(--color-primary)]/20"
+      >
+        <div className="flex items-center gap-2 border-l-2 border-[var(--color-primary)] pl-2"
+        >
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] font-[family-name:var(--font-display)]">
             {t('log.title')}
           </h3>
           {session.logs.length > 0 && (
-            <span style={{ fontSize: 10, color: '#1e3a3a', fontFamily: 'var(--font-mono)' }}>
+            <span className="text-[10px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]"
+            >
               {session.logs.length.toLocaleString()}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'rgba(255,0,255,0.7)', fontWeight: 700 }}>
+        <div className="flex items-center gap-3"
+        >
+          <span className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--color-secondary)]/70 font-bold"
+          >
             {APP_DISPLAY}
           </span>
           <button
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase btn-interactive hover:bg-white/10 focus-ring"
-            style={{ background: 'rgba(19,236,236,0.1)', border: '1px solid rgba(19,236,236,0.2)', color: 'var(--color-primary)', fontSize: 10 }}
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase btn-interactive hover:bg-white/10 focus-ring bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] text-[10px]"
             onClick={() => clearLogs(session.id)}
           >
             {t('log.clear')}
@@ -196,9 +195,10 @@ export default function DataLog({ session }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 px-3 py-1.5 shrink-0"
-        style={{ background: 'rgba(16,34,34,0.5)', borderBottom: '1px solid rgba(19,236,236,0.1)' }}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(100,116,139,0.8)" strokeWidth="2" style={{ flexShrink: 0 }}>
+      <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 bg-[rgba(16,34,34,0.5)] border-b border-[var(--color-primary)]/10"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(100,116,139,0.8)" strokeWidth="2" className="shrink-0"
+        >
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
         <input
@@ -209,32 +209,25 @@ export default function DataLog({ session }: Props) {
           className="field-control flex-1 min-w-0"
         />
         {logFilter && (
-          <button onClick={() => setLogFilter('')} className="btn-interactive hover-text-primary focus-ring px-1" style={{ color: '#64748b', fontSize: 14, lineHeight: 1 }} aria-label={t('log.clear')}>×</button>
+          <button onClick={() => setLogFilter('')} className="btn-interactive hover-text-primary focus-ring px-1 text-[var(--color-text-muted)] text-sm leading-none" aria-label={t('log.clear')}>×</button>
         )}
       </div>
 
       <div
         ref={parentRef}
-        className="flex-1 overflow-y-auto relative"
+        className="flex-1 overflow-y-auto relative bg-[rgba(16,34,34,0.95)] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] select-text"
         onScroll={handleScroll}
-        style={{ background: 'rgba(16,34,34,0.95)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)', userSelect: 'text', WebkitUserSelect: 'text' }}
       >
         <div className="crt-scanlines" />
 
         {filteredLogs.length === 0 ? (
           <div
-            className="flex flex-col items-center justify-center gap-3 h-full relative z-20"
-            style={{
-              color: 'rgba(100,116,139,0.9)',
-              fontSize: 13,
-              fontFamily: 'var(--font-mono)',
-              background: 'rgba(16,34,34,0.32)',
-            }}
+            className="flex flex-col items-center justify-center gap-3 h-full relative z-20 text-[var(--color-text-muted)]/90 text-[13px] font-[family-name:var(--font-mono)] bg-[rgba(16,34,34,0.32)]"
           >
             {session.status === 'idle' || session.status === 'error' ? (
-              <Plug size={48} strokeWidth={1.2} style={{ opacity: 0.5 }} />
+              <Plug size={48} strokeWidth={1.2} className="opacity-50" />
             ) : (
-              <Clock size={48} strokeWidth={1.2} style={{ opacity: 0.5 }} />
+              <Clock size={48} strokeWidth={1.2} className="opacity-50" />
             )}
             <span>
               {session.status === 'idle' || session.status === 'error'
@@ -243,13 +236,14 @@ export default function DataLog({ session }: Props) {
             </span>
           </div>
         ) : (
-          <div style={{ height: virtualizer.getTotalSize(), position: 'relative', zIndex: 20 }}>
+          <div className="relative z-20" style={{ height: virtualizer.getTotalSize() }}>
             {virtualizer.getVirtualItems().map(vItem => (
               <div
                 key={vItem.key}
                 data-index={vItem.index}
                 ref={virtualizer.measureElement}
-                style={{ position: 'absolute', top: vItem.start, left: 0, right: 0 }}
+                className="absolute inset-x-0"
+                style={{ top: vItem.start }}
               >
                 <LogRow
                   entry={filteredLogs[vItem.index]}
@@ -267,8 +261,8 @@ export default function DataLog({ session }: Props) {
         )}
 
         {(session.status === 'connected' || session.status === 'listening') && (
-          <div className="relative z-20 px-3 pb-2"
-            style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', fontWeight: 700 }}>
+          <div className="relative z-20 px-3 pb-2 font-[family-name:var(--font-mono)] text-[var(--color-primary)] font-bold"
+          >
             <span className="blink">_</span>
           </div>
         )}

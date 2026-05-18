@@ -121,40 +121,24 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
 
   return (
     <div
-      className="h-full flex flex-col"
-      style={{
-        width: 340,
-        background: 'rgba(16,34,34,0.95)',
-        borderLeft: '1px solid rgba(19,236,236,0.2)',
-        transform: open ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.2s ease',
-      }}
+      className={`h-full flex flex-col w-[340px] bg-[rgba(16,34,34,0.95)] border-l border-[var(--color-primary)]/20 transition-transform duration-200 ease-out ${open ? 'translate-x-0' : 'translate-x-full'}`}
     >
-      <div className="px-3 py-2 flex items-center justify-between shrink-0"
-        style={{ borderBottom: '1px solid rgba(19,236,236,0.2)', background: 'linear-gradient(to right,rgba(255,0,255,0.08),transparent)' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }}>
+      <div className="px-3 py-2 flex items-center justify-between shrink-0 border-b border-[var(--color-primary)]/20 bg-[linear-gradient(to_right,rgba(255,0,255,0.08),transparent)]">
+        <div className="text-xs font-bold text-[var(--color-primary)] font-[family-name:var(--font-display)]">
           {t('sendCenter.title')}
         </div>
-        <button onClick={onClose} className="btn-interactive hover-text-primary focus-ring p-1 -m-1" style={{ color: '#64748b', fontSize: 15 }} aria-label={t('header.close')}>×</button>
+        <button onClick={onClose} className="btn-interactive hover-text-primary focus-ring p-1 -m-1 text-[var(--color-text-muted)] text-[15px]" aria-label={t('header.close')}>×</button>
       </div>
 
-      <div className="p-2 shrink-0" style={{ borderBottom: '1px solid rgba(19,236,236,0.1)' }}>
-        <div className="flex items-center gap-1 rounded p-1" style={{ background: 'rgba(15,23,42,0.45)', border: '1px solid rgba(19,236,236,0.15)' }}>
+      <div className="p-2 shrink-0 border-b border-[var(--color-primary)]/10">
+        <div className="flex items-center gap-1 rounded p-1 bg-[rgba(15,23,42,0.45)] border border-[var(--color-primary)]/15">
           {(['history', 'shortcuts', 'scripts'] as SendCenterTabKey[]).map(k => {
             const active = activeTab === k;
             return (
               <button
                 key={k}
                 onClick={() => onTabChange(k)}
-                className="flex-1 rounded py-1 btn-interactive focus-ring"
-                style={{
-                  fontSize: 11,
-                  color: active ? 'var(--color-primary)' : '#64748b',
-                  background: active ? 'rgba(19,236,236,0.12)' : 'transparent',
-                  border: active ? '1px solid rgba(19,236,236,0.35)' : '1px solid transparent',
-                  fontFamily: 'var(--font-display)',
-                  cursor: 'pointer',
-                }}
+                className={`flex-1 rounded py-1 btn-interactive focus-ring text-[11px] font-[family-name:var(--font-display)] cursor-pointer ${active ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/12 border border-[var(--color-primary)]/35' : 'text-[var(--color-text-muted)] bg-transparent border border-transparent'}`}
               >
                 {t(`sendCenter.tabs.${k}`)}
               </button>
@@ -165,8 +149,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder={t('sendCenter.searchPlaceholder')}
-          className="field-control w-full mt-2"
-          style={{ height: 30, fontSize: 11 }}
+          className="field-control w-full mt-2 h-[30px] text-[11px]"
         />
       </div>
 
@@ -174,19 +157,18 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
         {activeTab === 'history' && (
           <>
             <div className="flex items-center justify-between mb-2">
-              <span style={{ fontSize: 10, color: '#64748b' }}>{t('sendCenter.historyCount', { count: historyList.length })}</span>
+              <span className="text-[10px] text-[var(--color-text-muted)]">{t('sendCenter.historyCount', { count: historyList.length })}</span>
               {!!session?.sendHistory.length && (
                 <button
                   onClick={() => session && clearSendHistory(session.id)}
-                  className="btn-interactive hover-text-primary focus-ring"
-                  style={{ fontSize: 10, color: '#94a3b8' }}
+                  className="btn-interactive hover-text-primary focus-ring text-[10px] text-[var(--color-text-muted)]"
                 >
                   {t('sendCenter.clearAll')}
                 </button>
               )}
             </div>
             {historyList.length === 0 ? (
-              <div style={{ color: '#475569', fontSize: 11, textAlign: 'center', paddingTop: 16 }}>{t('sendCenter.emptyHistory')}</div>
+              <div className="text-[var(--color-text-muted)] text-[11px] text-center pt-4">{t('sendCenter.emptyHistory')}</div>
             ) : (
               <div className="flex flex-col gap-1.5">
                 {historyList.map((item, idx) => {
@@ -195,33 +177,20 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                   return (
                     <div
                       key={`${idx}-${item}`}
-                      className={`rounded p-2 group relative transition-all duration-200 ease-out ${expanded ? 'pb-9' : ''}`}
+                      className={`rounded p-2 group relative transition-all duration-200 ease-out bg-[rgba(16,34,34,0.7)] border border-[var(--color-primary)]/10 ${expanded ? 'pb-9' : ''}`}
                       data-expand-item="true"
                       onClick={() => setExpandedHistoryItem(prev => (prev === item ? null : item))}
                       onDoubleClick={() => appendText(item)}
-                      style={{ background: 'rgba(16,34,34,0.7)', border: '1px solid rgba(19,236,236,0.1)' }}
                     >
                       <div
-                        className={`transition-[max-height,padding-right] duration-200 ease-out ${expanded ? '' : 'group-hover:pr-52 group-focus-within:pr-52'}`}
-                        style={{
-                          fontSize: 11,
-                          color: '#cbd5e1',
-                          fontFamily: 'var(--font-mono)',
-                          whiteSpace: expanded ? 'pre-wrap' : 'nowrap',
-                          wordBreak: expanded ? 'break-all' : 'normal',
-                          overflow: 'hidden',
-                          textOverflow: expanded ? 'clip' : 'ellipsis',
-                          lineHeight: '20px',
-                          maxHeight: expanded ? 9999 : 20,
-                        }}
+                        className={`transition-[max-height,padding-right] duration-200 ease-out text-[11px] text-[var(--color-text-secondary)] font-[family-name:var(--font-mono)] leading-5 overflow-hidden ${expanded ? 'whitespace-pre-wrap break-all max-h-[9999px] text-clip' : 'whitespace-nowrap break-normal max-h-5 text-ellipsis group-hover:pr-52 group-focus-within:pr-52'}`}
                       >
                         {item}
                       </div>
                       <div
-                        className={`absolute right-2 flex items-center gap-1 px-1.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all ${
+                        className={`absolute right-2 flex items-center gap-1 px-1.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all bg-[rgba(31,41,55,0.92)] border border-[var(--color-text-muted)]/18 backdrop-blur-[2px] ${
                           expanded ? 'bottom-2' : 'top-1/2 -translate-y-1/2'
                         }`}
-                        style={{ background: 'rgba(31,41,55,0.92)', border: '1px solid rgba(148,163,184,0.18)', backdropFilter: 'blur(2px)' }}
                       >
                         <button
                           onClick={e => {
@@ -230,8 +199,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                           }}
                           title={t('sendCenter.fill')}
                           aria-label={t('sendCenter.fill')}
-                          className="btn-interactive hover:opacity-80 focus-ring"
-                          style={{ color: 'var(--color-primary)', fontSize: 10, fontWeight: 600 }}
+                          className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-primary)] text-[10px] font-semibold"
                         >
                           {t('sendCenter.fill')}
                         </button>
@@ -242,8 +210,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                           }}
                           title={t('sendCenter.sendNow')}
                           aria-label={t('sendCenter.sendNow')}
-                          className="btn-interactive hover:opacity-80 focus-ring"
-                          style={{ color: 'var(--color-accent)', fontSize: 10, fontWeight: 600 }}
+                          className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-secondary)] text-[10px] font-semibold"
                         >
                           {t('sendCenter.sendNow')}
                         </button>
@@ -254,8 +221,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                           }}
                           title={starred ? t('sendCenter.unstar') : t('sendCenter.star')}
                           aria-label={starred ? t('sendCenter.unstar') : t('sendCenter.star')}
-                          className="btn-interactive hover:opacity-80 focus-ring"
-                          style={{ color: starred ? '#fbbf24' : '#94a3b8', fontSize: 10, fontWeight: 600 }}
+                          className={`btn-interactive hover:opacity-80 focus-ring text-[10px] font-semibold ${starred ? 'text-amber-400' : 'text-[var(--color-text-muted)]'}`}
                         >
                           {starred ? t('sendCenter.unstar') : t('sendCenter.star')}
                         </button>
@@ -267,8 +233,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                             }}
                             title={t('sendCenter.delete')}
                             aria-label={t('sendCenter.delete')}
-                            className="btn-interactive hover:opacity-80 focus-ring"
-                            style={{ color: '#94a3b8', fontSize: 10, fontWeight: 600 }}
+                            className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-text-muted)] text-[10px] font-semibold"
                           >
                             {t('sendCenter.delete')}
                           </button>
@@ -288,8 +253,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
               {!addingShortcut && (
                 <button
                   onClick={startAddShortcut}
-                  className="btn-interactive hover:opacity-90 focus-ring"
-                  style={{ fontSize: 10, color: 'var(--color-accent)' }}
+                  className="btn-interactive hover:opacity-90 focus-ring text-[10px] text-[var(--color-secondary)]"
                 >
                   + {t('shortcuts.add')}
                 </button>
@@ -298,79 +262,61 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
 
             {addingShortcut && (
               <div
-                className="rounded p-2 mb-2"
-                style={{ background: 'rgba(16,34,34,0.7)', border: '1px solid rgba(255,0,255,0.2)' }}
+                className="rounded p-2 mb-2 bg-[rgba(16,34,34,0.7)] border border-[var(--color-secondary)]/20"
               >
                 <input
                   value={shortcutName}
                   onChange={e => setShortcutName(e.target.value)}
                   placeholder={t('shortcuts.namePlaceholder')}
-                  className="field-control w-full"
-                  style={{ height: 28, fontSize: 11 }}
+                  className="field-control w-full h-[28px] text-[11px]"
                 />
                 <textarea
                   value={shortcutData}
                   onChange={e => setShortcutData(e.target.value)}
                   placeholder={t('shortcuts.dataPlaceholder')}
                   rows={3}
-                  className="field-control mt-1.5 w-full resize-y"
-                  style={{ minHeight: 72 }}
+                  className="field-control mt-1.5 w-full resize-y min-h-[72px]"
                 />
                 <div className="flex items-center gap-2 mt-2">
                   <select
                     value={shortcutEncoding}
                     onChange={e => setShortcutEncoding(e.target.value as EncodingMode)}
-                    className="field-control"
-                    style={{ height: 26, fontSize: 10, flex: 1 }}
+                    className="field-control h-[26px] text-[10px] flex-1"
                   >
                     <option value="ASCII">ASCII</option>
                     <option value="HEX">HEX</option>
                   </select>
-                  <button onClick={saveShortcut} className="btn-interactive hover:opacity-90 focus-ring" style={{ fontSize: 10, color: 'var(--color-primary)' }}>{t('shortcuts.save')}</button>
-                  <button onClick={() => setAddingShortcut(false)} className="btn-interactive hover-text-primary focus-ring" style={{ fontSize: 10, color: '#64748b' }}>✕</button>
+                  <button onClick={saveShortcut} className="btn-interactive hover:opacity-90 focus-ring text-[10px] text-[var(--color-primary)]">{t('shortcuts.save')}</button>
+                  <button onClick={() => setAddingShortcut(false)} className="btn-interactive hover-text-primary focus-ring text-[10px] text-[var(--color-text-muted)]">✕</button>
                 </div>
               </div>
             )}
 
             {shortcutList.length === 0 ? (
-              <div style={{ color: '#475569', fontSize: 11, textAlign: 'center', paddingTop: 16 }}>{t('sendCenter.emptyShortcuts')}</div>
+              <div className="text-[var(--color-text-muted)] text-[11px] text-center pt-4">{t('sendCenter.emptyShortcuts')}</div>
             ) : (
               <div className="flex flex-col gap-1.5">
                 {shortcutList.map(cmd => (
                   <div
                     key={cmd.id}
-                    className={`rounded p-2 group relative transition-all duration-200 ease-out ${expandedShortcutId === cmd.id ? 'pb-9' : ''}`}
+                    className={`rounded p-2 group relative transition-all duration-200 ease-out bg-[rgba(16,34,34,0.7)] border border-[var(--color-primary)]/10 ${expandedShortcutId === cmd.id ? 'pb-9' : ''}`}
                     data-expand-item="true"
                     onClick={() => setExpandedShortcutId(prev => (prev === cmd.id ? null : cmd.id))}
                     onDoubleClick={() => appendText(cmd.data, cmd.encoding)}
-                    style={{ background: 'rgba(16,34,34,0.7)', border: '1px solid rgba(19,236,236,0.1)' }}
                   >
                     <div className="flex items-center justify-between">
-                      <span style={{ fontSize: 10, color: 'var(--color-primary)' }}>{cmd.name}</span>
-                      <span style={{ fontSize: 9, color: '#64748b', fontFamily: 'var(--font-mono)' }}>{cmd.encoding}</span>
+                      <span className="text-[10px] text-[var(--color-primary)]">{cmd.name}</span>
+                      <span className="text-[9px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">{cmd.encoding}</span>
                     </div>
                     <div
-                      className={`transition-[max-height,padding-right] duration-200 ease-out ${expandedShortcutId === cmd.id ? '' : 'group-hover:pr-40 group-focus-within:pr-40'}`}
-                      style={{
-                        fontSize: 11,
-                        color: '#cbd5e1',
-                        fontFamily: 'var(--font-mono)',
-                        whiteSpace: expandedShortcutId === cmd.id ? 'pre-wrap' : 'nowrap',
-                        wordBreak: expandedShortcutId === cmd.id ? 'break-all' : 'normal',
-                        overflow: 'hidden',
-                        textOverflow: expandedShortcutId === cmd.id ? 'clip' : 'ellipsis',
-                        marginTop: 2,
-                        lineHeight: '20px',
-                        maxHeight: expandedShortcutId === cmd.id ? 9999 : 20,
-                      }}
+                      className={`transition-[max-height,padding-right] duration-200 ease-out text-[11px] text-[var(--color-text-secondary)] font-[family-name:var(--font-mono)] leading-5 overflow-hidden mt-0.5 ${expandedShortcutId === cmd.id ? 'whitespace-pre-wrap break-all max-h-[9999px] text-clip' : 'whitespace-nowrap break-normal max-h-5 text-ellipsis group-hover:pr-40 group-focus-within:pr-40'}`}
                     >
                       {cmd.data}
                     </div>
                     <div
-                      className={`absolute right-2 flex items-center gap-1 px-1.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all ${
+                      className={`absolute right-2 flex items-center gap-1 px-1.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all bg-[rgba(31,41,55,0.92)] border border-[var(--color-text-muted)]/18 backdrop-blur-[2px] ${
                         expandedShortcutId === cmd.id ? 'bottom-2' : 'top-1/2 -translate-y-1/2'
                       }`}
-                      style={{ background: 'rgba(31,41,55,0.92)', border: '1px solid rgba(148,163,184,0.18)', backdropFilter: 'blur(2px)' }}
                     >
                       <button
                         onClick={e => {
@@ -379,8 +325,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                         }}
                         title={t('sendCenter.fill')}
                         aria-label={t('sendCenter.fill')}
-                        className="btn-interactive hover:opacity-80 focus-ring"
-                        style={{ color: 'var(--color-primary)', fontSize: 10, fontWeight: 600 }}
+                        className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-primary)] text-[10px] font-semibold"
                       >
                         {t('sendCenter.fill')}
                       </button>
@@ -391,8 +336,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                         }}
                         title={t('sendCenter.sendNow')}
                         aria-label={t('sendCenter.sendNow')}
-                        className="btn-interactive hover:opacity-80 focus-ring"
-                        style={{ color: 'var(--color-accent)', fontSize: 10, fontWeight: 600 }}
+                        className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-secondary)] text-[10px] font-semibold"
                       >
                         {t('sendCenter.sendNow')}
                       </button>
@@ -403,8 +347,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
                         }}
                         title={t('sendCenter.delete')}
                         aria-label={t('sendCenter.delete')}
-                        className="btn-interactive hover:opacity-80 focus-ring"
-                        style={{ color: '#94a3b8', fontSize: 10, fontWeight: 600 }}
+                        className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-text-muted)] text-[10px] font-semibold"
                       >
                         {t('sendCenter.delete')}
                       </button>
@@ -417,9 +360,9 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
         )}
 
         {activeTab === 'scripts' && (
-          <div className="rounded p-3" style={{ background: 'rgba(16,34,34,0.7)', border: '1px dashed rgba(19,236,236,0.2)' }}>
-            <div style={{ color: 'var(--color-primary)', fontSize: 11, fontWeight: 700 }}>{t('sendCenter.scriptsComingSoon')}</div>
-            <div style={{ color: '#64748b', fontSize: 11, marginTop: 6, lineHeight: 1.4 }}>
+          <div className="rounded p-3 bg-[rgba(16,34,34,0.7)] border border-dashed border-[var(--color-primary)]/20">
+            <div className="text-[var(--color-primary)] text-[11px] font-bold">{t('sendCenter.scriptsComingSoon')}</div>
+            <div className="text-[var(--color-text-muted)] text-[11px] mt-1.5 leading-relaxed">
               {t('sendCenter.scriptsHint')}
             </div>
           </div>
