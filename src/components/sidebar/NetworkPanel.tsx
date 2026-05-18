@@ -28,7 +28,16 @@ export default function NetworkPanel({ session }: Props) {
 
   const handleConnect = async () => {
     if (isActive || isBusy) {
-      await invoke('disconnect', { id: session.id });
+      try {
+        await invoke('disconnect', { id: session.id });
+      } catch (e) {
+        setStatus(session.id, 'error', String(e));
+        appendLog(session.id, {
+          timestamp: Date.now(),
+          direction: 'system',
+          data: Array.from(new TextEncoder().encode(`Disconnect error: ${e}`)),
+        });
+      }
       return;
     }
 

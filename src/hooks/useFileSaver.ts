@@ -30,8 +30,15 @@ export function useFileSaver(sessionId: string): FileSaverState {
         await writer.write({ type: 'write', position: file.size, data: line });
         await writer.close();
       })
-      .catch(() => {});
-  }, []);
+      .catch((err) => {
+        const st = useSessionStore.getState();
+        st.appendLog(sessionId, {
+          timestamp: Date.now(),
+          direction: 'system',
+          data: Array.from(new TextEncoder().encode(`File write error: ${err}`)),
+        });
+      });
+  }, [sessionId]);
 
   useEffect(() => {
     const flushToFile = () => {
