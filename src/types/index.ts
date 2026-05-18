@@ -155,6 +155,27 @@ export interface SessionProfile {
   createdAt: number;
 }
 
+export interface Script {
+  id: string;
+  name: string;
+  source: string;
+  enabled: boolean;
+  autoRun: boolean;
+  linkedSessionIds: string[];
+}
+
+export type ScriptStatus = 'idle' | 'running' | 'error' | 'success';
+
+export interface ScriptExecution {
+  scriptId: string;
+  sessionId: string;
+  status: ScriptStatus;
+  output: string[];
+  error?: string;
+  startedAt: number;
+  endedAt?: number;
+}
+
 export interface TauriDataEvent {
   connection_id: string;
   direction: 'send' | 'recv' | 'system';

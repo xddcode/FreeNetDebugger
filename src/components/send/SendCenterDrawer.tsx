@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSessionStore, useSettingsStore } from '../../store';
 import { sendPanelBus } from '../../utils/sendPanelBus';
 import type { EncodingMode, Session } from '../../types';
+import ScriptsPanel from '../scripts/ScriptsPanel';
 
 export type SendCenterTabKey = 'history' | 'shortcuts' | 'scripts';
 
@@ -360,12 +361,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
         )}
 
         {activeTab === 'scripts' && (
-          <div className="rounded p-3 bg-[rgba(16,34,34,0.7)] border border-dashed border-[var(--color-primary)]/20">
-            <div className="text-[var(--color-primary)] text-[11px] font-bold">{t('sendCenter.scriptsComingSoon')}</div>
-            <div className="text-[var(--color-text-muted)] text-[11px] mt-1.5 leading-relaxed">
-              {t('sendCenter.scriptsHint')}
-            </div>
-          </div>
+          <ScriptsPanel sessionId={session?.id} />
         )}
       </div>
     </div>
