@@ -1,4 +1,4 @@
-import type { SelectHTMLAttributes } from 'react';
+import type { ChangeEvent, SelectHTMLAttributes } from 'react';
 
 interface Option {
   value: string;
@@ -7,7 +7,7 @@ interface Option {
 
 interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
   options: Option[];
   disabled?: boolean;
   className?: string;
