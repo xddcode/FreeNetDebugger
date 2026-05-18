@@ -131,6 +131,19 @@ const zhCN: Translations = {
   about: {
     confirm: '确定',
   },
+  serial: {
+    port:        '串口',
+    baudRate:    '波特率',
+    dataBits:    '数据位',
+    stopBits:    '停止位',
+    parity:      '校验位',
+    parityNone:  '无',
+    parityOdd:   '奇校验',
+    parityEven:  '偶校验',
+    refresh:     '刷新',
+    noPorts:     '未找到串口',
+    selectPort:  '请选择串口',
+  },
   traffic: {
     title:      '流量分析',
     visualizer: '实时流量监控',

@@ -4,6 +4,7 @@ import { invoke } from '../../utils/tauri';
 import { useSessionStore } from '../../store';
 import type { Session, ProtocolType } from '../../types';
 import { isValidIPv4, isValidPort, isValidWsUrl } from '../../utils/validation';
+import { useSerialPorts } from '../../hooks/useSerialPorts';
 import { PanelCard, PanelHeader, FieldLabel, FieldInput, FieldSelect } from './ui';
 
 interface Props {
@@ -17,6 +18,7 @@ export default function NetworkPanel({ session }: Props) {
   const appendLog = useSessionStore(s => s.appendLog);
 
   const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const { ports, loading: portsLoading, refresh: refreshPorts } = useSerialPorts();
 
   const { config } = session;
   const isActive = session.status === 'connected' || session.status === 'listening';
@@ -41,12 +43,12 @@ export default function NetworkPanel({ session }: Props) {
       return;
     }
 
-    // Validate all visible fields before connecting
     const newErrors: Record<string, boolean> = {};
     const showRemote = ['TCP_CLIENT', 'UDP_CLIENT', 'WEBSOCKET'].includes(config.protocol);
     const showLocal = ['TCP_SERVER', 'UDP_SERVER', 'UDP_CLIENT'].includes(config.protocol);
     const showWs = config.protocol === 'WEBSOCKET';
     const isSrv = config.protocol === 'TCP_SERVER';
+    const isSerial = config.protocol === 'SERIAL';
 
     if (showRemote && !showWs) {
       newErrors.remoteHost = !isValidIPv4(config.remoteHost);
@@ -62,6 +64,9 @@ export default function NetworkPanel({ session }: Props) {
     if (showWs) {
       newErrors.wsUrl = !isValidWsUrl(config.wsUrl);
     }
+    if (isSerial) {
+      newErrors.serialPort = !config.serialPort;
+    }
 
     setErrors(newErrors);
     if (Object.values(newErrors).some(Boolean)) {
@@ -76,6 +81,11 @@ export default function NetworkPanel({ session }: Props) {
       local_port: config.localPort || undefined,
       local_host: config.localHost || undefined,
       ws_url: proto === 'WEBSOCKET' ? config.wsUrl : undefined,
+      serial_port: proto === 'SERIAL' ? config.serialPort : undefined,
+      baud_rate: proto === 'SERIAL' ? config.baudRate : undefined,
+      data_bits: proto === 'SERIAL' ? config.dataBits : undefined,
+      stop_bits: proto === 'SERIAL' ? config.stopBits : undefined,
+      parity: proto === 'SERIAL' ? config.parity : undefined,
     };
     try {
       setStatus(session.id, 'connecting');
@@ -94,6 +104,7 @@ export default function NetworkPanel({ session }: Props) {
   const showLocal = ['TCP_SERVER', 'UDP_SERVER', 'UDP_CLIENT'].includes(config.protocol);
   const showWs = config.protocol === 'WEBSOCKET';
   const isSrv = config.protocol === 'TCP_SERVER';
+  const isSerial = config.protocol === 'SERIAL';
 
   const btnClass = isActive
     ? 'bg-[linear-gradient(to_bottom,rgba(248,113,113,0.15),rgba(248,113,113,0.05))] border border-[rgba(248,113,113,0.25)] text-[rgba(248,113,113,0.8)] shadow-[0_0_6px_rgba(248,113,113,0.06)]'
@@ -107,6 +118,22 @@ export default function NetworkPanel({ session }: Props) {
     { value: 'WEBSOCKET', label: t('protocol.WEBSOCKET') },
     { value: 'SERIAL', label: t('protocol.SERIAL') },
   ];
+
+  const BAUD_RATES = [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
+  const DATA_BITS: { value: string; label: string }[] = [
+    { value: '5', label: '5' }, { value: '6', label: '6' },
+    { value: '7', label: '7' }, { value: '8', label: '8' },
+  ];
+  const STOP_BITS: { value: string; label: string }[] = [
+    { value: '1', label: '1' }, { value: '2', label: '2' },
+  ];
+  const PARITY: { value: string; label: string }[] = [
+    { value: 'none', label: t('serial.parityNone') },
+    { value: 'odd', label: t('serial.parityOdd') },
+    { value: 'even', label: t('serial.parityEven') },
+  ];
+
+  const portOptions = ports.map(p => ({ value: p, label: p }));
 
   return (
     <PanelCard>
@@ -202,6 +229,67 @@ export default function NetworkPanel({ session }: Props) {
             />
             {errors.localPort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('validation.invalidPort')}</span>}
           </div>
+        )}
+        {isSerial && (
+          <>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <FieldLabel seq={2} label={t('serial.port')} />
+                <FieldSelect
+                  value={config.serialPort}
+                  onChange={v => updateConfig(session.id, { serialPort: v })}
+                  options={portOptions.length > 0 ? portOptions : [{ value: '', label: t('serial.noPorts') }]}
+                  disabled={isActive || isBusy || portsLoading}
+                />
+              </div>
+              <button
+                onClick={refreshPorts}
+                disabled={portsLoading}
+                className="px-2 py-1.5 rounded text-[10px] btn-interactive focus-ring border border-[var(--color-primary)]/20 text-[var(--color-primary)] font-[family-name:var(--font-mono)] disabled:opacity-50"
+              >
+                {portsLoading ? '...' : t('serial.refresh')}
+              </button>
+            </div>
+            {errors.serialPort && <span className="text-[10px] text-[var(--color-error)] mt-0.5 block">{t('serial.selectPort')}</span>}
+            <div>
+              <FieldLabel seq={3} label={t('serial.baudRate')} />
+              <FieldSelect
+                value={String(config.baudRate)}
+                onChange={v => updateConfig(session.id, { baudRate: Number(v) })}
+                options={BAUD_RATES.map(b => ({ value: String(b), label: String(b) }))}
+                disabled={isActive || isBusy}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <FieldLabel label={t('serial.dataBits')} />
+                <FieldSelect
+                  value={String(config.dataBits)}
+                  onChange={v => updateConfig(session.id, { dataBits: Number(v) as 5 | 6 | 7 | 8 })}
+                  options={DATA_BITS}
+                  disabled={isActive || isBusy}
+                />
+              </div>
+              <div>
+                <FieldLabel label={t('serial.stopBits')} />
+                <FieldSelect
+                  value={String(config.stopBits)}
+                  onChange={v => updateConfig(session.id, { stopBits: Number(v) as 1 | 2 })}
+                  options={STOP_BITS}
+                  disabled={isActive || isBusy}
+                />
+              </div>
+              <div>
+                <FieldLabel label={t('serial.parity')} />
+                <FieldSelect
+                  value={config.parity}
+                  onChange={v => updateConfig(session.id, { parity: v as 'none' | 'odd' | 'even' })}
+                  options={PARITY}
+                  disabled={isActive || isBusy}
+                />
+              </div>
+            </div>
+          </>
         )}
         <button
           onClick={handleConnect}
