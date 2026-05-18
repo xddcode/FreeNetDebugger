@@ -1,4 +1,5 @@
 pub mod handler;
+pub mod serial;
 pub mod tcp;
 pub mod udp;
 pub mod websocket;
@@ -7,6 +8,7 @@ use tauri::AppHandle;
 use tokio::sync::mpsc;
 
 use self::handler::ProtocolHandler;
+use self::serial::SerialHandler;
 use self::tcp::{TcpClientHandler, TcpServerHandler};
 use self::udp::UdpHandler;
 use self::websocket::WebSocketHandler;
@@ -45,6 +47,14 @@ pub fn build_handler(config: ConnectionConfig) -> Result<Box<dyn ProtocolHandler
                 })
                 .ok_or("Missing WebSocket URL")?;
             Ok(Box::new(WebSocketHandler { url }))
+        }
+        "SERIAL" => {
+            let port_name = config.serial_port.ok_or("Missing serial_port")?;
+            let baud_rate = config.baud_rate.unwrap_or(115200);
+            let data_bits = config.data_bits.unwrap_or(8);
+            let stop_bits = config.stop_bits.unwrap_or(1);
+            let parity = config.parity.unwrap_or_else(|| "none".to_string());
+            Ok(Box::new(SerialHandler { port_name, baud_rate, data_bits, stop_bits, parity }))
         }
         proto => Err(format!("Unsupported protocol: {}", proto)),
     }
