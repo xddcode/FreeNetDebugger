@@ -7,6 +7,11 @@ use tokio::sync::mpsc;
 use super::handler::ProtocolHandler;
 use crate::events::{emit_data, emit_status};
 
+fn is_permission_error(e: &serialport::Error) -> bool {
+    let s = e.to_string().to_lowercase();
+    s.contains("permission") || s.contains("access") || s.contains("denied")
+}
+
 pub struct SerialHandler {
     pub port_name: String,
     pub baud_rate: u32,
@@ -61,7 +66,17 @@ impl ProtocolHandler for SerialHandler {
             let mut port = match port_result {
                 Ok(Ok(port)) => port,
                 Ok(Err(e)) => {
-                    emit_status(&app, &id, "error", &format!("Serial open failed: {}", e)).await;
+                    let msg = if is_permission_error(&e) {
+                        #[cfg(target_os = "linux")]
+                        { format!("Permission denied: add your user to the 'dialout' group (sudo usermod -a -G dialout $USER)") }
+                        #[cfg(target_os = "macos")]
+                        { format!("Permission denied: ensure you have access to {}", self.port_name) }
+                        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+                        { format!("Serial open failed: {}", e) }
+                    } else {
+                        format!("Serial open failed: {}", e)
+                    };
+                    emit_status(&app, &id, "error", &msg).await;
                     return;
                 }
                 Err(e) => {
