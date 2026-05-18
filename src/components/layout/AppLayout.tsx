@@ -16,9 +16,13 @@ import AboutDialog from '../AboutDialog';
 import { APP } from '../../config/app';
 
 function SessionDot({ status }: { status: string }) {
-  const c = { connected: '#00ff00', listening: '#13ecec', connecting: '#fbbf24', error: '#f87171' }[status]
-    ?? 'rgba(19,236,236,0.2)';
-  return <span className="inline-block rounded-full shrink-0" style={{ width: 6, height: 6, background: c, boxShadow: `0 0 5px ${c}` }} />;
+  const statusColorClass = {
+    connected: 'bg-[var(--color-success)] shadow-[0_0_5px_var(--color-success)]',
+    listening: 'bg-[var(--color-primary)] shadow-[0_0_5px_var(--color-primary)]',
+    connecting: 'bg-[var(--color-warning)] shadow-[0_0_5px_var(--color-warning)]',
+    error: 'bg-[var(--color-error)] shadow-[0_0_5px_var(--color-error)]',
+  }[status] ?? 'bg-[var(--color-border)]';
+  return <span className={`inline-block rounded-full w-1.5 h-1.5 shrink-0 ${statusColorClass}`} />;
 }
 
 export default function AppLayout() {
@@ -132,8 +136,7 @@ export default function AppLayout() {
       type="button"
       onClick={onClick}
       title={title}
-      className="w-11 h-10 flex items-center justify-center btn-interactive rounded-sm hover:bg-white/10 focus-ring"
-      style={{ color: 'var(--color-primary)' }}
+      className="w-11 h-10 flex items-center justify-center btn-interactive rounded-sm hover:bg-white/10 focus-ring text-[var(--color-primary)]"
     >
       {icon}
     </button>
@@ -143,35 +146,24 @@ export default function AppLayout() {
     <div className="relative flex flex-col h-full w-full overflow-hidden hex-grid brushed-metal">
 
       <header
-        className="relative z-20 flex items-center justify-between pl-4 pr-0 py-0 shrink-0 select-none"
-        style={{
-          height: 40,
-          background: 'rgba(16,34,34,0.95)',
-          borderBottom: '1px solid rgba(19,236,236,0.2)',
-        }}
+        className="relative z-20 flex items-center justify-between pl-4 pr-0 py-0 shrink-0 select-none h-10 bg-[var(--color-bg)]/95 border-b border-[var(--color-border)]"
       >
-        {/* 左侧：图标+标题+空白 可拖拽 */}
+        {/* Left: icon + title + spacer (draggable) */}
         <div
           data-tauri-drag-region
-          className="flex items-center gap-2 flex-1 min-w-0 cursor-move"
-          style={{ color: 'var(--color-primary)' }}
+          className="flex items-center gap-2 flex-1 min-w-0 cursor-move text-[var(--color-primary)]"
         >
           <span
-            className="inline-flex items-center justify-center rounded shrink-0"
-            style={{
-              width: 24,
-              height: 24,
-              background: 'linear-gradient(135deg, rgba(19,236,236,0.12), rgba(255,0,255,0.08))'
-            }}
+            className="inline-flex items-center justify-center rounded shrink-0 w-6 h-6 bg-[linear-gradient(135deg,rgba(45,212,191,0.12),rgba(129,140,248,0.08))]"
           >
-            <img src="/app-icon.png" alt="FreeNetDebugger" width="18" height="18" style={{ borderRadius: 4, flexShrink: 0 }} />
+            <img src="/app-icon.png" alt="FreeNetDebugger" width="18" height="18" className="rounded shrink-0" />
           </span>
-          <h1 className="text-sm font-bold tracking-tight uppercase" style={{ fontFamily: 'var(--font-display)' }}>
+          <h1 className="text-sm font-bold tracking-tight uppercase">
             {APP.name}
           </h1>
         </div>
-        {/* 右侧：菜单+状态+按钮 可点击 */}
-        <div className="flex items-center gap-4 shrink-0" style={{ color: 'var(--color-primary)' }}>
+        {/* Right: menu + status + buttons (clickable) */}
+        <div className="flex items-center gap-4 shrink-0 text-[var(--color-primary)]">
           <div className="relative flex items-center gap-0.5">
             <button
               type="button"
@@ -183,9 +175,8 @@ export default function AppLayout() {
             <button
               type="button"
               onClick={() => openUrl(APP.github)}
-              className="p-1 rounded btn-interactive hover:bg-white/10 focus-ring"
+              className="p-1 rounded btn-interactive hover:bg-white/10 focus-ring text-[var(--color-primary)]"
               title="GitHub"
-              style={{ color: 'var(--color-primary)' }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -194,11 +185,7 @@ export default function AppLayout() {
             {menuOpen && (
               <div
                 onClick={e => e.stopPropagation()}
-                className="absolute left-0 top-full mt-1 py-1 rounded shadow-lg z-50 min-w-[160px]"
-                style={{
-                  background: 'rgba(22,46,46,0.98)',
-                  border: '1px solid rgba(19,236,236,0.3)',
-                }}
+                className="absolute left-0 top-full mt-1 py-1 rounded shadow-lg z-50 min-w-[160px] bg-[var(--color-surface)]/98 border border-[var(--color-border)]"
               >
             <button
               type="button"
@@ -212,22 +199,12 @@ export default function AppLayout() {
           </div>
 
           <div
-            className="flex items-center gap-2 px-2 py-0.5 rounded mr-2"
-            style={{
-              background: 'rgba(19,236,236,0.1)',
-              border: '1px solid rgba(19,236,236,0.3)',
-            }}
+            className="flex items-center gap-2 px-2 py-0.5 rounded mr-2 bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30"
           >
             <span
-              className="inline-block rounded-full"
-              style={{
-                width: 6, height: 6,
-                background: 'var(--color-primary)',
-                boxShadow: '0 0 4px #13ecec',
-                animation: isAlive ? 'pulse-glow 2s ease-in-out infinite' : 'none',
-              }}
+              className={`inline-block rounded-full w-1.5 h-1.5 bg-[var(--color-primary)] shadow-[0_0_4px_var(--color-primary)] ${isAlive ? 'animate-pulse' : ''}`}
             />
-            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)' }}>
+            <span className="text-[9px] font-[family-name:var(--font-mono)] text-[var(--color-primary)]">
               {statusLabel()}
             </span>
           </div>
@@ -241,8 +218,7 @@ export default function AppLayout() {
                 openSendCenter('history');
               }
             }}
-            className="px-2 py-0.5 text-xs rounded btn-interactive hover:bg-white/10 mr-2 focus-ring"
-            style={{ color: sendCenterOpen ? 'var(--color-accent)' : 'var(--color-primary)' }}
+            className={`px-2 py-0.5 text-xs rounded btn-interactive hover:bg-white/10 mr-2 focus-ring ${sendCenterOpen ? 'text-[var(--color-secondary)]' : 'text-[var(--color-primary)]'}`}
             title={t('sendCenter.title')}
           >
             {t('sendCenter.title')}
@@ -250,8 +226,7 @@ export default function AppLayout() {
 
           <button
             onClick={handleToggleLang}
-            className="px-2 py-0.5 text-xs rounded btn-interactive hover:bg-white/10 mr-2 focus-ring"
-            style={{ color: 'var(--color-primary)' }}
+            className="px-2 py-0.5 text-xs rounded btn-interactive hover:bg-white/10 mr-2 focus-ring text-[var(--color-primary)]"
             title={locale === 'en' ? '切换为中文' : 'Switch to English'}
           >
             {locale === 'en' ? '中文' : 'EN'}
@@ -264,8 +239,7 @@ export default function AppLayout() {
       </header>
 
       <div
-        className="relative z-10 flex items-center gap-1.5 px-3 shrink-0 overflow-x-auto"
-        style={{ height: 40, background: 'rgba(16,34,34,0.95)', borderBottom: '1px solid rgba(19,236,236,0.1)' }}
+        className="relative z-10 flex items-center gap-1.5 px-3 shrink-0 overflow-x-auto h-10 bg-[var(--color-bg)]/95 border-b border-[var(--color-border)]"
       >
         {sessions.map(sess => {
           const active = sess.id === activeId;
@@ -274,13 +248,7 @@ export default function AppLayout() {
               key={sess.id}
               role="button"
               tabIndex={0}
-              className="flex items-center gap-1.5 px-3 rounded shrink-0 group tab-interactive focus-ring"
-              style={{
-                height: 28, fontSize: 11, fontFamily: 'var(--font-mono)',
-                background: active ? 'rgba(19,236,236,0.12)' : 'transparent',
-                border: active ? '1px solid rgba(19,236,236,0.4)' : '1px solid transparent',
-                color: active ? 'var(--color-primary)' : '#64748b',
-              }}
+              className={`flex items-center gap-1.5 px-3 rounded shrink-0 group tab-interactive focus-ring h-7 text-[11px] font-[family-name:var(--font-mono)] ${active ? 'bg-[var(--color-primary)]/12 border border-[var(--color-primary)]/40 text-[var(--color-primary)]' : 'bg-transparent border border-transparent text-[var(--color-text-muted)]'}`}
               onClick={() => setActive(sess.id)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActive(sess.id); } }}
             >
@@ -288,8 +256,7 @@ export default function AppLayout() {
               <span>{t(`protocol.${sess.config.protocol}`)}</span>
               {sessions.length > 1 && (
                 <span
-                  className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  style={{ color: '#64748b', fontSize: 13 }}
+                  className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-[var(--color-text-muted)] text-[13px]"
                   onClick={e => {
                     e.stopPropagation();
                     void handleCloseSession(sess.id);
@@ -300,8 +267,7 @@ export default function AppLayout() {
           );
         })}
         <button
-          className="px-2 rounded shrink-0 btn-interactive hover:bg-white/5 focus-ring"
-          style={{ height: 28, fontSize: 14, color: '#475569', border: '1px dashed rgba(19,236,236,0.15)' }}
+          className="px-2 rounded shrink-0 btn-interactive hover:bg-white/5 focus-ring h-7 text-sm text-[var(--color-text-secondary)] border border-dashed border-[var(--color-border)]"
           onClick={() => addSession()}
           title={t('header.newSession')}
         >+</button>
@@ -322,27 +288,23 @@ export default function AppLayout() {
           {/* Traffic — collapsible */}
           <div className="shrink-0 neon-card overflow-hidden">
             <button
-              className="w-full flex items-center justify-between px-3 py-2 btn-interactive"
-              style={{
-                background: 'linear-gradient(to right, rgba(255,0,255,0.08), transparent)',
-                borderBottom: trafficOpen ? '1px solid rgba(19,236,236,0.15)' : 'none',
-              }}
+              className={`w-full flex items-center justify-between px-3 py-2 btn-interactive bg-[linear-gradient(to_right,rgba(129,140,248,0.08),transparent)] ${trafficOpen ? 'border-b border-[var(--color-border)]' : ''}`}
               onClick={() => setTrafficOpen(o => !o)}
             >
               <div className="flex items-center gap-2">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="2">
                   <line x1="18" y1="20" x2="18" y2="10"/>
                   <line x1="12" y1="20" x2="12" y2="4"/>
                   <line x1="6"  y1="20" x2="6"  y2="14"/>
                 </svg>
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-secondary)]">
                   {t('traffic.title')}
                 </span>
               </div>
               <svg
                 width="12" height="12" viewBox="0 0 12 12"
-                fill="none" stroke="rgba(19,236,236,0.4)" strokeWidth="1.5"
-                style={{ transform: trafficOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                fill="none" stroke="var(--color-border-focus)" strokeWidth="1.5"
+                className={`transition-transform duration-200 ${trafficOpen ? 'rotate-180' : ''}`}
               >
                 <polyline points="2,4 6,8 10,4" />
               </svg>
@@ -360,8 +322,7 @@ export default function AppLayout() {
 
         <div
           ref={sendCenterPanelRef}
-          className="shrink-0 min-h-0 overflow-hidden"
-          style={{ width: sendCenterOpen ? 340 : 0, transition: 'width 0.2s ease' }}
+          className={`shrink-0 min-h-0 overflow-hidden transition-[width] duration-200 ${sendCenterOpen ? 'w-[340px]' : 'w-0'}`}
         >
           <SendCenterDrawer
             open={sendCenterOpen}
