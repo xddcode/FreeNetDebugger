@@ -13,7 +13,7 @@ export default function HttpPanel({ session }: Props) {
   const isActive = session.status === 'connected';
   const isBusy = session.status === 'connecting' || session.status === 'disconnecting';
 
-  const { httpHeaders } = session.config;
+  const httpHeaders = session.config.httpHeaders ?? [];
 
   const addHeader = () => {
     updateConfig(session.id, {

@@ -288,6 +288,11 @@ export const useSessionStore = create<SessionState>()(
             if ((s as { sendContent?: string }).sendContent === undefined) {
               (s as { sendContent: string }).sendContent = '';
             }
+            const cfg = s.config as { httpUrl?: string; httpMethod?: string; httpHeaders?: unknown; httpBody?: string };
+            if (cfg.httpUrl === undefined) { cfg.httpUrl = 'https://httpbin.org/get'; }
+            if (cfg.httpMethod === undefined) { cfg.httpMethod = 'GET'; }
+            if (cfg.httpHeaders === undefined) { cfg.httpHeaders = []; }
+            if (cfg.httpBody === undefined) { cfg.httpBody = ''; }
           }
         }
         return p ?? persisted;
