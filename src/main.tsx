@@ -5,38 +5,46 @@ import './index.css';
 import './i18n';              // initialise i18next (side-effect import)
 import i18n from './i18n';
 import { useSettingsStore } from './store';
+import { initStorage } from './store/storage';
 
-// Apply persisted locale before first render so there's no flash of wrong language
-const savedLocale = useSettingsStore.getState().locale;
-if (savedLocale && savedLocale !== i18n.language) {
-  i18n.changeLanguage(savedLocale);
+async function bootstrap() {
+  // Load persisted data from tauri-plugin-store into memory cache
+  await initStorage();
+
+  // Apply persisted locale before first render so there's no flash of wrong language
+  const savedLocale = useSettingsStore.getState().locale;
+  if (savedLocale && savedLocale !== i18n.language) {
+    i18n.changeLanguage(savedLocale);
+  }
+
+  // Apply persisted theme before first render so there's no flash of wrong theme
+  const savedTheme = useSettingsStore.getState().theme ?? 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
+  ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+
+  const hideStartupSplash = () => {
+    const splash = document.getElementById('startup-splash');
+    if (!splash) {
+      return;
+    }
+    const splashAt = (window as Window & { __startupSplashAt?: number }).__startupSplashAt ?? Date.now();
+    const minVisibleMs = 900;
+    const elapsed = Date.now() - splashAt;
+    const waitMs = Math.max(0, minVisibleMs - elapsed);
+    window.setTimeout(() => {
+      splash.classList.add('fade-out');
+      window.setTimeout(() => splash.remove(), 260);
+    }, waitMs);
+  };
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(hideStartupSplash);
+  });
 }
 
-// Apply persisted theme before first render so there's no flash of wrong theme
-const savedTheme = useSettingsStore.getState().theme ?? 'dark';
-document.documentElement.setAttribute('data-theme', savedTheme);
-
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
-
-const hideStartupSplash = () => {
-  const splash = document.getElementById('startup-splash');
-  if (!splash) {
-    return;
-  }
-  const splashAt = (window as Window & { __startupSplashAt?: number }).__startupSplashAt ?? Date.now();
-  const minVisibleMs = 900;
-  const elapsed = Date.now() - splashAt;
-  const waitMs = Math.max(0, minVisibleMs - elapsed);
-  window.setTimeout(() => {
-    splash.classList.add('fade-out');
-    window.setTimeout(() => splash.remove(), 260);
-  }, waitMs);
-};
-
-window.requestAnimationFrame(() => {
-  window.requestAnimationFrame(hideStartupSplash);
-});
+bootstrap().catch((err: unknown) => { window.console.error(err); });

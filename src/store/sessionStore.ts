@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { getCachedItem, setCachedItem, removeCachedItem } from './storage';
 import type {
   Session, ConnectionConfig, ReceiveSettings, SendSettings,
   LogEntry, ProtocolType, TrafficSample, SessionProfile,
@@ -280,7 +281,11 @@ export const useSessionStore = create<SessionState>()(
     })),
     {
       name: `${STORAGE_KEY}-sessions`,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => ({
+        getItem: (name) => getCachedItem(name),
+        setItem: (name, value) => setCachedItem(name, value),
+        removeItem: (name) => removeCachedItem(name),
+      })),
       migrate: (persisted: unknown) => {
         const p = persisted as PersistedSessionState | undefined;
         if (p?.sessions) {

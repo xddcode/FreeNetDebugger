@@ -24,3 +24,4 @@ serialport = "4"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
 rquickjs = { version = "0.6", features = ["macro", "parallel"] }
 log = "0.4"
+tauri-plugin-store = "2.4.3"

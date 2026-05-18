@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { Script } from '../types';
 import { STORAGE_KEY } from '../config/constants';
+import { getCachedItem, setCachedItem, removeCachedItem } from './storage';
 
 interface ScriptState {
   scripts: Script[];
@@ -102,7 +103,11 @@ export const useScriptStore = create<ScriptState>()(
     })),
     {
       name: `${STORAGE_KEY}-scripts`,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => ({
+        getItem: (name) => getCachedItem(name),
+        setItem: (name, value) => setCachedItem(name, value),
+        removeItem: (name) => removeCachedItem(name),
+      })),
       partialize: (state) => ({
         scripts: state.scripts,
         activeScriptId: state.activeScriptId,

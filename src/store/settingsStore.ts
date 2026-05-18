@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { QuickCommand } from '../types';
 import { STORAGE_KEY } from '../config/constants';
+import { getCachedItem, setCachedItem, removeCachedItem } from './storage';
 
 interface SettingsState {
   locale: 'en' | 'zh-CN';
@@ -46,7 +47,11 @@ export const useSettingsStore = create<SettingsState>()(
     })),
     {
       name: `${STORAGE_KEY}-settings`,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => ({
+        getItem: (name) => getCachedItem(name),
+        setItem: (name, value) => setCachedItem(name, value),
+        removeItem: (name) => removeCachedItem(name),
+      })),
       partialize: (state) => ({
         locale: state.locale,
         theme: state.theme,
