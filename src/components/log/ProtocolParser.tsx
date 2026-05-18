@@ -97,12 +97,15 @@ export default function ProtocolParser({ data }: Props) {
   const addField = () => {
     if (!newField.name || newField.offset === undefined) {return;}
     const length = newField.length ?? TYPE_SIZES[newField.type as FieldType] ?? 1;
+    const name = newField.name;
+    const offset = newField.offset;
+    const type = newField.type as FieldType;
     setFields(prev => [...prev, {
       id: `fld_${Date.now()}`,
-      name: newField.name,
-      offset: newField.offset,
+      name,
+      offset,
       length,
-      type: newField.type as FieldType,
+      type,
     }]);
     setNewField({ type: 'uint8', length: 1 });
   };

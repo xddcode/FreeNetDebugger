@@ -5,4 +5,3 @@ export { useLogStore } from './logStore';
 export { useScriptStore } from './scriptStore';
 
 // Re-export types for convenience
-export type { SessionState } from './sessionStore';
