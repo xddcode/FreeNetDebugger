@@ -9,13 +9,12 @@ export function hexToBytes(hex: string): number[] {
   if (cleaned.length % 2 !== 0) {
     return [];
   }
+  if (!/^[0-9A-Fa-f]*$/.test(cleaned)) {
+    return [];
+  }
   const bytes: number[] = [];
   for (let i = 0; i < cleaned.length; i += 2) {
-    const val = parseInt(cleaned.substring(i, i + 2), 16);
-    if (isNaN(val)) {
-      return [];
-    }
-    bytes.push(val);
+    bytes.push(parseInt(cleaned.substring(i, i + 2), 16));
   }
   return bytes;
 }
