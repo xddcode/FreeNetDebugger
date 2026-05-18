@@ -12,6 +12,10 @@ if (savedLocale && savedLocale !== i18n.language) {
   i18n.changeLanguage(savedLocale);
 }
 
+// Apply persisted theme before first render so there's no flash of wrong theme
+const savedTheme = useAppStore.getState().theme ?? 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <App />

@@ -53,6 +53,7 @@ type PersistedState = {
   activeSessionId: string | null;
   quickCommands: QuickCommand[];
   locale: 'en' | 'zh-CN';
+  theme: 'dark' | 'light';
 };
 
 interface AppState {
@@ -92,6 +93,9 @@ interface AppState {
 
   locale: 'en' | 'zh-CN';
   setLocale: (locale: 'en' | 'zh-CN') => void;
+
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
 }
 
 const find = (sessions: Session[], id: string) => sessions.find(s => s.id === id);
@@ -104,6 +108,7 @@ export const useAppStore = create<AppState>()(
       logFilter: '',
       quickCommands: [],
       locale: 'en',
+      theme: 'dark',
 
       addSession: (protocol = 'TCP_CLIENT') =>
         set(s => { const ss = makeSession(protocol); s.sessions.push(ss); s.activeSessionId = ss.id; }),
@@ -259,6 +264,8 @@ export const useAppStore = create<AppState>()(
       setLogFilter: (filter) => set(s => { s.logFilter = filter; }),
 
       setLocale: (locale) => set(s => { s.locale = locale; }),
+
+      setTheme: (theme) => set(s => { s.theme = theme; }),
     })),
     {
       name: 'fnd-store-v1',
@@ -290,6 +297,7 @@ export const useAppStore = create<AppState>()(
         activeSessionId: state.activeSessionId,
         quickCommands: state.quickCommands,
         locale: state.locale,
+        theme: state.theme,
       }),
     }
   )
