@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TrafficSample } from '../../types';
+import { TRAFFIC_MAX_SAMPLES } from '../../config/constants';
 
 interface SparklineProps {
   data: number[];
@@ -76,24 +77,20 @@ export default function TrafficChart({ samples }: Props) {
   const CHART_W = W;
   const CHART_H = H;
 
-  const rxData = samples.map(s => s.rxRate);
-  const txData = samples.map(s => s.txRate);
-
-  const lastSample = samples[samples.length - 1];
-  // Professional telemetry UX:
-  // - show smoothed current rate (3-second moving average)
-  // - show peak across current window (up to last 60 samples)
-  const rxRate = averageTail(rxData, 3);
-  const txRate = averageTail(txData, 3);
-  const rxPeak = rxData.length > 0 ? Math.max(...rxData) : 0;
-  const txPeak = txData.length > 0 ? Math.max(...txData) : 0;
-  const rxTotal = lastSample?.rxTotal ?? 0;
-  const txTotal = lastSample?.txTotal ?? 0;
-
-  // Pad to TRAFFIC_MAX_SAMPLES so chart fills the full width
-  const PAD = 60;
-  const rxPadded = Array(Math.max(0, PAD - rxData.length)).fill(0).concat(rxData);
-  const txPadded = Array(Math.max(0, PAD - txData.length)).fill(0).concat(txData);
+  const { rxRate, txRate, rxPeak, txPeak, rxTotal, txTotal, rxPadded, txPadded } = useMemo(() => {
+    const rx = samples.map(s => s.rxRate);
+    const tx = samples.map(s => s.txRate);
+    const last = samples[samples.length - 1];
+    const rxR = averageTail(rx, 3);
+    const txR = averageTail(tx, 3);
+    const rxP = rx.length > 0 ? Math.max(...rx) : 0;
+    const txP = tx.length > 0 ? Math.max(...tx) : 0;
+    const rxT = last?.rxTotal ?? 0;
+    const txT = last?.txTotal ?? 0;
+    const rxPad = Array(Math.max(0, TRAFFIC_MAX_SAMPLES - rx.length)).fill(0).concat(rx);
+    const txPad = Array(Math.max(0, TRAFFIC_MAX_SAMPLES - tx.length)).fill(0).concat(tx);
+    return { rxRate: rxR, txRate: txR, rxPeak: rxP, txPeak: txP, rxTotal: rxT, txTotal: txT, rxPadded: rxPad, txPadded: txPad };
+  }, [samples]);
 
   return (
     <div
