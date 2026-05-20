@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../../types';
 import { PanelCard, PanelHeader } from './ui';
@@ -56,7 +56,7 @@ function parseHttpResponse(logs: Session['logs']): ParsedHttpResponse | null {
 
 function statusColorClass(code: number): string {
   if (code >= 200 && code < 300) { return 'text-[var(--color-success)]'; }
-  if (code >= 300 && code < 400) { return 'text-[var(--color-secondary)]'; }
+  if (code >= 300 && code < 400) { return 'text-[var(--color-warning)]'; }
   if (code >= 400 && code < 500) { return 'text-[var(--color-warning)]'; }
   if (code >= 500) { return 'text-[var(--color-error)]'; }
   return 'text-[var(--color-text-muted)]';
@@ -64,10 +64,10 @@ function statusColorClass(code: number): string {
 
 function statusBgClass(code: number): string {
   if (code >= 200 && code < 300) { return 'bg-[var(--color-success)]/10 border-[var(--color-success)]/20'; }
-  if (code >= 300 && code < 400) { return 'bg-[var(--color-secondary)]/10 border-[var(--color-secondary)]/20'; }
+  if (code >= 300 && code < 400) { return 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]/20'; }
   if (code >= 400 && code < 500) { return 'bg-[var(--color-warning)]/10 border-[var(--color-warning)]/20'; }
   if (code >= 500) { return 'bg-[var(--color-error)]/10 border-[var(--color-error)]/20'; }
-  return 'bg-[var(--color-surface)] border-[var(--color-border)]';
+  return 'bg-[var(--color-surface)] border-[var(--color-border-subtle)]';
 }
 
 export default function HttpResponsePanel({ session }: Props) {
@@ -82,7 +82,7 @@ export default function HttpResponsePanel({ session }: Props) {
       />
       <div className="p-3 flex flex-col gap-2">
         {!response ? (
-          <div className="text-[11px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
+          <div className="text-2xs text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
             {session.status === 'connected' ? 'Waiting for first request...' : 'Connect to send HTTP requests'}
           </div>
         ) : (
@@ -91,31 +91,31 @@ export default function HttpResponsePanel({ session }: Props) {
               <span className={`text-lg font-bold font-[family-name:var(--font-mono)] ${statusColorClass(response.statusCode)}`}>
                 {response.statusCode}
               </span>
-              <span className="text-[11px] text-[var(--color-text-secondary)]">
+              <span className="text-2xs text-[var(--color-text-secondary)]">
                 {response.statusText}
               </span>
-              <span className="ml-auto text-[10px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
+              <span className="ml-auto text-2xs text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
                 {response.elapsedMs} ms
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="px-2 py-1.5 rounded bg-[var(--color-bg)] border border-[var(--color-border)]">
-                <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Content-Type</div>
-                <div className="text-[10px] text-[var(--color-text-primary)] font-[family-name:var(--font-mono)] truncate">
+              <div className="px-2 py-1.5 rounded bg-[var(--color-surface-container)] border border-[var(--color-border-subtle)]">
+                <div className="text-2xs uppercase tracking-wider text-[var(--color-text-muted)]">Content-Type</div>
+                <div className="text-2xs text-[var(--color-text-primary)] font-[family-name:var(--font-mono)] truncate">
                   {response.headers['content-type'] ?? '—'}
                 </div>
               </div>
-              <div className="px-2 py-1.5 rounded bg-[var(--color-bg)] border border-[var(--color-border)]">
-                <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Body Size</div>
-                <div className="text-[10px] text-[var(--color-text-primary)] font-[family-name:var(--font-mono)]">
+              <div className="px-2 py-1.5 rounded bg-[var(--color-surface-container)] border border-[var(--color-border-subtle)]">
+                <div className="text-2xs uppercase tracking-wider text-[var(--color-text-muted)]">Body Size</div>
+                <div className="text-2xs text-[var(--color-text-primary)] font-[family-name:var(--font-mono)]">
                   {response.bodySize > 0 ? `${response.bodySize.toLocaleString()} B` : '—'}
                 </div>
               </div>
             </div>
 
             {response.headers['content-type']?.includes('application/json') && (
-              <div className="text-[9px] text-[var(--color-success)] font-[family-name:var(--font-mono)]">
+              <div className="text-2xs text-[var(--color-success)] font-[family-name:var(--font-mono)]">
                 JSON response — view in Data Log
               </div>
             )}

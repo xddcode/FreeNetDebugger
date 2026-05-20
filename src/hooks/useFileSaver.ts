@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect, type RefObject } from 'react';
-import { useSessionStore } from '../store';
+import { useSessionStore, getAllSessions } from '../store';
 import { bytesToDisplay, formatTimestamp } from '../utils/encoding';
 import { FILE_FLUSH_INTERVAL } from '../config/constants';
 
@@ -43,7 +43,7 @@ export function useFileSaver(sessionId: string): FileSaverState {
   useEffect(() => {
     const flushToFile = () => {
       const st = useSessionStore.getState();
-      const live = st.sessions.find(s => s.id === sessionId);
+      const live = getAllSessions(st).find((s) => s.id === sessionId);
       if (!live || !live.receiveSettings.saveToFile || !fileHandleRef.current || live.logs.length === 0) {
         return;
       }

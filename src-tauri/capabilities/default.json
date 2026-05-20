@@ -11,6 +11,18 @@
     "core:window:allow-maximize",
     "core:window:allow-toggle-maximize",
     "opener:default",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-write-text-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$DESKTOP/**" },
+        { "path": "$HOME/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DOWNLOAD/**" }
+      ]
+    },
     "store:default",
     "store:allow-load",
     "store:allow-get",

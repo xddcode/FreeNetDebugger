@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use reqwest::Url;
 use tauri::AppHandle;
 use tokio::sync::mpsc;
 
@@ -22,13 +23,38 @@ impl HttpHandler {
 }
 
 #[derive(serde::Deserialize)]
+struct HttpQueryParam {
+    key: String,
+    value: String,
+    enabled: bool,
+}
+
+#[derive(serde::Deserialize)]
 struct HttpRequestPayload {
     method: String,
     url: String,
     #[serde(default)]
     headers: HashMap<String, String>,
     #[serde(default)]
+    params: Vec<HttpQueryParam>,
+    #[serde(default)]
     body: Option<String>,
+}
+
+fn build_url_with_params(url: &str, params: &[HttpQueryParam]) -> String {
+    let mut parsed = match Url::parse(url) {
+        Ok(u) => u,
+        Err(_) => return url.to_string(),
+    };
+    // Clear existing query to avoid duplicates when frontend already appended params
+    parsed.set_query(None);
+    {
+        let mut pairs = parsed.query_pairs_mut();
+        for p in params.iter().filter(|p| p.enabled && !p.key.is_empty()) {
+            pairs.append_pair(&p.key, &p.value);
+        }
+    }
+    parsed.to_string()
 }
 
 impl ProtocolHandler for HttpHandler {
@@ -51,7 +77,7 @@ impl ProtocolHandler for HttpHandler {
                 };
 
                 let method = payload.method.to_uppercase();
-                let url = payload.url;
+                let url = build_url_with_params(&payload.url, &payload.params);
 
                 let mut req_builder = match method.as_str() {
                     "GET" => self.client.get(&url),

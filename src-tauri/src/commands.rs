@@ -4,7 +4,7 @@ use tokio::sync::mpsc;
 use crate::events::emit_status;
 use crate::protocols::spawn_connection_task;
 use crate::state::{AppState, ConnEntry};
-use crate::types::ConnectionConfig;
+use crate::types::{ConnectionConfig, SystemStats};
 use crate::utils::CHAN_CAP;
 
 #[tauri::command]
@@ -52,11 +52,33 @@ pub async fn disconnect(
 
 #[tauri::command]
 pub async fn send_data(
+    app: AppHandle,
     state: State<'_, AppState>,
     id: String,
     data: Vec<u8>,
+    config: Option<ConnectionConfig>,
 ) -> Result<(), String> {
-    let conns = state.connections.lock().await;
+    let mut conns = state.connections.lock().await;
+
+    // Auto-spawn handler if no active connection and config is provided
+    // (used by stateless protocols like HTTP)
+    if !conns.contains_key(&id) {
+        match config {
+            Some(cfg) => {
+                let (data_tx, data_rx) = mpsc::channel::<Vec<u8>>(CHAN_CAP);
+                let abort_handle = spawn_connection_task(app, id.clone(), cfg, data_rx)?;
+                conns.insert(
+                    id.clone(),
+                    ConnEntry {
+                        data_tx,
+                        abort: abort_handle,
+                    },
+                );
+            }
+            None => return Err("No active connection".to_string()),
+        }
+    }
+
     match conns.get(&id) {
         Some(entry) => entry
             .data_tx
@@ -85,4 +107,34 @@ pub fn run_script(app: AppHandle, session_id: String, source: String) -> Result<
         .map_err(|e| format!("Engine init failed: {}", e))?;
     let output = engine.run(&source)?;
     Ok(output)
+}
+
+#[tauri::command]
+pub fn get_system_stats() -> SystemStats {
+    use sysinfo::{System, RefreshKind, CpuRefreshKind, MemoryRefreshKind};
+
+    let mut sys = System::new_with_specifics(
+        RefreshKind::nothing()
+            .with_cpu(CpuRefreshKind::everything())
+            .with_memory(MemoryRefreshKind::everything()),
+    );
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    sys.refresh_cpu_all();
+    sys.refresh_memory();
+
+    let cpu_percent = sys.global_cpu_usage();
+    let mem_total = sys.total_memory();
+    let mem_used = sys.used_memory();
+    let mem_percent = if mem_total > 0 {
+        (mem_used as f32 / mem_total as f32) * 100.0
+    } else {
+        0.0
+    };
+
+    SystemStats {
+        cpu_percent,
+        mem_used,
+        mem_total,
+        mem_percent,
+    }
 }

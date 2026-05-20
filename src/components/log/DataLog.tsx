@@ -1,123 +1,353 @@
-import React, { useRef, useMemo, useCallback, useState, useEffect, memo } from 'react';
+﻿import { useRef, useMemo, useCallback, useState, useEffect, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Plug, Clock } from 'lucide-react';
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Grid,
+  Heading,
+  IconButton,
+  Text,
+} from '@chakra-ui/react';
+import { SearchInput } from '../ui/SearchInput';
+import { Plug, Clock, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { useSessionStore, useLogStore } from '../../store';
 import type { Session, LogEntry, EncodingMode, AsciiNonPrintableMode } from '../../types';
 import {
-  bytesToDisplay, bytesToHexText, formatTimestamp,
+  bytesToDisplay, bytesToHexText, bytesToHex,
 } from '../../utils/encoding';
-import { APP_DISPLAY } from '../../config/app';
+import { showToast } from '../../store/toastStore';
 import {
-  LOG_VIRTUALIZER_OVERSCAN, LOG_ESTIMATE_SIZE, LOG_SCROLL_BOTTOM_THRESHOLD,
+  LOG_VIRTUALIZER_OVERSCAN,
+  LOG_ESTIMATE_SIZE,
+  LOG_SCROLL_BOTTOM_THRESHOLD,
   LOG_FILTER_DEBOUNCE_MS,
+  LOG_TABLE_COLUMNS,
+  LOG_TABLE_COLUMN_GAP,
 } from '../../config/constants';
 
 interface Props { session: Session }
 
-function renderData(entry: LogEntry, encoding: EncodingMode, asciiMode: AsciiNonPrintableMode): string {
-  return bytesToDisplay(entry.data, encoding, asciiMode);
+function fmtTime(ms: number): string {
+  const d = new Date(ms);
+  const pad = (n: number, len = 2) => n.toString().padStart(len, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+}
+
+type LogPayloadColor = 'success' | 'warning' | 'danger' | 'fg.subtle';
+
+type SystemLogKind = 'success' | 'info' | 'error';
+
+interface RowData {
+  time: string;
+  dir: 'TX' | 'RX' | 'SYS' | 'ERR';
+  dirIcon: 'up' | 'down' | 'warn' | 'ok' | 'info';
+  payloadColor: LogPayloadColor;
+  hexText?: string;
+  asciiText?: string;
+  plainText?: string;
+  len: string;
+  isError: boolean;
+  rawHex: string;
+  rawText: string;
+}
+
+function classifySystemLog(text: string, empty: boolean): { kind: SystemLogKind; isError: boolean } {
+  if (empty || /error|timeout|fail/i.test(text)) {
+    return { kind: 'error', isError: true };
+  }
+  if (
+    /^Connected to\b/i.test(text) ||
+    /^Listening on\b/i.test(text) ||
+    /^Client connected:/i.test(text)
+  ) {
+    return { kind: 'success', isError: false };
+  }
+  return { kind: 'info', isError: false };
+}
+
+function systemLogStyle(kind: SystemLogKind): { payloadColor: LogPayloadColor; dirIcon: RowData['dirIcon'] } {
+  switch (kind) {
+    case 'success':
+      return { payloadColor: 'success', dirIcon: 'ok' };
+    case 'error':
+      return { payloadColor: 'danger', dirIcon: 'warn' };
+    default:
+      return { payloadColor: 'fg.subtle', dirIcon: 'info' };
+  }
+}
+
+function buildRowData(
+  entry: LogEntry,
+  encoding: EncodingMode,
+  asciiMode: AsciiNonPrintableMode,
+): RowData {
+  const isRecv = entry.direction === 'recv';
+  const isSys = entry.direction === 'system';
+
+  const text = new TextDecoder().decode(new Uint8Array(entry.data));
+
+  if (isSys) {
+    const { kind, isError } = classifySystemLog(text, entry.data.length === 0);
+    const { payloadColor, dirIcon } = systemLogStyle(kind);
+    return {
+      time: fmtTime(entry.timestamp),
+      dir: isError ? 'ERR' : 'SYS',
+      dirIcon,
+      payloadColor,
+      plainText: text,
+      len: '-',
+      isError,
+      rawHex: '',
+      rawText: text,
+    };
+  }
+
+  const dir = isRecv ? 'RX' : 'TX';
+  const dirIcon = isRecv ? 'down' : 'up';
+  const payloadColor: LogPayloadColor = isRecv ? 'success' : 'warning';
+
+  const rawHex = bytesToHex(entry.data);
+  const rawText = new TextDecoder().decode(new Uint8Array(entry.data));
+
+  if (encoding === 'HEX_TEXT') {
+    const dual = bytesToHexText(entry.data, asciiMode);
+    return {
+      time: fmtTime(entry.timestamp),
+      dir,
+      dirIcon,
+      payloadColor,
+      hexText: dual.hex,
+      asciiText: dual.text,
+      len: entry.data.length.toLocaleString(),
+      isError: false,
+      rawHex,
+      rawText,
+    };
+  }
+
+  return {
+    time: fmtTime(entry.timestamp),
+    dir,
+    dirIcon,
+    payloadColor,
+    plainText: bytesToDisplay(entry.data, encoding, asciiMode),
+    len: entry.data.length.toLocaleString(),
+    isError: false,
+    rawHex,
+    rawText,
+  };
+}
+
+function copyToClipboard(text: string) {
+  void window.navigator.clipboard.writeText(text);
 }
 
 const LogRow = memo(function LogRow({
   entry,
   encoding,
   asciiMode,
-  showAsLog,
   autoNewline,
-  dirRecv,
-  dirSend,
-  dirSystem,
+  isSelected,
+  onSelect,
 }: {
   entry: LogEntry;
   encoding: EncodingMode;
   asciiMode: AsciiNonPrintableMode;
-  showAsLog: boolean;
   autoNewline: boolean;
-  dirRecv: string;
-  dirSend: string;
-  dirSystem: string;
+  isSelected: boolean;
+  onSelect: () => void;
 }) {
-  const isRecv = entry.direction === 'recv';
-  const isSys  = entry.direction === 'system';
+  const data = useMemo(
+    () => buildRowData(entry, encoding, asciiMode),
+    [entry, encoding, asciiMode],
+  );
 
-  const encLabel = encoding;
-  const dirLabel = isSys ? `# ${dirSystem}` : isRecv ? `# ${dirRecv} ${encLabel}>` : `# ${dirSend} ${encLabel}>`;
-
-  const dataColorClass = isSys
-    ? 'text-[var(--color-text-muted)]'
-    : isRecv
-    ? 'text-[var(--color-success)]'
-    : 'text-[var(--color-accent)]';
-
-  const suffix = isRecv && autoNewline ? '\n' : '';
-  const text = renderData(entry, encoding, asciiMode) + suffix;
-  const dual = encoding === 'HEX_TEXT' ? bytesToHexText(entry.data, asciiMode) : null;
-  const hexText = dual ? `${dual.hex}${suffix}` : null;
-  const plainText = dual ? `${dual.text}${suffix}` : null;
-
-  if (!showAsLog) {
-    return (
-      <div className="px-3 py-0.5 font-[family-name:var(--font-mono)]">
-        {dual ? (
-          <>
-            <div className={`text-xs font-semibold break-all whitespace-pre-wrap ${dataColorClass}`}>
-              {hexText}
-            </div>
-            <div className="text-[11px] mt-px text-[var(--color-text-secondary)] break-all whitespace-pre-wrap">
-              {plainText}
-            </div>
-          </>
-        ) : (
-          <div className={`text-xs font-semibold break-all whitespace-pre-wrap ${dataColorClass}`}>
-            {text}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const recvSpacer = autoNewline && entry.direction === 'recv';
+  const showCopyActions = !data.isError && data.len !== '-';
 
   return (
-    <div className="px-3 py-1 font-[family-name:var(--font-mono)]">
-      <div className="text-[11px] text-[var(--color-text-muted)]">
-        [{formatTimestamp(entry.timestamp)}]
-        {entry.source && ` [${entry.source}]`}
-        {' '}{dirLabel}
-      </div>
-      {dual ? (
-        <>
-          <div className={`text-xs font-semibold mt-0.5 break-all whitespace-pre-wrap ${dataColorClass}`}>
-            {hexText}
-          </div>
-          <div className="text-[11px] mt-0.5 text-[var(--color-text-secondary)] break-all whitespace-pre-wrap">
-            {plainText}
-          </div>
-        </>
-      ) : (
-        <div className={`text-xs font-semibold mt-0.5 break-all whitespace-pre-wrap ${dataColorClass}`}>
-          {text}
-        </div>
-      )}
-    </div>
+    <Grid
+      className="group"
+      templateColumns={LOG_TABLE_COLUMNS}
+      columnGap={LOG_TABLE_COLUMN_GAP}
+      px="3"
+      py="2"
+      pb={recvSpacer ? '4' : '2'}
+      borderBottomWidth="1px"
+      borderColor="border"
+      alignItems="flex-start"
+      fontFamily="mono"
+      fontSize="2xs"
+      cursor="pointer"
+      bg={isSelected ? 'accent.subtle' : 'transparent'}
+      _hover={{ bg: isSelected ? 'accent.subtle' : 'bg.subtle' }}
+      onClick={onSelect}
+    >
+      <Text
+        color="fg.subtle"
+        fontSize="2xs"
+        lineHeight="1.6"
+        userSelect="none"
+        whiteSpace="nowrap"
+      >
+        {data.time}
+      </Text>
+
+      <Flex justify="center" pt="0.5">
+        <DirGlyph icon={data.dirIcon} color={data.payloadColor} />
+      </Flex>
+
+      <Box minW="0">
+        {data.hexText && data.asciiText ? (
+          <HexAsciiPayload hex={data.hexText} ascii={data.asciiText} color={data.payloadColor} />
+        ) : (
+          <Text color={data.payloadColor} wordBreak="break-all" lineHeight="1.6" whiteSpace="pre-wrap">
+            {data.plainText}
+          </Text>
+        )}
+      </Box>
+
+      <Flex
+        position="relative"
+        justify="flex-end"
+        align="center"
+        minH="5"
+        pt="0.5"
+        flexShrink={0}
+      >
+        <Text
+          color="fg.subtle"
+          fontSize="2xs"
+          lineHeight="1.6"
+          whiteSpace="nowrap"
+          className={showCopyActions ? 'transition-opacity group-hover:opacity-0' : undefined}
+        >
+          {data.len}
+        </Text>
+        {showCopyActions && (
+          <Flex
+            position="absolute"
+            right="0"
+            top="0"
+            gap="0.5"
+            className="pointer-events-none opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100"
+          >
+            <IconButton
+              aria-label="Copy HEX"
+              title="Copy HEX"
+              size="xs"
+              variant="ghost"
+              color="fg.subtle"
+              _hover={{ color: 'accent', bg: 'accent.subtle' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(data.rawHex);
+                showToast('success', 'Copied HEX');
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+            </IconButton>
+            <IconButton
+              aria-label="Copy ASCII"
+              title="Copy ASCII"
+              size="xs"
+              variant="ghost"
+              color="fg.subtle"
+              _hover={{ color: 'accent', bg: 'accent.subtle' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(data.rawText);
+                showToast('success', 'Copied text');
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </IconButton>
+          </Flex>
+        )}
+      </Flex>
+    </Grid>
   );
 }, (prev, next) =>
   prev.entry.id === next.entry.id &&
   prev.encoding === next.encoding &&
   prev.asciiMode === next.asciiMode &&
-  prev.showAsLog === next.showAsLog &&
   prev.autoNewline === next.autoNewline &&
-  prev.dirRecv === next.dirRecv &&
-  prev.dirSend === next.dirSend &&
-  prev.dirSystem === next.dirSystem,
+  prev.isSelected === next.isSelected,
 );
+
+function DirGlyph({ icon, color }: { icon: RowData['dirIcon']; color: LogPayloadColor }) {
+  const iconProps = { size: 14, strokeWidth: 2.25 };
+
+  return (
+    <Box color={color} lineHeight={0} aria-hidden display="flex">
+      {icon === 'up' ? (
+        <ArrowUp {...iconProps} />
+      ) : icon === 'down' ? (
+        <ArrowDown {...iconProps} />
+      ) : icon === 'ok' ? (
+        <CheckCircle2 {...iconProps} />
+      ) : icon === 'info' ? (
+        <Info {...iconProps} />
+      ) : (
+        <AlertTriangle {...iconProps} />
+      )}
+    </Box>
+  );
+}
+
+/** Design: hex groups + ASCII on the same line, direction-colored, 16 bytes per row. */
+function HexAsciiPayload({ hex, ascii, color }: { hex: string; ascii: string; color: LogPayloadColor }) {
+  const bytes = hex.split(' ').filter(Boolean);
+  const bytesPerLine = 16;
+  const lines: { hexLine: string; asciiLine: string }[] = [];
+
+  for (let i = 0; i < bytes.length; i += bytesPerLine) {
+    const chunk = bytes.slice(i, i + bytesPerLine);
+    lines.push({
+      hexLine: chunk.join(' '),
+      asciiLine: ascii.slice(i, i + bytesPerLine),
+    });
+  }
+
+  return (
+    <Box>
+      {lines.map((line, idx) => (
+        <Text key={idx} color={color} lineHeight="1.6" wordBreak="break-all">
+          {line.hexLine}
+          {line.asciiLine ? (
+            <>
+              <Text as="span" opacity={0.45}>
+                {'    '}
+              </Text>
+              <Text as="span" opacity={0.92}>
+                {line.asciiLine}
+              </Text>
+            </>
+          ) : null}
+        </Text>
+      ))}
+    </Box>
+  );
+}
+
 
 export default function DataLog({ session }: Props) {
   const { t } = useTranslation();
-  const logFilter    = useLogStore(s => s.logFilter);
+  const logFilter = useLogStore(s => s.logFilter);
   const setLogFilter = useLogStore(s => s.setLogFilter);
-  const clearLogs    = useSessionStore(s => s.clearLogs);
+  const clearLogs = useSessionStore(s => s.clearLogs);
 
   const [inputValue, setInputValue] = useState(logFilter);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setLogFilter(inputValue), LOG_FILTER_DEBOUNCE_MS);
@@ -129,7 +359,7 @@ export default function DataLog({ session }: Props) {
   }, [logFilter]);
 
   const parentRef = useRef<HTMLDivElement>(null);
-  const atBottom  = useRef(true);
+  const atBottom = useRef(true);
 
   const asciiMode = session.receiveSettings.asciiNonPrintable ?? 'DOT';
 
@@ -139,18 +369,31 @@ export default function DataLog({ session }: Props) {
     }
     const q = logFilter.toLowerCase();
     return session.logs.filter(e =>
-      renderData(e, session.receiveSettings.encoding, asciiMode).toLowerCase().includes(q),
+      bytesToDisplay(e.data, session.receiveSettings.encoding, asciiMode).toLowerCase().includes(q),
     );
   }, [session.logs, logFilter, session.receiveSettings.encoding, asciiMode]);
 
-  // Stable callbacks so virtualizer doesn't recreate on every render
+  // Stats
+  const stats = useMemo(() => {
+    let rx = 0, tx = 0, sys = 0;
+    for (const e of filteredLogs) {
+      if (e.direction === 'recv') {
+        rx++;
+      } else if (e.direction === 'send') {
+        tx++;
+      } else {
+        sys++;
+      }
+    }
+    return { rx, tx, sys };
+  }, [filteredLogs]);
+
   const getEstimateSize = useCallback(() => LOG_ESTIMATE_SIZE, []);
-  const getItemKey      = useCallback(
+  const getItemKey = useCallback(
     (i: number) => filteredLogs[i]?.id ?? i,
     [filteredLogs],
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual uses interior mutability
   const virtualizer = useVirtualizer({
     count: filteredLogs.length,
     getScrollElement: () => parentRef.current,
@@ -159,9 +402,8 @@ export default function DataLog({ session }: Props) {
     overscan: LOG_VIRTUALIZER_OVERSCAN,
   });
 
-  // Auto-scroll to bottom when new data arrives and user hasn't scrolled up
   const prevCountRef = useRef(0);
-  React.useEffect(() => {
+  useEffect(() => {
     if (filteredLogs.length !== prevCountRef.current) {
       prevCountRef.current = filteredLogs.length;
       if (atBottom.current && filteredLogs.length > 0) {
@@ -172,116 +414,179 @@ export default function DataLog({ session }: Props) {
 
   const handleScroll = useCallback(() => {
     const el = parentRef.current;
-    if (!el) {
-      return;
-    }
+    if (!el) { return; }
     atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < LOG_SCROLL_BOTTOM_THRESHOLD;
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-[rgba(16,34,34,0.8)] select-text"
-    >
-      <div className="flex items-center justify-between px-3 py-1.5 shrink-0 bg-[linear-gradient(to_right,rgba(45,212,191,0.1),transparent)] border-b border-[var(--color-primary)]/20"
+    <Flex direction="column" h="full" userSelect="text">
+      <Flex
+        align="center"
+        justify="space-between"
+        px="3"
+        py="1.5"
+        flexShrink={0}
+        borderBottomWidth="1px"
+        borderColor="border"
+        bgGradient="to-r"
+        gradientFrom="accent.subtle"
+        gradientTo="transparent"
       >
-        <div className="flex items-center gap-2 border-l-2 border-[var(--color-primary)] pl-2"
-        >
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] font-[family-name:var(--font-display)]">
+        <Flex align="center" gap="2" borderLeftWidth="2px" borderColor="accent" pl="2">
+          <Heading fontSize="sm" lineHeight="normal" color="fg" fontWeight="normal">
             {t('log.title')}
-          </h3>
+          </Heading>
           {session.logs.length > 0 && (
-            <span className="text-[10px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]"
-            >
+            <Text fontSize="2xs" color="fg.subtle" fontFamily="mono">
               {session.logs.length.toLocaleString()}
-            </span>
+            </Text>
           )}
-        </div>
-        <div className="flex items-center gap-3"
-        >
-          <span className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--color-secondary)]/70 font-bold"
-          >
-            {APP_DISPLAY}
-          </span>
-          <button
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold uppercase btn-interactive hover:bg-white/10 focus-ring bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] text-[10px]"
-            onClick={() => clearLogs(session.id)}
+        </Flex>
+        <Flex align="center" gap="2">
+          {filteredLogs.length > 0 && (
+            <Flex align="center" gap="1" mr="2">
+              {stats.rx > 0 && (
+                <Badge size="sm" colorPalette="success" variant="subtle" fontSize="2xs">
+                  RX {stats.rx}
+                </Badge>
+              )}
+              {stats.tx > 0 && (
+                <Badge size="sm" colorPalette="warning" variant="subtle" fontSize="2xs">
+                  TX {stats.tx}
+                </Badge>
+              )}
+              {stats.sys > 0 && (
+                <Badge size="sm" colorPalette="warning" variant="subtle" fontSize="2xs">
+                  SYS {stats.sys}
+                </Badge>
+              )}
+            </Flex>
+          )}
+          <Button
+            size="xs"
+            variant="outline"
+            colorPalette="red"
+            fontSize="2xs"
+            fontFamily="mono"
+            onClick={() => {
+              clearLogs(session.id);
+              showToast('info', 'Logs cleared');
+            }}
           >
             {t('log.clear')}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Flex>
+      </Flex>
 
-      <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 bg-[rgba(16,34,34,0.5)] border-b border-[var(--color-primary)]/10"
+      <Flex
+        align="center"
+        px="3"
+        py="1.5"
+        flexShrink={0}
+        bg="bg.subtle"
+        borderBottomWidth="1px"
+        borderColor="border"
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(100,116,139,0.8)" strokeWidth="2" className="shrink-0"
-        >
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input
-          type="text"
+        <SearchInput
+          flex="1"
+          minW="0"
           value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
+          onChange={setInputValue}
           placeholder={t('log.searchPlaceholder')}
-          className="field-control flex-1 min-w-0"
+          clearAriaLabel={t('log.clear')}
         />
-        {inputValue && (
-          <button onClick={() => setInputValue('')} className="btn-interactive hover-text-primary focus-ring px-1 text-[var(--color-text-muted)] text-sm leading-none" aria-label={t('log.clear')}>×</button>
-        )}
-      </div>
+      </Flex>
 
-      <div
+      <Grid
+        templateColumns={LOG_TABLE_COLUMNS}
+        columnGap={LOG_TABLE_COLUMN_GAP}
+        px="3"
+        py="1.5"
+        flexShrink={0}
+        bg="bg"
+        borderBottomWidth="1px"
+        borderColor="border"
+        fontFamily="mono"
+        fontSize="2xs"
+        color="fg.subtle"
+        textTransform="uppercase"
+        letterSpacing="wider"
+        userSelect="none"
+        alignItems="center"
+      >
+        <Box whiteSpace="nowrap">{t('log.colTime')}</Box>
+        <Box textAlign="center" whiteSpace="nowrap">
+          {t('log.colDir')}
+        </Box>
+        <Box minW="0">{t('log.colData')}</Box>
+        <Box textAlign="right" whiteSpace="nowrap">
+          {t('log.colLen')}
+        </Box>
+      </Grid>
+
+      <Box
         ref={parentRef}
-        className="flex-1 overflow-y-auto relative bg-[rgba(16,34,34,0.95)] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] select-text"
+        flex="1"
+        overflowY="auto"
+        position="relative"
+        bg="bg"
+        userSelect="text"
         onScroll={handleScroll}
       >
-        <div className="crt-scanlines" />
-
         {filteredLogs.length === 0 ? (
-          <div
-            className="flex flex-col items-center justify-center gap-3 h-full relative z-20 text-[var(--color-text-muted)]/90 text-[13px] font-[family-name:var(--font-mono)] bg-[rgba(16,34,34,0.32)]"
+          <Flex
+            direction="column"
+            align="center"
+            justify="center"
+            gap="3"
+            h="full"
+            position="relative"
+            zIndex={20}
+            color="fg.subtle"
+            fontFamily="mono"
+            fontSize="sm"
           >
             {session.status === 'idle' || session.status === 'error' ? (
-              <Plug size={48} strokeWidth={1.2} className="opacity-50" />
+              <Plug size={48} strokeWidth={1.2} opacity={0.4} />
             ) : (
-              <Clock size={48} strokeWidth={1.2} className="opacity-50" />
+              <Clock size={48} strokeWidth={1.2} opacity={0.4} />
             )}
-            <span>
+            <Text>
               {session.status === 'idle' || session.status === 'error'
                 ? t('log.connectFirst')
                 : t('log.waiting')}
-            </span>
-          </div>
+            </Text>
+          </Flex>
         ) : (
-          <div className="relative z-20" style={{ height: virtualizer.getTotalSize() }}>
-            {virtualizer.getVirtualItems().map(vItem => (
-              <div
+          <Box position="relative" zIndex={20} height={`${virtualizer.getTotalSize()}px`}>
+            {virtualizer.getVirtualItems().map((vItem) => (
+              <Box
                 key={vItem.key}
                 data-index={vItem.index}
                 ref={virtualizer.measureElement}
-                className="absolute inset-x-0"
-                style={{ top: vItem.start }}
+                position="absolute"
+                insetX="0"
+                top={`${vItem.start}px`}
               >
                 <LogRow
                   entry={filteredLogs[vItem.index]}
                   encoding={session.receiveSettings.encoding}
                   asciiMode={asciiMode}
-                  showAsLog={session.receiveSettings.showAsLog}
                   autoNewline={session.receiveSettings.autoNewline}
-                  dirRecv={t('log.dirRecv')}
-                  dirSend={t('log.dirSend')}
-                  dirSystem={t('log.dirSystem')}
+                  isSelected={selectedId === filteredLogs[vItem.index].id}
+                  onSelect={() => setSelectedId(filteredLogs[vItem.index].id)}
                 />
-              </div>
+              </Box>
             ))}
-          </div>
+          </Box>
         )}
 
         {(session.status === 'connected' || session.status === 'listening') && (
-          <div className="relative z-20 px-3 pb-2 font-[family-name:var(--font-mono)] text-[var(--color-primary)] font-bold"
-          >
+          <Box position="relative" zIndex={20} px="4" pb="2" fontFamily="mono" color="accent" fontWeight="bold">
             <span className="blink">_</span>
-          </div>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Flex>
   );
 }

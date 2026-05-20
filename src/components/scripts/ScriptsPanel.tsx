@@ -1,7 +1,17 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Box,
+  Button,
+  Checkbox,
+  Flex,
+  Stack,
+  Text,
+} from '@chakra-ui/react';
 import Editor from '@monaco-editor/react';
+import { CheckboxControl } from '../sidebar/ui';
 import { useScriptStore } from '../../store';
+import { showToast } from '../../store/toastStore';
 import { runScript } from '../../services/scriptService';
 import type { Script } from '../../types';
 
@@ -27,19 +37,31 @@ export default function ScriptsPanel({ sessionId }: Props) {
 
   const handleAdd = () => {
     addScript();
+    showToast('success', t('toast.scriptAdded'));
   };
 
   const handleDelete = (id: string) => {
     removeScript(id);
+    showToast('info', t('toast.scriptDeleted'));
   };
+
+  const activeIdRef = useRef(activeId);
+  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+
+  const debounceTimerRef = useRef<number | null>(null);
 
   const handleSourceChange = useCallback(
     (value: string | undefined) => {
-      if (activeId && value !== undefined) {
-        updateScript(activeId, { source: value });
+      if (!activeIdRef.current || value === undefined) return;
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
       }
+      debounceTimerRef.current = window.setTimeout(() => {
+        debounceTimerRef.current = null;
+        updateScript(activeIdRef.current!, { source: value });
+      }, 500);
     },
-    [activeId, updateScript]
+    [updateScript],
   );
 
   const handleToggleAutoRun = (script: Script) => {
@@ -64,6 +86,7 @@ export default function ScriptsPanel({ sessionId }: Props) {
       setOutput((prev) => [...prev, ...result.map((line) => `  ${line}`), '> Done.']);
     } catch (e) {
       setOutput((prev) => [...prev, `> Error: ${e}`]);
+      showToast('error', `${t('toast.scriptRunFailed')}: ${e}`);
     } finally {
       setIsRunning(false);
     }
@@ -72,89 +95,105 @@ export default function ScriptsPanel({ sessionId }: Props) {
   const handleStop = () => {
     setIsRunning(false);
     setOutput((prev) => [...prev, '> Stopped.']);
+    showToast('warning', t('toast.scriptStopped'));
   };
 
   const clearOutput = () => setOutput([]);
 
   return (
-    <div className="flex flex-col h-full gap-2">
-      {/* Script list */}
-      <div className="flex items-center gap-1 shrink-0">
-        <div className="flex-1 flex items-center gap-1 overflow-x-auto sidebar-scroll">
+    <Flex direction="column" h="full" gap="2">
+      <Flex align="center" gap="1" flexShrink={0}>
+        <Flex flex="1" align="center" gap="1" overflowX="auto" className="sidebar-scroll">
           {scripts.map((sc) => (
-            <button
+            <Button
               key={sc.id}
               onClick={() => setActive(sc.id)}
-              className={`px-2 py-1 rounded text-[10px] btn-interactive whitespace-nowrap font-[family-name:var(--font-mono)] ${
-                sc.id === activeId
-                  ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)] border border-[var(--color-primary)]/30'
-                  : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
-              }`}
+              size="xs"
+              variant={sc.id === activeId ? 'surface' : 'outline'}
+              colorPalette={sc.id === activeId ? 'blue' : 'gray'}
+              fontFamily="mono"
+              fontSize="2xs"
+              whiteSpace="nowrap"
+              flexShrink={0}
             >
               {sc.name}
               {sc.autoRun && (
-                <span className="ml-1 text-[var(--color-success)]">●</span>
+                <Text as="span" ml="1" color="success">
+                  ●
+                </Text>
               )}
-            </button>
+            </Button>
           ))}
-        </div>
-        <button
+        </Flex>
+        <Button
           onClick={handleAdd}
-          className="px-2 py-1 rounded text-[10px] btn-interactive text-[var(--color-primary)] border border-[var(--color-primary)]/20 shrink-0"
+          size="xs"
+          variant="outline"
+          colorPalette="blue"
+          flexShrink={0}
+          fontSize="2xs"
         >
           + {t('shortcuts.add')}
-        </button>
-      </div>
+        </Button>
+      </Flex>
 
       {activeScript ? (
         <>
-          {/* Toolbar */}
-          <div className="flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2">
-              <button
+          <Flex align="center" justify="space-between" flexShrink={0}>
+            <Flex align="center" gap="2" flexWrap="wrap">
+              <Button
                 onClick={isRunning ? handleStop : handleRun}
                 disabled={!activeScript}
-                className={`px-3 py-1 rounded text-[10px] font-bold uppercase btn-interactive focus-ring font-[family-name:var(--font-display)] ${
-                  isRunning
-                    ? 'bg-[var(--color-error)]/10 text-[var(--color-error)] border border-[var(--color-error)]/20'
-                    : 'bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20'
-                }`}
+                size="xs"
+                variant="outline"
+                colorPalette={isRunning ? 'red' : 'green'}
+                textTransform="uppercase"
+                fontSize="2xs"
+                fontWeight="bold"
               >
                 {isRunning ? 'Stop' : 'Run'}
-              </button>
-              <label className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)] cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={activeScript.autoRun}
-                  onChange={() => handleToggleAutoRun(activeScript)}
-                  className="custom-check accent"
-                />
-                Auto-run
-              </label>
-              {sessionId && (
-                <label className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={activeScript.linkedSessionIds.includes(sessionId)}
-                    onChange={() => handleToggleLink(activeScript)}
-                    className="custom-check accent"
-                  />
-                  Link
-                </label>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleDelete(activeScript.id)}
-                className="text-[10px] btn-interactive text-[var(--color-error)]/70 hover:text-[var(--color-error)]"
+              </Button>
+              <Checkbox.Root
+                checked={activeScript.autoRun}
+                onCheckedChange={() => handleToggleAutoRun(activeScript)}
+                colorPalette="blue"
+                variant="outline"
+                size="sm"
               >
-                {t('profile.delete')}
-              </button>
-            </div>
-          </div>
+                <Checkbox.HiddenInput />
+                <CheckboxControl />
+                <Checkbox.Label fontSize="2xs" color="fg.muted">
+                  Auto-run
+                </Checkbox.Label>
+              </Checkbox.Root>
+              {sessionId && (
+                <Checkbox.Root
+                  checked={activeScript.linkedSessionIds.includes(sessionId)}
+                  onCheckedChange={() => handleToggleLink(activeScript)}
+                  colorPalette="blue"
+                  variant="outline"
+                  size="sm"
+                >
+                  <Checkbox.HiddenInput />
+                  <CheckboxControl />
+                  <Checkbox.Label fontSize="2xs" color="fg.muted">
+                    Link
+                  </Checkbox.Label>
+                </Checkbox.Root>
+              )}
+            </Flex>
+            <Button
+              onClick={() => handleDelete(activeScript.id)}
+              size="xs"
+              variant="ghost"
+              colorPalette="red"
+              fontSize="2xs"
+            >
+              {t('profile.delete')}
+            </Button>
+          </Flex>
 
-          {/* Editor */}
-          <div className="flex-1 min-h-0 rounded border border-[var(--color-border)] overflow-hidden">
+          <Box flex="1" minH="0" rounded="md" borderWidth="1px" borderColor="border" overflow="hidden">
             <Editor
               value={activeScript.source}
               onChange={handleSourceChange}
@@ -171,41 +210,56 @@ export default function ScriptsPanel({ sessionId }: Props) {
                 padding: { top: 8 },
               }}
             />
-          </div>
+          </Box>
 
-          {/* Output */}
-          <div className="shrink-0 h-[120px] flex flex-col rounded border border-[var(--color-border)] bg-[rgba(16,34,34,0.7)]">
-            <div className="flex items-center justify-between px-2 py-1 border-b border-[var(--color-border)]">
-              <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-[family-name:var(--font-display)]">Output</span>
-              <button
-                onClick={clearOutput}
-                className="text-[9px] btn-interactive text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
-              >
+          <Flex
+            direction="column"
+            flexShrink={0}
+            h="120px"
+            rounded="md"
+            borderWidth="1px"
+            borderColor="border"
+            bg="bg.muted"
+            overflow="hidden"
+          >
+            <Flex
+              align="center"
+              justify="space-between"
+              px="2"
+              py="1"
+              borderBottomWidth="1px"
+              borderColor="border"
+            >
+              <Text fontSize="2xs" textTransform="uppercase" letterSpacing="wider" color="fg.subtle">
+                Output
+              </Text>
+              <Button onClick={clearOutput} size="xs" variant="ghost" fontSize="2xs" color="fg.subtle">
                 {t('send.clear')}
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2 font-[family-name:var(--font-mono)] text-[10px] text-[var(--color-text-secondary)] sidebar-scroll">
+              </Button>
+            </Flex>
+            <Box flex="1" overflowY="auto" p="2" fontFamily="mono" fontSize="2xs" color="fg.muted" className="sidebar-scroll">
               {output.length === 0 ? (
-                <span className="text-[var(--color-text-muted)]">Ready...</span>
+                <Text color="fg.subtle">Ready...</Text>
               ) : (
-                output.map((line, i) => (
-                  <div key={i} className="leading-relaxed">{line}</div>
-                ))
+                <Stack gap="0">
+                  {output.map((line, i) => (
+                    <Text key={i} lineHeight="relaxed">
+                      {line}
+                    </Text>
+                  ))}
+                </Stack>
               )}
-            </div>
-          </div>
+            </Box>
+          </Flex>
         </>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-[var(--color-text-muted)]">
-          <div className="text-[11px]">{t('sendCenter.emptyShortcuts')}</div>
-          <button
-            onClick={handleAdd}
-            className="px-3 py-1.5 rounded text-[10px] btn-interactive text-[var(--color-primary)] border border-[var(--color-primary)]/20"
-          >
+        <Flex flex="1" direction="column" align="center" justify="center" gap="3" color="fg.subtle">
+          <Text fontSize="2xs">{t('sendCenter.emptyShortcuts')}</Text>
+          <Button onClick={handleAdd} size="sm" variant="outline" colorPalette="blue" fontSize="2xs">
             + {t('shortcuts.add')}
-          </button>
-        </div>
+          </Button>
+        </Flex>
       )}
-    </div>
+    </Flex>
   );
 }

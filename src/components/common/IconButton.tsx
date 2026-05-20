@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { IconButton as ChakraIconButton } from '@chakra-ui/react';
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: ReactNode;
@@ -8,59 +9,40 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
 }
 
+const sizeMap = {
+  sm: 'xs' as const,
+  md: 'sm' as const,
+  lg: 'md' as const,
+};
+
 export default function IconButton({
   icon,
   variant = 'default',
   size = 'md',
   title,
-  className = '',
+  className,
   disabled = false,
   ...rest
 }: Props) {
-  const baseClasses = [
-    'inline-flex',
-    'items-center',
-    'justify-center',
-    'rounded-[var(--radius-md)]',
-    'btn-interactive',
-    'transition-colors',
-    'duration-[var(--transition-fast)]',
-  ].join(' ');
-
-  const sizeClasses = {
-    sm: 'w-7 h-7',
-    md: 'w-8 h-8',
-    lg: 'w-10 h-10',
-  };
-
-  const variantClasses = {
-    default: [
-      'bg-[var(--color-surface-elevated)]',
-      'text-[var(--color-text-secondary)]',
-      'hover:text-[var(--color-text-primary)]',
-    ].join(' '),
-    primary: [
-      'bg-[var(--color-primary)]/10',
-      'text-[var(--color-primary)]',
-      'hover:bg-[var(--color-primary)]/20',
-    ].join(' '),
-    ghost: [
-      'bg-transparent',
-      'text-[var(--color-text-muted)]',
-      'hover:bg-[var(--color-surface)]',
-      'hover:text-[var(--color-text-secondary)]',
-    ].join(' '),
-  };
-
-  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
-
-  const classes = [baseClasses, sizeClasses[size], variantClasses[variant], disabledClasses, className]
-    .filter(Boolean)
-    .join(' ');
+  const chakraVariant =
+    variant === 'ghost' ? 'ghost' : variant === 'primary' ? 'subtle' : 'outline';
 
   return (
-    <button className={classes} disabled={disabled} title={title} {...rest}>
+    <ChakraIconButton
+      aria-label={title ?? 'button'}
+      title={title}
+      variant={chakraVariant}
+      size={sizeMap[size]}
+      disabled={disabled}
+      className={className}
+      colorPalette={variant === 'primary' ? 'blue' : 'gray'}
+      bg={variant === 'primary' ? 'accent.subtle' : variant === 'default' ? 'bg.muted' : undefined}
+      color={variant === 'primary' ? 'accent' : 'fg.muted'}
+      borderColor={variant === 'default' ? 'border' : undefined}
+      _hover={{ color: 'fg' }}
+      {...rest}
+    >
       {icon}
-    </button>
+    </ChakraIconButton>
   );
 }

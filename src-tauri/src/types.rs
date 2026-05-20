@@ -26,3 +26,11 @@ pub struct HttpHeader {
     pub value: String,
     pub enabled: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemStats {
+    pub cpu_percent: f32,
+    pub mem_used: u64,
+    pub mem_total: u64,
+    pub mem_percent: f32,
+}

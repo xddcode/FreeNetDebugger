@@ -34,6 +34,17 @@ export interface HttpHeader {
   enabled: boolean;
 }
 
+export interface HttpQueryParam {
+  key: string;
+  value: string;
+  enabled: boolean;
+}
+
+export type HttpBody =
+  | { type: 'none' }
+  | { type: 'text'; content: string }
+  | { type: 'json'; content: string };
+
 export interface ConnectionConfig {
   protocol: ProtocolType;
   remoteHost: string;
@@ -49,13 +60,22 @@ export interface ConnectionConfig {
   httpUrl: string;
   httpMethod: HttpMethod;
   httpHeaders: HttpHeader[];
-  httpBody: string;
+  httpParams: HttpQueryParam[];
+  httpBody: HttpBody;
 }
+
+/** Protocol-specific config views — used for type-safe UI isolation */
+export interface TcpClientConfigView { remoteHost: string; remotePort: number; localPort: number; }
+export interface TcpServerConfigView { localHost: string; localPort: number; }
+export interface UdpClientConfigView { remoteHost: string; remotePort: number; localPort: number; }
+export interface UdpServerConfigView { localHost: string; localPort: number; }
+export interface WebSocketConfigView { wsUrl: string; }
+export interface SerialConfigView { serialPort: string; baudRate: number; dataBits: 5 | 6 | 7 | 8; stopBits: 1 | 2; parity: 'none' | 'odd' | 'even'; }
+export interface HttpConfigView { httpUrl: string; httpMethod: HttpMethod; httpHeaders: HttpHeader[]; httpParams: HttpQueryParam[]; httpBody: HttpBody; }
 
 export interface ReceiveSettings {
   encoding: EncodingMode;
   asciiNonPrintable: AsciiNonPrintableMode;
-  showAsLog: boolean;
   autoNewline: boolean;
   saveToFile: boolean;
   pauseReceiving: boolean;
@@ -138,21 +158,71 @@ export interface Session {
   txBytes: number;
   remoteAddr?: string;
   trafficSamples: TrafficSample[];
+  /** Connected clients (TCP Server only) */
+  clients: string[];
   /** Last 30 sent texts for history recall */
   sendHistory: string[];
   /** Per-session send input content */
   sendContent: string;
+  /**
+   * Runtime-only flag: whether the session is currently shown as a tab.
+   * Closing a tab flips this to false but does NOT delete the session — the
+   * session still lives in the workspace tree. Deletion happens via the sidebar.
+   * Not persisted across restarts; on hydration the active session is re-opened.
+   */
+  opened: boolean;
   // [PRO] optional script parser for this session
   parser?: ProtocolParser;
 }
 
-export interface SessionProfile {
-  id: string;
+/**
+ * Per-tab working copy of editable session fields. Runtime data (logs, status,
+ * traffic) stays on the catalog `Session`; edits in an open tab go here until
+ * the user saves, which commits the draft back to the session.
+ */
+export interface TabDraft {
   name: string;
   config: ConnectionConfig;
   receiveSettings: ReceiveSettings;
   sendSettings: SendSettings;
-  createdAt: number;
+  sendContent: string;
+  sendHistory: string[];
+  dirty: boolean;
+}
+
+/**
+ * The workspace is a Bruno-style tree:
+ *   workspace root
+ *   ├── session            (loose session at root)
+ *   ├── group
+ *   │   ├── session
+ *   │   └── nested group ...
+ *   └── ...
+ *
+ * Groups are optional — sessions may live directly at the root. A group can
+ * contain a mix of nested groups and sessions. Items are kept in display order
+ * inside the `children` array.
+ */
+export interface GroupNode {
+  /** Discriminator. Lets `WorkspaceItem` be narrowed with `isGroup()`. */
+  kind: 'group';
+  id: string;
+  name: string;
+  /** UI-only: whether the group is expanded in the sidebar tree. */
+  expanded: boolean;
+  children: WorkspaceItem[];
+}
+
+export type SessionItem = Session & { kind: 'session' };
+
+export type WorkspaceItem = GroupNode | SessionItem;
+
+export function isGroup(item: WorkspaceItem): item is GroupNode {
+  return item.kind === 'group';
+}
+
+export function isSession(item: WorkspaceItem): item is SessionItem {
+  return item.kind === 'session';
 }
 
 export interface Script {
@@ -188,4 +258,11 @@ export interface TauriStatusEvent {
   connection_id: string;
   status: string;
   message: string;
+}
+
+export interface SystemStats {
+  cpu_percent: number;
+  mem_used: number;
+  mem_total: number;
+  mem_percent: number;
 }

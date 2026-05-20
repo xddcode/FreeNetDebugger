@@ -112,6 +112,7 @@ export const useScriptStore = create<ScriptState>()(
         scripts: state.scripts,
         activeScriptId: state.activeScriptId,
       }),
+      skipHydration: true,
     }
   )
 );

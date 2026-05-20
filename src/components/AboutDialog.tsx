@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { Box, Button, Dialog, Flex, Image, Text } from '@chakra-ui/react';
 import { APP } from '../config/app';
+import AppDialog from './ui/AppDialog';
 
 interface Props {
   open: boolean;
@@ -9,70 +11,67 @@ interface Props {
 
 export default function AboutDialog({ open, onClose }: Props) {
   const { t } = useTranslation();
-  if (!open) {
-    return null;
-  }
 
   return (
-    <div
-      className="fixed inset-0 z-9999 flex items-center justify-center cursor-pointer"
-      onClick={onClose}
-    >
-      {/* 遮罩 */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        aria-hidden
-      />
-      {/* 弹窗 */}
-      <div
-        className="relative w-[360px] rounded-lg shadow-2xl neon-card overflow-hidden cursor-default bg-[rgba(22,46,46,0.98)] border border-[var(--color-primary)]/30 shadow-[0_0_30px_rgba(45,212,191,0.15),0_20px_60px_rgba(0,0,0,0.5)]"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="p-6">
-          {/* 图标 + 标题 */}
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-[linear-gradient(135deg,rgba(45,212,191,0.12),rgba(255,0,255,0.08))]"
-            >
-              <img src="/app-icon.png" alt="FreeNetDebugger" width="30" height="30" className="rounded-md shrink-0" />
-            </div>
-            <div>
-              <h2
-                className="text-lg font-bold uppercase tracking-tight text-[var(--color-primary)] font-[family-name:var(--font-display)]"
-              >
-                {APP.name}
-              </h2>
-              <p className="text-xs text-[var(--color-primary)]/70">
-                v{APP.version}
-              </p>
-            </div>
-          </div>
-
-          <p className="text-sm mb-5 text-[var(--color-text-muted)] leading-relaxed">
-            {APP.description}
-          </p>
-
-          {/* GitHub 链接 */}
-          <button
-            type="button"
-            onClick={() => openUrl(APP.github)}
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded btn-interactive hover:bg-white/10 focus-ring mb-5 bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 text-[var(--color-primary)]"
+    <AppDialog open={open} onClose={onClose} size="xs">
+      <Dialog.Header>
+        <Dialog.Title srOnly>{APP.name}</Dialog.Title>
+      </Dialog.Header>
+      <Dialog.Body>
+        <Flex align="center" gap="3" mb="4">
+          <Box
+            w="12"
+            h="12"
+            rounded="md"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            flexShrink={0}
+            bg="accent.subtle"
+            borderWidth="1px"
+            borderColor="accent.subtle"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
-            <span className="text-sm font-medium">GitHub</span>
-          </button>
+            <Image src="/app-icon.png" alt={APP.name} width="30px" height="30px" rounded="md" />
+          </Box>
+          <Box>
+            <Text fontSize="sm" fontWeight="normal" color="accent" letterSpacing="tight">
+              {APP.name}
+            </Text>
+            <Text fontSize="xs" color="accent" opacity={0.7} fontFamily="mono">
+              v{APP.version}
+            </Text>
+          </Box>
+        </Flex>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-2.5 rounded text-sm font-medium btn-interactive hover:bg-white/10 focus-ring bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/40 text-[var(--color-primary)]"
-          >
-            {t('about.confirm')}
-          </button>
-        </div>
-      </div>
-    </div>
+        <Text fontSize="sm" color="fg.subtle" mb="5" lineHeight="relaxed">
+          {APP.description}
+        </Text>
+
+        <Button
+          variant="outline"
+          width="full"
+          mb="5"
+          onClick={() => openUrl(APP.github)}
+          borderColor="accent.subtle"
+          bg="accent.subtle"
+          color="accent"
+          _hover={{ bg: 'accent.subtle', opacity: 0.9 }}
+        >
+          GitHub
+        </Button>
+
+        <Button
+          width="full"
+          onClick={onClose}
+          bg="accent.subtle"
+          color="accent"
+          borderWidth="1px"
+          borderColor="accent.subtle"
+          _hover={{ bg: 'accent.subtle', opacity: 0.85 }}
+        >
+          {t('about.confirm')}
+        </Button>
+      </Dialog.Body>
+    </AppDialog>
   );
 }

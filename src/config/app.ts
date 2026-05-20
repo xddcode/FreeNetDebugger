@@ -2,8 +2,8 @@
  * 应用元信息，集中维护
  */
 export const APP = {
-  name: 'FreeNetDebugger',
-  version: '1.0.0',
+  name: 'FreeNetPulse',
+  version: '1.1.0',
   description: '高颜值、高性能的跨平台网络调试助手',
   github: 'https://github.com/xddcode/FreeNetDebugger.git',
   gitee: 'https://gitee.com/xddcode/free-net-debugger',

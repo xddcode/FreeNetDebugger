@@ -57,6 +57,7 @@ export const useSettingsStore = create<SettingsState>()(
         theme: state.theme,
         quickCommands: state.quickCommands,
       }),
+      skipHydration: true,
     }
   )
 );

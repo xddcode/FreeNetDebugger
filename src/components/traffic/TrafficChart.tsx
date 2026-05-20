@@ -1,21 +1,20 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Box, Grid, Stack, Text } from '@chakra-ui/react';
 import type { TrafficSample } from '../../types';
 import { TRAFFIC_MAX_SAMPLES } from '../../config/constants';
 
 interface SparklineProps {
   data: number[];
-  color: string;
+  stroke: string;
   fill: string;
   width: number;
   height: number;
 }
 
-function Sparkline({ data, color, fill, width, height }: SparklineProps) {
+function Sparkline({ data, stroke, fill, width, height }: SparklineProps) {
   const path = useMemo(() => {
-    if (data.length < 2) {
-      return { line: '', area: '' };
-    }
+    if (data.length < 2) { return { line: '', area: '' }; }
     const max = Math.max(...data, 1);
     const pts = data.map((v, i) => ({
       x: (i / (data.length - 1)) * width,
@@ -26,44 +25,83 @@ function Sparkline({ data, color, fill, width, height }: SparklineProps) {
     return { line, area };
   }, [data, width, height]);
 
-  if (data.length < 2) {
-    return null;
-  }
+  if (data.length < 2) { return null; }
   return (
     <g>
       <path d={path.area} fill={fill} />
-      <path d={path.line} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d={path.line} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" />
     </g>
   );
 }
 
 function formatRate(bps: number): string {
-  if (bps >= 1024 * 1024) {
-    return `${(bps / 1024 / 1024).toFixed(1)} MB/s`;
-  }
-  if (bps >= 1024) {
-    return `${(bps / 1024).toFixed(1)} KB/s`;
-  }
+  if (bps >= 1024 * 1024) { return `${(bps / 1024 / 1024).toFixed(1)} MB/s`; }
+  if (bps >= 1024) { return `${(bps / 1024).toFixed(1)} KB/s`; }
   return `${bps} B/s`;
 }
 
 function formatTotal(n: number): string {
-  if (n >= 1024 * 1024) {
-    return `${(n / 1024 / 1024).toFixed(2)} MB`;
-  }
-  if (n >= 1024) {
-    return `${(n / 1024).toFixed(1)} KB`;
-  }
+  if (n >= 1024 * 1024) { return `${(n / 1024 / 1024).toFixed(2)} MB`; }
+  if (n >= 1024) { return `${(n / 1024).toFixed(1)} KB`; }
   return `${n} B`;
 }
 
 function averageTail(data: number[], windowSize: number): number {
-  if (data.length === 0) {
-    return 0;
-  }
+  if (data.length === 0) { return 0; }
   const tail = data.slice(-windowSize);
   const sum = tail.reduce((acc, v) => acc + v, 0);
   return Math.round(sum / tail.length);
+}
+
+interface StatCardProps {
+  label: string;
+  total: string;
+  rateLine: string;
+  colorPalette: 'green' | 'blue';
+}
+
+function StatCard({ label, total, rateLine, colorPalette }: StatCardProps) {
+  return (
+    <Box
+      p="2.5"
+      rounded="md"
+      bg={`${colorPalette === 'green' ? 'success' : 'accent'}.subtle`}
+      borderWidth="1px"
+      borderColor="border"
+      borderLeftWidth="2px"
+      borderLeftColor={colorPalette === 'green' ? 'success' : 'accent'}
+    >
+      <Text
+        fontSize="2xs"
+        textTransform="uppercase"
+        letterSpacing="wider"
+        color={colorPalette === 'green' ? 'success' : 'accent'}
+        opacity={0.85}
+        fontFamily="mono"
+        mb="1"
+      >
+        {label}
+      </Text>
+      <Text
+        fontSize="sm"
+        fontWeight="bold"
+        color={colorPalette === 'green' ? 'success' : 'accent'}
+        fontFamily="mono"
+        lineHeight="1.2"
+      >
+        {total}
+      </Text>
+      <Text
+        fontSize="2xs"
+        color="fg.subtle"
+        fontFamily="mono"
+        mt="0.5"
+        lineHeight="1.4"
+      >
+        {rateLine}
+      </Text>
+    </Box>
+  );
 }
 
 interface Props {
@@ -73,13 +111,11 @@ interface Props {
 export default function TrafficChart({ samples }: Props) {
   const { t } = useTranslation();
   const W = 400;
-  const H = 64;
-  const CHART_W = W;
-  const CHART_H = H;
+  const H = 72;
 
   const { rxRate, txRate, rxPeak, txPeak, rxTotal, txTotal, rxPadded, txPadded } = useMemo(() => {
-    const rx = samples.map(s => s.rxRate);
-    const tx = samples.map(s => s.txRate);
+    const rx = samples.map((s) => s.rxRate);
+    const tx = samples.map((s) => s.txRate);
     const last = samples[samples.length - 1];
     const rxR = averageTail(rx, 3);
     const txR = averageTail(tx, 3);
@@ -89,111 +125,119 @@ export default function TrafficChart({ samples }: Props) {
     const txT = last?.txTotal ?? 0;
     const rxPad = Array(Math.max(0, TRAFFIC_MAX_SAMPLES - rx.length)).fill(0).concat(rx);
     const txPad = Array(Math.max(0, TRAFFIC_MAX_SAMPLES - tx.length)).fill(0).concat(tx);
-    return { rxRate: rxR, txRate: txR, rxPeak: rxP, txPeak: txP, rxTotal: rxT, txTotal: txT, rxPadded: rxPad, txPadded: txPad };
+    return {
+      rxRate: rxR,
+      txRate: txR,
+      rxPeak: rxP,
+      txPeak: txP,
+      rxTotal: rxT,
+      txTotal: txT,
+      rxPadded: rxPad,
+      txPadded: txPad,
+    };
   }, [samples]);
 
+  const hasData = samples.length >= 2;
+
   return (
-    <div
-      className="flex flex-col gap-2 p-3 bg-[rgba(16,34,34,0.6)]"
-    >
-      {/* SVG chart */}
-      <div
-        className="relative rounded overflow-hidden border border-[var(--color-primary)]/15 bg-[rgba(10,20,20,0.8)] shadow-[inset_0_0_12px_rgba(0,0,0,0.6)]"
+    <Stack gap="3" p="3">
+      <Box
+        position="relative"
+        rounded="md"
+        overflow="hidden"
+        borderWidth="1px"
+        borderColor="border"
+        bg="bg.muted"
+        minH={`${H}px`}
       >
-        {/* Watermark label */}
-        <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none text-[10px] font-[family-name:var(--font-mono)] tracking-[0.2em] text-[var(--color-primary)]/[0.08] font-bold"
+        <Box
+          position="absolute"
+          inset="0"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          pointerEvents="none"
+          userSelect="none"
         >
-          {t('traffic.visualizer')}
-        </div>
-
-        {/* Grid lines */}
-        <svg
-          width="100%" height={H}
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          className="block"
-        >
-          {/* Horizontal grid */}
-          {[0.25, 0.5, 0.75].map(f => (
-            <line
-              key={f}
-              x1="0" y1={H * f}
-              x2={W} y2={H * f}
-              stroke="rgba(19,236,236,0.06)"
-              strokeWidth="1"
-            />
-          ))}
-
-          {/* RX — green */}
-          <Sparkline
-            data={rxPadded}
-            color="#00ff00"
-            fill="rgba(0,255,0,0.12)"
-            width={CHART_W}
-            height={CHART_H}
-          />
-
-          {/* TX — magenta */}
-          <Sparkline
-            data={txPadded}
-            color="#ff00ff"
-            fill="rgba(255,0,255,0.1)"
-            width={CHART_W}
-            height={CHART_H}
-          />
-
-          {/* Right-edge glow line */}
-          <line
-            x1={W} y1="0" x2={W} y2={H}
-            stroke="rgba(19,236,236,0.2)"
-            strokeWidth="1"
-          />
-        </svg>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* RX stat */}
-        <div
-          className="flex flex-col gap-0.5 p-2 rounded bg-[rgba(0,255,0,0.05)] border border-[rgba(0,255,0,0.15)]"
-        >
-          <div
-            className="flex items-center gap-1 uppercase text-[9px] tracking-[0.12em] text-[rgba(0,255,0,0.6)] font-[family-name:var(--font-mono)]"
+          <Text
+            fontSize="2xs"
+            fontFamily="mono"
+            letterSpacing="0.2em"
+            color="fg.subtle"
+            opacity={0.35}
+            fontWeight="bold"
           >
-            <span
-              className="inline-block rounded-full w-[5px] h-[5px] bg-[#00ff00] shadow-[0_0_4px_#00ff00]"
-            />
-            {t('traffic.totalIn')}
-          </div>
-          <div className="text-[15px] font-bold text-[#00ff00] font-[family-name:var(--font-mono)]">
-            {formatTotal(rxTotal)}
-          </div>
-          <div className="text-[10px] text-[rgba(0,255,0,0.5)] font-[family-name:var(--font-mono)]">
-            ↓ {formatRate(rxRate)} ({t('traffic.peak')} {formatRate(rxPeak)})
-          </div>
-        </div>
+            {t('traffic.visualizer')}
+          </Text>
+        </Box>
 
-        {/* TX stat */}
-        <div
-          className="flex flex-col gap-0.5 p-2 rounded bg-[rgba(255,0,255,0.05)] border border-[rgba(255,0,255,0.15)]"
-        >
-          <div
-            className="flex items-center gap-1 uppercase text-[9px] tracking-[0.12em] text-[rgba(255,0,255,0.6)] font-[family-name:var(--font-mono)]"
-          >
-            <span
-              className="inline-block rounded-full w-[5px] h-[5px] bg-[#ff00ff] shadow-[0_0_4px_#ff00ff]"
+        {hasData ? (
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block' }}>
+            {[0.25, 0.5, 0.75].map((f) => (
+              <line
+                key={f}
+                x1="0"
+                y1={H * f}
+                x2={W}
+                y2={H * f}
+                stroke="var(--chakra-colors-border)"
+                strokeWidth="1"
+                opacity={0.5}
+              />
+            ))}
+            <Sparkline
+              data={rxPadded}
+              stroke="var(--chakra-colors-success)"
+              fill="color-mix(in srgb, var(--chakra-colors-success) 18%, transparent)"
+              width={W}
+              height={H}
             />
-            {t('traffic.totalOut')}
-          </div>
-          <div className="text-[15px] font-bold text-[#ff00ff] font-[family-name:var(--font-mono)]">
-            {formatTotal(txTotal)}
-          </div>
-          <div className="text-[10px] text-[rgba(255,0,255,0.5)] font-[family-name:var(--font-mono)]">
-            ↑ {formatRate(txRate)} ({t('traffic.peak')} {formatRate(txPeak)})
-          </div>
-        </div>
-      </div>
-    </div>
+            <Sparkline
+              data={txPadded}
+              stroke="var(--chakra-colors-accent)"
+              fill="color-mix(in srgb, var(--chakra-colors-accent) 15%, transparent)"
+              width={W}
+              height={H}
+            />
+          </svg>
+        ) : (
+          <ChartPlaceholder height={H} />
+        )}
+      </Box>
+
+      <Grid templateColumns="1fr 1fr" gap="2">
+        <StatCard
+          label={t('traffic.totalIn')}
+          total={formatTotal(rxTotal)}
+          rateLine={`↓ ${formatRate(rxRate)} · ${t('traffic.peak')} ${formatRate(rxPeak)}`}
+          colorPalette="green"
+        />
+        <StatCard
+          label={t('traffic.totalOut')}
+          total={formatTotal(txTotal)}
+          rateLine={`↑ ${formatRate(txRate)} · ${t('traffic.peak')} ${formatRate(txPeak)}`}
+          colorPalette="blue"
+        />
+      </Grid>
+    </Stack>
+  );
+}
+
+function ChartPlaceholder({ height }: { height: number }) {
+  return (
+    <Box
+      height={`${height}px`}
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+    >
+      <Box
+        width="full"
+        height="1px"
+        bg="border"
+        opacity={0.6}
+        mx="4"
+      />
+    </Box>
   );
 }

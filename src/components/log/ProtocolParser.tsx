@@ -1,5 +1,14 @@
-import { useState, useMemo } from 'react';
-import { PanelCard, PanelHeader } from '../sidebar/ui';
+﻿import { useState, useMemo } from 'react';
+import {
+  Button,
+  CloseButton,
+  Flex,
+  Grid,
+  Input,
+  Stack,
+  Text,
+} from '@chakra-ui/react';
+import { FieldNumberInput, FieldSelect, PanelCard, PanelHeader } from '../sidebar/ui';
 
 export type FieldType = 'uint8' | 'uint16' | 'uint32' | 'int8' | 'int16' | 'int32' | 'float' | 'double' | 'ascii' | 'hex';
 
@@ -20,6 +29,19 @@ export interface ProtocolTemplate {
 interface Props {
   data: number[];
 }
+
+const FIELD_TYPE_OPTIONS: { value: FieldType; label: string }[] = [
+  { value: 'uint8', label: 'uint8' },
+  { value: 'uint16', label: 'uint16' },
+  { value: 'uint32', label: 'uint32' },
+  { value: 'int8', label: 'int8' },
+  { value: 'int16', label: 'int16' },
+  { value: 'int32', label: 'int32' },
+  { value: 'float', label: 'float' },
+  { value: 'double', label: 'double' },
+  { value: 'ascii', label: 'ascii' },
+  { value: 'hex', label: 'hex' },
+];
 
 const TYPE_SIZES: Record<FieldType, number | null> = {
   uint8: 1, uint16: 2, uint32: 4,
@@ -120,99 +142,116 @@ export default function ProtocolParser({ data }: Props) {
         icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>}
         label="Protocol Parser"
       />
-      <div className="p-3 flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <button
+      <Stack p="3" gap="2">
+        <Flex align="center" justify="space-between">
+          <Button
             onClick={() => setEditing(!editing)}
-            className="text-[10px] btn-interactive text-[var(--color-primary)] border border-[var(--color-primary)]/20 px-2 py-1 rounded"
+            size="xs"
+            variant="outline"
+            colorPalette="blue"
+            fontSize="2xs"
           >
             {editing ? 'Done' : 'Edit Fields'}
-          </button>
+          </Button>
           {fields.length > 0 && (
-            <span className="text-[10px] text-[var(--color-text-muted)]">{fields.length} fields</span>
+            <Text fontSize="2xs" color="fg.subtle">{fields.length} fields</Text>
           )}
-        </div>
+        </Flex>
 
         {editing && (
-          <div className="flex flex-col gap-1.5 p-2 rounded bg-[var(--color-bg)] border border-[var(--color-border)]">
-            <div className="grid grid-cols-4 gap-1">
-              <input
-                type="text"
+          <Stack gap="1.5" p="2" rounded="md" bg="bg.subtle" borderWidth="1px" borderColor="border">
+            <Grid templateColumns="repeat(4, 1fr)" gap="1">
+              <Input
+                size="xs"
                 value={newField.name ?? ''}
-                onChange={e => setNewField(p => ({ ...p, name: e.target.value }))}
+                onChange={(e) => setNewField(p => ({ ...p, name: e.target.value }))}
                 placeholder="Name"
-                className="field-control text-[10px] px-1 py-0.5"
+                fontSize="2xs"
               />
-              <input
-                type="number"
-                value={newField.offset ?? ''}
-                onChange={e => setNewField(p => ({ ...p, offset: Number(e.target.value) }))}
-                placeholder="Offset"
-                className="field-control text-[10px] px-1 py-0.5"
+              <FieldNumberInput
+                size="xs"
+                value={newField.offset ?? 0}
+                onChange={(offset) => setNewField((p) => ({ ...p, offset }))}
+                min={0}
+                showControls={false}
               />
-              <input
-                type="number"
-                value={newField.length ?? ''}
-                onChange={e => setNewField(p => ({ ...p, length: Number(e.target.value) }))}
-                placeholder="Len"
-                className="field-control text-[10px] px-1 py-0.5"
+              <FieldNumberInput
+                size="xs"
+                value={newField.length ?? 0}
+                onChange={(length) => setNewField((p) => ({ ...p, length }))}
+                min={0}
+                showControls={false}
               />
-              <select
+              <FieldSelect
+                size="xs"
                 value={newField.type ?? 'uint8'}
-                onChange={e => setNewField(p => ({ ...p, type: e.target.value as FieldType }))}
-                className="field-control text-[10px] px-1 py-0.5"
-              >
-                <option value="uint8">uint8</option>
-                <option value="uint16">uint16</option>
-                <option value="uint32">uint32</option>
-                <option value="int8">int8</option>
-                <option value="int16">int16</option>
-                <option value="int32">int32</option>
-                <option value="float">float</option>
-                <option value="double">double</option>
-                <option value="ascii">ascii</option>
-                <option value="hex">hex</option>
-              </select>
-            </div>
-            <button
+                onChange={(v) => setNewField(p => ({ ...p, type: v as FieldType }))}
+                options={FIELD_TYPE_OPTIONS}
+                fontSize="2xs"
+              />
+            </Grid>
+            <Button
               onClick={addField}
-              className="text-[10px] btn-interactive text-[var(--color-success)] border border-[var(--color-success)]/20 px-2 py-0.5 rounded self-start"
+              size="xs"
+              variant="outline"
+              colorPalette="green"
+              fontSize="2xs"
+              alignSelf="flex-start"
             >
               + Add Field
-            </button>
-          </div>
+            </Button>
+          </Stack>
         )}
 
         {parsed.length === 0 ? (
-          <div className="text-[11px] text-[var(--color-text-muted)]">No fields defined. Click "Edit Fields" to add.</div>
+          <Text fontSize="2xs" color="fg.subtle">No fields defined. Click &quot;Edit Fields&quot; to add.</Text>
         ) : (
-          <div className="flex flex-col gap-1">
-            <div className="grid grid-cols-[1fr_60px_1fr_1fr_20px] gap-1 px-2 py-1 text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-[family-name:var(--font-display)]">
-              <span>Name</span>
-              <span>Off</span>
-              <span>Value</span>
-              <span>Raw</span>
-              <span />
-            </div>
+          <Stack gap="1">
+            <Grid
+              templateColumns="1fr 60px 1fr 1fr 20px"
+              gap="1"
+              px="2"
+              py="1"
+              fontSize="2xs"
+              textTransform="uppercase"
+              letterSpacing="wider"
+              color="fg.subtle"
+            >
+              <Text>Name</Text>
+              <Text>Off</Text>
+              <Text>Value</Text>
+              <Text>Raw</Text>
+              <Text />
+            </Grid>
             {parsed.map(f => (
-              <div key={f.id} className="grid grid-cols-[1fr_60px_1fr_1fr_20px] gap-1 px-2 py-1 rounded bg-[var(--color-bg)] border border-[var(--color-border)] items-center">
-                <span className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--color-text-primary)] truncate" title={f.name}>{f.name}</span>
-                <span className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--color-text-muted)]">{f.offset}+{f.length}</span>
-                <span className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--color-primary)]">{f.value}</span>
-                <span className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--color-text-secondary)] truncate">{f.raw}</span>
+              <Grid
+                key={f.id}
+                templateColumns="1fr 60px 1fr 1fr 20px"
+                gap="1"
+                px="2"
+                py="1"
+                rounded="md"
+                bg="bg.subtle"
+                borderWidth="1px"
+                borderColor="border"
+                alignItems="center"
+              >
+                <Text fontSize="2xs" fontFamily="mono" color="fg" truncate title={f.name}>{f.name}</Text>
+                <Text fontSize="2xs" fontFamily="mono" color="fg.subtle">{f.offset}+{f.length}</Text>
+                <Text fontSize="2xs" fontFamily="mono" color="accent">{f.value}</Text>
+                <Text fontSize="2xs" fontFamily="mono" color="fg.muted" truncate>{f.raw}</Text>
                 {editing && (
-                  <button
+                  <CloseButton
+                    size="xs"
+                    color="danger"
                     onClick={() => removeField(f.id)}
-                    className="text-[var(--color-error)]/70 hover:text-[var(--color-error)] text-xs btn-interactive"
-                  >
-                    ×
-                  </button>
+                  />
                 )}
-              </div>
+              </Grid>
             ))}
-          </div>
+          </Stack>
         )}
-      </div>
+      </Stack>
     </PanelCard>
   );
 }

@@ -1,64 +1,401 @@
-import type { ReactNode } from 'react';
+﻿import { useMemo, type ComponentProps, type ReactNode } from 'react';
+import { useDebouncedControlledValue } from '../../hooks/useDebouncedControlledValue';
+import {
+  Box,
+  Card,
+  Checkbox,
+  createListCollection,
+  Field,
+  Flex,
+  Input,
+  NumberInput,
+  Portal,
+  RadioGroup as ChakraRadioGroup,
+  Select,
+  Text,
+} from '@chakra-ui/react';
 
-export function PanelCard({ children }: { children: ReactNode }) {
-  return <div className="neon-card flex flex-col overflow-hidden shrink-0">{children}</div>;
+export function PanelCard({
+  children,
+  flexShrink = 0,
+  ...rest
+}: { children: ReactNode } & ComponentProps<typeof Card.Root>) {
+  return (
+    <Card.Root
+      size="sm"
+      variant="outline"
+      bg="bg.panel"
+      borderColor="border.emphasized"
+      borderTopWidth="1px"
+      borderTopColor="whiteAlpha.100"
+      rounded="lg"
+      shadow="sm"
+      display="flex"
+      flexDirection="column"
+      overflow="hidden"
+      flexShrink={flexShrink}
+      {...rest}
+    >
+      {children}
+    </Card.Root>
+  );
 }
 
 export function PanelHeader({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2.5 shrink-0 bg-[linear-gradient(to_right,rgba(45,212,191,0.08),transparent)] border-b border-[var(--color-primary)]/15"
+    <Flex
+      align="center"
+      gap="2"
+      px="4"
+      py="3"
+      mb="2"
+      flexShrink={0}
+      borderBottomWidth="1px"
+      borderColor="border"
     >
-      <span className="text-[var(--color-primary)] flex items-center">{icon}</span>
-      <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--color-primary)] font-[family-name:var(--font-display)]">{label}</h3>
-    </div>
+      <Box color="fg.muted" display="flex" alignItems="center" flexShrink={0}>
+        {icon}
+      </Box>
+      <Text
+        as="h3"
+        fontSize="sm"
+        lineHeight="normal"
+        color="fg"
+        fontFamily="body"
+        fontWeight="normal"
+      >
+        {label}
+      </Text>
+    </Flex>
   );
 }
 
 export function FieldLabel({ seq, label }: { seq?: number; label: string }) {
   return (
-    <label className="block mb-1.5 uppercase font-bold tracking-wider text-[var(--color-text-muted)] text-[11px]"
+    <Text
+      as="label"
+      display="block"
+      mb="2.5"
+      color="fg.muted"
+      fontSize="2xs"
+      fontFamily="mono"
+      fontWeight="normal"
+      lineHeight="label"
+      letterSpacing="label"
     >
-      {seq && <span className="text-[var(--color-text-muted)]">({seq}) </span>}{label}
-    </label>
+      {seq !== undefined && (
+        <Text as="span" color="fg.subtle" fontSize="2xs" mr="1">
+          {seq}.
+        </Text>
+      )}
+      {label}
+    </Text>
   );
 }
 
-export function FieldInput({ value, onChange, placeholder, type = 'text', disabled, error }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean; error?: boolean }) {
-  return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} className={`field-control w-full disabled:opacity-50 disabled:cursor-not-allowed ${error ? 'border-[var(--color-error)] !shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),0_0_0_1px_rgba(251,113,133,0.4)]' : ''}`} />;
+export function FieldInput({
+  value,
+  onChange,
+  onLiveChange,
+  placeholder,
+  type = 'text',
+  disabled,
+  error,
+  debounceMs,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onLiveChange?: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  disabled?: boolean;
+  error?: boolean;
+  debounceMs?: number;
+}) {
+  const { draft, setDraft, flush } = useDebouncedControlledValue(value, onChange, debounceMs);
+
+  return (
+    <Field.Root invalid={error}>
+      <Input
+        type={type === 'number' ? 'text' : type}
+        inputMode={type === 'number' ? 'numeric' : undefined}
+        colorPalette="blue"
+        value={draft}
+        onChange={(e) => {
+          const next = e.target.value;
+          setDraft(next);
+          onLiveChange?.(next);
+        }}
+        onBlur={() => flush()}
+        placeholder={placeholder}
+        disabled={disabled}
+        size="sm"
+        width="full"
+        borderColor={error ? 'danger' : undefined}
+        _placeholder={{ color: 'fg.subtle' }}
+      />
+    </Field.Root>
+  );
 }
 
-export function FieldSelect({ value, onChange, options, disabled }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; disabled?: boolean }) {
+export function FieldNumberInput({
+  value,
+  onChange,
+  onLiveChange,
+  min,
+  max,
+  step = 1,
+  disabled,
+  error,
+  width = 'full',
+  size = 'sm',
+  textAlign,
+  showControls = true,
+  debounceMs,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  onLiveChange?: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  disabled?: boolean;
+  error?: boolean;
+  width?: string | number;
+  size?: 'xs' | 'sm' | 'md';
+  textAlign?: 'left' | 'center' | 'right';
+  showControls?: boolean;
+  debounceMs?: number;
+}) {
+  const { draft, setDraft, flush } = useDebouncedControlledValue(value, onChange, debounceMs);
+
   return (
-    <div className="relative">
-      <select value={value} onChange={e => onChange(e.target.value)} disabled={disabled} className="field-control pr-6 appearance-none cursor-pointer w-full disabled:opacity-50 disabled:cursor-not-allowed"
+    <Field.Root invalid={error} width={width} flexShrink={width === 'full' ? undefined : 0}>
+      <NumberInput.Root
+        size={size}
+        variant="outline"
+        colorPalette="blue"
+        value={String(draft)}
+        min={min}
+        max={max}
+        step={step}
+        disabled={disabled}
+        width={width}
+        onValueChange={(details) => {
+          const next = details.valueAsNumber;
+          if (!Number.isNaN(next)) {
+            setDraft(next);
+            onLiveChange?.(next);
+          }
+        }}
       >
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-      <svg width="10" height="10" viewBox="0 0 10 10" className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="rgba(19,236,236,0.5)" strokeWidth="1.5"><polyline points="2,3 5,7 8,3" /></svg>
-    </div>
+        <NumberInput.Input
+          bg="bg.input"
+          borderColor={error ? 'danger' : 'border'}
+          boxShadow="none"
+          color="fg"
+          fontFamily="mono"
+          textAlign={textAlign}
+          onBlur={() => flush()}
+          _focusVisible={{ boxShadow: '0 0 0 1px var(--chakra-colors-border-focus)' }}
+        />
+        {showControls ? <NumberInput.Control /> : null}
+      </NumberInput.Root>
+    </Field.Root>
   );
 }
 
-export function CheckRow({ checked, onChange, label, accent }: { checked: boolean; onChange: (v: boolean) => void; label: string; accent?: boolean }) {
-  return (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
-      <input type="checkbox" className={`custom-check ${accent ? 'accent' : ''}`} checked={checked} onChange={e => onChange(e.target.checked)} />
-      <span className="text-[12px] transition-colors text-[var(--color-text-secondary)]">{label}</span>
-    </label>
-  );
-}
+export type FieldSelectProps = {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  disabled?: boolean;
+  width?: string;
+  flex?: string | number;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  fontSize?: string;
+  textTransform?: 'uppercase' | 'lowercase' | 'capitalize' | 'none';
+  height?: string | number;
+  bg?: string;
+  placeholder?: string;
+};
 
-export function RadioGroup({ options, value, onChange, accent }: { options: string[]; value: string; onChange: (v: string) => void; accent?: boolean }) {
+export function FieldSelect({
+  value,
+  onChange,
+  options,
+  disabled,
+  width = 'full',
+  flex,
+  size = 'sm',
+  fontSize = 'sm',
+  textTransform,
+  height,
+  bg = 'bg.input',
+  placeholder,
+}: FieldSelectProps) {
+  const collection = useMemo(
+    () => createListCollection({ items: options }),
+    [options],
+  );
+
   return (
-    <div className="flex items-center gap-4 p-1.5 rounded bg-[rgba(16,34,34,0.5)] border border-[var(--color-primary)]/10"
+    <Select.Root
+      collection={collection}
+      size={size}
+      width={width}
+      flex={flex}
+      disabled={disabled}
+      variant="outline"
+      colorPalette="blue"
+      value={value ? [value] : []}
+      onValueChange={(details) => {
+        const next = details.value[0];
+        if (next !== undefined) {
+          onChange(next);
+        }
+      }}
     >
-      {options.map(opt => (
-        <label key={opt} className="flex items-center gap-1.5 cursor-pointer select-none"
+      <Select.HiddenSelect />
+      <Select.Control>
+        <Select.Trigger
+          bg={bg}
+          borderColor="border"
+          boxShadow="none"
+          fontFamily="mono"
+          fontSize={fontSize}
+          fontWeight="normal"
+          textTransform={textTransform}
+          height={height}
+          _focusVisible={{ boxShadow: '0 0 0 1px var(--chakra-colors-border-focus)' }}
         >
-          <input type="radio" className={`custom-radio ${accent ? 'accent' : ''}`} checked={value === opt} onChange={() => onChange(opt)} />
-          <span className="text-[12px] font-[family-name:var(--font-mono)] text-[var(--color-text-secondary)]">{opt}</span>
-        </label>
-      ))}
-    </div>
+          <Select.ValueText placeholder={placeholder} />
+        </Select.Trigger>
+        <Select.IndicatorGroup>
+          <Select.Indicator />
+        </Select.IndicatorGroup>
+      </Select.Control>
+      <Portal>
+        <Select.Positioner>
+          <Select.Content zIndex="popover" bg="bg.panel" borderColor="border">
+            {collection.items.map((item) => (
+              <Select.Item key={item.value} item={item} fontFamily="mono" fontSize={fontSize}>
+                <Select.ItemText>{item.label}</Select.ItemText>
+                <Select.ItemIndicator />
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Positioner>
+      </Portal>
+    </Select.Root>
   );
 }
+
+/** Chakra Checkbox control styled with app accent tokens (not gray/white default). */
+export function CheckboxControl() {
+  return (
+    <Checkbox.Control
+      bg="bg.input"
+      borderWidth="1px"
+      borderColor="border"
+      _checked={{
+        bg: 'accent',
+        borderColor: 'accent',
+        color: 'accent.fg',
+      }}
+      _focusVisible={{
+        outline: '2px solid',
+        outlineColor: 'accent',
+        outlineOffset: '1px',
+      }}
+    >
+      <Checkbox.Indicator />
+    </Checkbox.Control>
+  );
+}
+
+export function CheckRow({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  /** @deprecated accent styling is always applied via theme tokens */
+  accent?: boolean;
+}) {
+  return (
+    <Checkbox.Root
+      checked={checked}
+      onCheckedChange={(details) => onChange(details.checked === true)}
+      colorPalette="blue"
+      variant="outline"
+      size="sm"
+      py="1"
+    >
+      <Checkbox.HiddenInput />
+      <CheckboxControl />
+      <Checkbox.Label
+        fontSize="sm"
+        fontFamily="body"
+        fontWeight="normal"
+        color="fg.subtle"
+        userSelect="none"
+        _hover={{ color: 'fg' }}
+      >
+        {label}
+      </Checkbox.Label>
+    </Checkbox.Root>
+  );
+}
+
+export type RadioGroupOption = { value: string; label: string };
+
+export function RadioGroupRow({
+  options,
+  value,
+  onChange,
+  accent,
+}: {
+  options: RadioGroupOption[] | string[];
+  value: string;
+  onChange: (v: string) => void;
+  accent?: boolean;
+}) {
+  const items: RadioGroupOption[] = options.map((opt) =>
+    typeof opt === 'string' ? { value: opt, label: opt } : opt,
+  );
+
+  return (
+    <ChakraRadioGroup.Root
+      value={value}
+      onValueChange={(details) => onChange(details.value ?? '')}
+      colorPalette={accent ? 'blue' : 'gray'}
+      size="sm"
+      width="full"
+    >
+      <Flex align="center" gap="4" width="full" py="2" flexWrap="wrap">
+        {items.map((opt) => (
+          <ChakraRadioGroup.Item key={opt.value} value={opt.value} gap="1.5">
+            <ChakraRadioGroup.ItemHiddenInput />
+            <ChakraRadioGroup.ItemIndicator />
+            <ChakraRadioGroup.ItemText
+              fontSize="sm"
+              fontFamily="body"
+              fontWeight="normal"
+              color="fg.subtle"
+              whiteSpace="nowrap"
+              _hover={{ color: 'fg' }}
+            >
+              {opt.label}
+            </ChakraRadioGroup.ItemText>
+          </ChakraRadioGroup.Item>
+        ))}
+      </Flex>
+    </ChakraRadioGroup.Root>
+  );
+}
+
+/** @deprecated Use RadioGroupRow — kept for existing imports */
+export const RadioGroup = RadioGroupRow;

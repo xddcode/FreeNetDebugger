@@ -1,28 +1,38 @@
 import type { ReactNode } from 'react';
+import { Card as ChakraCard } from '@chakra-ui/react';
 
 interface Props {
   children: ReactNode;
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  elevated?: boolean;
 }
 
-export default function Card({ children, className = '', padding = 'md' }: Props) {
-  const baseClasses = [
-    'bg-[var(--color-surface)]',
-    'border',
-    'border-[var(--color-border)]',
-    'rounded-[var(--radius-lg)]',
-    'shadow-[var(--shadow-sm)]',
-  ].join(' ');
+const paddingMap = {
+  none: '0',
+  sm: '3',
+  md: '4',
+  lg: '6',
+};
 
-  const paddingClasses = {
-    none: 'p-0',
-    sm: 'p-3',
-    md: 'p-4',
-    lg: 'p-6',
-  };
-
-  const classes = [baseClasses, paddingClasses[padding], className].filter(Boolean).join(' ');
-
-  return <div className={classes}>{children}</div>;
+export default function Card({
+  children,
+  className,
+  padding = 'md',
+  elevated = false,
+}: Props) {
+  return (
+    <ChakraCard.Root
+      size="sm"
+      variant="outline"
+      bg="bg.panel"
+      borderColor="border"
+      borderTopWidth={elevated ? '1px' : undefined}
+      borderTopColor={elevated ? 'whiteAlpha.100' : undefined}
+      shadow="sm"
+      className={className}
+    >
+      <ChakraCard.Body p={paddingMap[padding]}>{children}</ChakraCard.Body>
+    </ChakraCard.Root>
+  );
 }

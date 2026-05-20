@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
+import { Box, Button, Flex, Stack, Text, Textarea } from '@chakra-ui/react';
 import { PanelCard, PanelHeader, FieldSelect } from '../sidebar/ui';
 import { calculateChecksum } from '../../utils/checksum';
 import type { ChecksumType } from '../../types';
@@ -49,63 +50,83 @@ export default function ChecksumPanel() {
         </svg>}
         label="Checksum"
       />
-      <div className="p-3 flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex rounded overflow-hidden border border-[var(--color-border)]">
+      <Stack p="3" gap="2">
+        <Flex align="center" gap="2">
+          <Flex rounded="md" overflow="hidden" borderWidth="1px" borderColor="border">
             {(['HEX', 'ASCII'] as const).map((m) => (
-              <button
+              <Button
                 key={m}
                 onClick={() => setMode(m)}
-                className={`px-2 py-1 text-[10px] btn-interactive font-[family-name:var(--font-mono)] ${
-                  mode === m
-                    ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
-                    : 'text-[var(--color-text-muted)]'
-                }`}
+                size="xs"
+                variant={mode === m ? 'surface' : 'ghost'}
+                colorPalette={mode === m ? 'blue' : 'gray'}
+                fontFamily="mono"
+                fontSize="2xs"
+                rounded="none"
               >
                 {m}
-              </button>
+              </Button>
             ))}
-          </div>
+          </Flex>
           <FieldSelect
             value={algorithm}
             onChange={(v) => setAlgorithm(v as ChecksumType)}
             options={ALGORITHMS}
           />
-        </div>
+        </Flex>
 
-        <textarea
+        <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={mode === 'HEX' ? '01 02 FF ...' : 'Enter text...'}
           rows={3}
-          className="field-control w-full resize-none text-[11px] font-[family-name:var(--font-mono)]"
+          resize="none"
+          fontFamily="mono"
+          fontSize="2xs"
         />
 
         {result ? (
-          <div className="flex items-center gap-3 px-3 py-2 rounded bg-[var(--color-bg)] border border-[var(--color-border)]">
-            <div className="flex-1">
-              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Result</div>
-              <div className="text-[14px] font-bold font-[family-name:var(--font-mono)] text-[var(--color-primary)]">
+          <Flex
+            align="center"
+            gap="3"
+            px="3"
+            py="2"
+            rounded="md"
+            bg="bg.subtle"
+            borderWidth="1px"
+            borderColor="border"
+          >
+            <Box flex="1">
+              <Text fontSize="2xs" textTransform="uppercase" letterSpacing="wider" color="fg.subtle">
+                Result
+              </Text>
+              <Text fontSize="sm" fontWeight="normal" fontFamily="mono" color="accent">
                 0x{result.hex}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Decimal</div>
-              <div className="text-[11px] font-[family-name:var(--font-mono)] text-[var(--color-text-secondary)]">
+              </Text>
+            </Box>
+            <Box textAlign="right">
+              <Text fontSize="2xs" textTransform="uppercase" letterSpacing="wider" color="fg.subtle">
+                Decimal
+              </Text>
+              <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
                 {result.value.toString()}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Bytes</div>
-              <div className="text-[11px] font-[family-name:var(--font-mono)] text-[var(--color-text-secondary)]">
+              </Text>
+            </Box>
+            <Box textAlign="right">
+              <Text fontSize="2xs" textTransform="uppercase" letterSpacing="wider" color="fg.subtle">
+                Bytes
+              </Text>
+              <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
                 {result.bytes}
-              </div>
-            </div>
-          </div>
+              </Text>
+            </Box>
+          </Flex>
         ) : input.trim() ? (
-          <div className="text-[10px] text-[var(--color-error)]">Invalid {mode} input</div>
+          <Text fontSize="2xs" color="danger">
+            Invalid {mode} input
+          </Text>
         ) : null}
-      </div>
+      </Stack>
     </PanelCard>
   );
 }

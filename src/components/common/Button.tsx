@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { Button as ChakraButton } from '@chakra-ui/react';
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -7,61 +8,47 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
 }
 
+const variantMap = {
+  primary: { variant: 'solid' as const, colorPalette: 'blue' },
+  secondary: { variant: 'outline' as const, colorPalette: 'gray' },
+  ghost: { variant: 'ghost' as const, colorPalette: 'gray' },
+  danger: { variant: 'outline' as const, colorPalette: 'red' },
+};
+
+const sizeMap = {
+  sm: 'xs' as const,
+  md: 'sm' as const,
+  lg: 'md' as const,
+};
+
 export default function Button({
   variant = 'primary',
   size = 'md',
   children,
-  className = '',
+  className,
   disabled = false,
   ...rest
 }: Props) {
-  const baseClasses =
-    'inline-flex items-center justify-center font-medium rounded-[var(--radius-md)] transition-colors duration-[var(--transition-fast)] ease-in-out btn-interactive';
-
-  const sizeClasses = {
-    sm: 'h-8 px-3 text-xs',
-    md: 'h-9 px-4 text-sm',
-    lg: 'h-11 px-6 text-sm',
-  };
-
-  const variantClasses = {
-    primary: [
-      'bg-[var(--color-primary)]',
-      'text-[var(--color-text-inverse)]',
-      'hover:bg-[var(--color-primary-dim)]',
-      'border-none',
-    ].join(' '),
-    secondary: [
-      'bg-[var(--color-surface-elevated)]',
-      'text-[var(--color-text-primary)]',
-      'border',
-      'border-[var(--color-border)]',
-      'hover:bg-[var(--color-surface)]',
-    ].join(' '),
-    ghost: [
-      'bg-transparent',
-      'text-[var(--color-text-secondary)]',
-      'hover:bg-[var(--color-surface)]',
-      'border-none',
-    ].join(' '),
-    danger: [
-      'bg-[var(--color-error)]/20',
-      'text-[var(--color-error)]',
-      'border',
-      'border-[var(--color-error)]/40',
-      'hover:bg-[var(--color-error)]/30',
-    ].join(' '),
-  };
-
-  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
-
-  const classes = [baseClasses, sizeClasses[size], variantClasses[variant], disabledClasses, className]
-    .filter(Boolean)
-    .join(' ');
+  const mapped = variantMap[variant];
 
   return (
-    <button className={classes} disabled={disabled} {...rest}>
+    <ChakraButton
+      variant={mapped.variant}
+      colorPalette={mapped.colorPalette}
+      size={sizeMap[size]}
+      disabled={disabled}
+      className={className}
+      bg={variant === 'primary' ? 'accent' : undefined}
+      color={variant === 'primary' ? 'accent.fg' : undefined}
+      _hover={
+        variant === 'primary'
+          ? { bg: 'accent.emphasized' }
+          : undefined
+      }
+      borderColor={variant === 'secondary' ? 'border' : undefined}
+      {...rest}
+    >
       {children}
-    </button>
+    </ChakraButton>
   );
 }

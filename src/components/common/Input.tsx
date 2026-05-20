@@ -1,4 +1,5 @@
 import type { ChangeEvent, InputHTMLAttributes } from 'react';
+import { Input as ChakraInput } from '@chakra-ui/react';
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   value: string;
@@ -15,41 +16,23 @@ export default function Input({
   placeholder,
   disabled = false,
   error = false,
-  className = '',
+  className,
   ...rest
 }: Props) {
-  const baseClasses = [
-    'w-full',
-    'h-9',
-    'px-3',
-    'text-sm',
-    'rounded-[var(--radius-md)]',
-    'bg-[var(--color-surface)]',
-    'border',
-    'border-[var(--color-border)]',
-    'text-[var(--color-text-primary)]',
-    'font-[family-name:var(--font-body)]',
-    'outline-none',
-    'transition-colors',
-    'duration-[var(--transition-fast)]',
-    'placeholder:text-[var(--color-text-muted)]',
-    'focus:border-[var(--color-border-focus)]',
-    'focus:shadow-[var(--shadow-glow-primary)]',
-  ].join(' ');
-
-  const errorClasses = error ? 'border-[var(--color-error)]' : '';
-  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
-
-  const classes = [baseClasses, errorClasses, disabledClasses, className].filter(Boolean).join(' ');
+  const { size: _htmlSize, ...inputRest } = rest;
 
   return (
-    <input
-      className={classes}
+    <ChakraInput
       value={value}
       onChange={onChange}
       placeholder={placeholder}
       disabled={disabled}
-      {...rest}
+      aria-invalid={error || undefined}
+      size="sm"
+      className={className}
+      borderColor={error ? 'danger' : undefined}
+      _placeholder={{ color: 'fg.subtle' }}
+      {...inputRest}
     />
   );
 }

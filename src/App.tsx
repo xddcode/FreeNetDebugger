@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useSessionStore } from './store';
+import { useSessionStore, getAllSessions } from './store';
 import type { ConnectionStatus, TauriDataEvent, TauriStatusEvent, LogEntry } from './types';
 import AppLayout from './components/layout/AppLayout';
 
@@ -34,6 +34,8 @@ export default function App() {
   const appendLogs       = useSessionStore(s => s.appendLogs);
   const addRxBytes       = useSessionStore(s => s.addRxBytes);
   const addTxBytes       = useSessionStore(s => s.addTxBytes);
+  const addClient        = useSessionStore(s => s.addClient);
+  const removeClient     = useSessionStore(s => s.removeClient);
   const addTrafficSample = useSessionStore(s => s.addTrafficSample);
   const setActiveSession = useSessionStore(s => s.setActiveSession);
 
@@ -48,11 +50,15 @@ export default function App() {
   const pendingRx    = useRef<Map<string, number>>(new Map());
   const pendingTx    = useRef<Map<string, number>>(new Map());
 
-  // Init active session
+  // Fallback init: if nothing is active after hydration but the tree has at
+  // least one session, open the first one. Normally `onRehydrateStorage`
+  // already handles this — this useEffect is just a safety net.
   useEffect(() => {
     const store = useSessionStore.getState();
-    if (!store.activeSessionId && store.sessions.length > 0) {
-      setActiveSession(store.sessions[0].id);
+    if (store.activeSessionId) { return; }
+    const first = getAllSessions(store)[0];
+    if (first) {
+      setActiveSession(first.id);
     }
   }, [setActiveSession]);
 
@@ -100,6 +106,12 @@ export default function App() {
           data: Array.from(new TextEncoder().encode(logText)),
         });
       }
+
+      if (status === 'client_connected') {
+        addClient(connection_id, message);
+      } else if (status === 'client_disconnected') {
+        removeClient(connection_id, message);
+      }
     });
 
     return () => { unlistenStatus.then(f => f()); };
@@ -145,7 +157,7 @@ export default function App() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const sessions = useSessionStore.getState().sessions;
+      const sessions = getAllSessions(useSessionStore.getState());
       const now = Date.now();
       for (const sess of sessions) {
         const prev = prevBytesRef.current.get(sess.id) ?? { rx: 0, tx: 0 };

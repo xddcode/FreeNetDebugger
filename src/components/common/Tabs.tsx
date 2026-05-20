@@ -1,3 +1,5 @@
+import { Tabs } from '@chakra-ui/react';
+
 interface Tab {
   id: string;
   label: string;
@@ -10,44 +12,28 @@ interface Props {
   className?: string;
 }
 
-export default function Tabs({ tabs, activeTab, onTabChange, className = '' }: Props) {
-  const containerClasses = ['flex', 'border-b', 'border-[var(--color-border)]', className]
-    .filter(Boolean)
-    .join(' ');
-
+export default function AppTabs({ tabs, activeTab, onTabChange, className }: Props) {
   return (
-    <div className={containerClasses} role="tablist">
-      {tabs.map((tab) => {
-        const isActive = tab.id === activeTab;
-
-        const tabClasses = [
-          'px-4',
-          'py-2',
-          'text-sm',
-          'font-[family-name:var(--font-body)]',
-          'cursor-pointer',
-          'select-none',
-          'border-b-2',
-          'transition-colors',
-          'duration-[var(--transition-base)]',
-          'ease-[cubic-bezier(0.4,0,0.2,1)]',
-          isActive
-            ? 'text-[var(--color-text-primary)] border-[var(--color-primary)]'
-            : 'text-[var(--color-text-secondary)] border-transparent hover:text-[var(--color-text-primary)]',
-        ].join(' ');
-
-        return (
-          <button
+    <Tabs.Root
+      value={activeTab}
+      onValueChange={(details) => onTabChange(details.value)}
+      variant="line"
+      size="sm"
+      className={className}
+    >
+      <Tabs.List borderColor="border">
+        {tabs.map((tab) => (
+          <Tabs.Trigger
             key={tab.id}
-            role="tab"
-            aria-selected={isActive}
-            className={tabClasses}
-            onClick={() => onTabChange(tab.id)}
+            value={tab.id}
+            color="fg.muted"
+            _selected={{ color: 'accent', borderColor: 'accent' }}
+            _hover={{ color: 'fg' }}
           >
             {tab.label}
-          </button>
-        );
-      })}
-    </div>
+          </Tabs.Trigger>
+        ))}
+      </Tabs.List>
+    </Tabs.Root>
   );
 }

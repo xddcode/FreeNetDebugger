@@ -1,9 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Box,
+  Button,
+  CloseButton,
+  Flex,
+  Input,
+  SegmentGroup,
+  Stack,
+  Text,
+  Textarea,
+} from '@chakra-ui/react';
 import { useSessionStore, useSettingsStore } from '../../store';
 import { sendPanelBus } from '../../utils/sendPanelBus';
+import { showToast } from '../../store/toastStore';
 import type { EncodingMode, Session } from '../../types';
 import ScriptsPanel from '../scripts/ScriptsPanel';
+import { FieldSelect } from '../sidebar/ui';
 
 export type SendCenterTabKey = 'history' | 'shortcuts' | 'scripts';
 
@@ -15,13 +28,101 @@ interface Props {
   onClose: () => void;
 }
 
-export default function SendCenterDrawer({ open, session, activeTab, onTabChange, onClose }: Props) {
+function ExpandableItem({
+  label,
+  sublabel,
+  text,
+  expanded,
+  onToggle,
+  onDoubleClick,
+  actions,
+}: {
+  label?: ReactNode;
+  sublabel?: string;
+  text: string;
+  expanded: boolean;
+  onToggle: () => void;
+  onDoubleClick: () => void;
+  actions: ReactNode;
+}) {
+  return (
+    <Box
+      className="group"
+      rounded="md"
+      p="2"
+      position="relative"
+      bg="bg.subtle"
+      borderWidth="1px"
+      borderColor="border"
+      pb={expanded ? '9' : '2'}
+      transition="all 0.2s"
+      data-expand-item="true"
+      onClick={onToggle}
+      onDoubleClick={onDoubleClick}
+      cursor="pointer"
+    >
+      {label && (
+        <Flex align="center" justify="space-between" mb={sublabel ? '0.5' : 0}>
+          {label}
+          {sublabel && (
+            <Text fontSize="2xs" color="fg.subtle" fontFamily="mono">
+              {sublabel}
+            </Text>
+          )}
+        </Flex>
+      )}
+      <Text
+        fontSize="2xs"
+        color="fg.muted"
+        fontFamily="mono"
+        lineHeight="5"
+        overflow="hidden"
+        whiteSpace={expanded ? 'pre-wrap' : 'nowrap'}
+        textOverflow={expanded ? 'clip' : 'ellipsis'}
+        maxH={expanded ? 'none' : '5'}
+        pr={expanded ? 0 : '52'}
+        className={expanded ? '' : 'group-hover:pr-52'}
+      >
+        {text}
+      </Text>
+      <Flex
+        position="absolute"
+        right="2"
+        align="center"
+        gap="1"
+        px="1.5"
+        py="1"
+        rounded="md"
+        opacity={0}
+        pointerEvents="none"
+        className="group-hover:opacity-100 group-hover:pointer-events-auto"
+        bg="bg.muted"
+        borderWidth="1px"
+        borderColor="border"
+        backdropFilter="blur(2px)"
+        top={expanded ? 'auto' : '50%'}
+        bottom={expanded ? '2' : 'auto'}
+        transform={expanded ? 'none' : 'translateY(-50%)'}
+      >
+        {actions}
+      </Flex>
+    </Box>
+  );
+}
+
+export default function SendCenterDrawer({
+  open,
+  session,
+  activeTab,
+  onTabChange,
+  onClose,
+}: Props) {
   const { t } = useTranslation();
-  const quickCommands = useSettingsStore(s => s.quickCommands);
-  const addQuickCommand = useSettingsStore(s => s.addQuickCommand);
-  const removeQuickCommand = useSettingsStore(s => s.removeQuickCommand);
-  const removeSendHistory = useSessionStore(s => s.removeSendHistory);
-  const clearSendHistory = useSessionStore(s => s.clearSendHistory);
+  const quickCommands = useSettingsStore((s) => s.quickCommands);
+  const addQuickCommand = useSettingsStore((s) => s.addQuickCommand);
+  const removeQuickCommand = useSettingsStore((s) => s.removeQuickCommand);
+  const removeSendHistory = useSessionStore((s) => s.removeSendHistory);
+  const clearSendHistory = useSessionStore((s) => s.clearSendHistory);
 
   const [query, setQuery] = useState('');
   const [addingShortcut, setAddingShortcut] = useState(false);
@@ -56,7 +157,7 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
     if (!q) {
       return session.sendHistory;
     }
-    return session.sendHistory.filter(item => item.toLowerCase().includes(q));
+    return session.sendHistory.filter((item) => item.toLowerCase().includes(q));
   }, [session, query]);
 
   const shortcutList = useMemo(() => {
@@ -64,8 +165,8 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
     if (!q) {
       return quickCommands;
     }
-    return quickCommands.filter(c =>
-      c.name.toLowerCase().includes(q) || c.data.toLowerCase().includes(q),
+    return quickCommands.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.data.toLowerCase().includes(q),
     );
   }, [quickCommands, query]);
 
@@ -83,20 +184,23 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
     sendPanelBus.emit(text, encoding ?? session.sendSettings.encoding, false, true);
   };
 
-  const isStarred = (text: string) => quickCommands.some(c => c.data === text);
+  const isStarred = (text: string) => quickCommands.some((c) => c.data === text);
 
   const toggleStar = (text: string) => {
-    const exist = quickCommands.find(c => c.data === text);
+    const exist = quickCommands.find((c) => c.data === text);
     if (exist) {
       removeQuickCommand(exist.id);
+      showToast('info', t('toast.shortcutDeleted'));
       return;
     }
-    const shortName = text.replace(/\s+/g, ' ').trim().slice(0, 20) || t('sendCenter.shortcutDefaultName');
+    const shortName =
+      text.replace(/\s+/g, ' ').trim().slice(0, 20) || t('sendCenter.shortcutDefaultName');
     addQuickCommand({
       name: shortName,
       data: text,
       encoding: session?.sendSettings.encoding ?? 'ASCII',
     });
+    showToast('success', t('toast.shortcutSaved'));
   };
 
   const startAddShortcut = () => {
@@ -115,255 +219,287 @@ export default function SendCenterDrawer({ open, session, activeTab, onTabChange
       data: shortcutData.trim(),
       encoding: shortcutEncoding,
     });
+    showToast('success', t('toast.shortcutSaved'));
     setShortcutName('');
     setShortcutData('');
     setAddingShortcut(false);
   };
 
+  const tabItems = [
+    { value: 'history', label: t('sendCenter.tabs.history') },
+    { value: 'shortcuts', label: t('sendCenter.tabs.shortcuts') },
+    { value: 'scripts', label: t('sendCenter.tabs.scripts') },
+  ];
+
   return (
-    <div
-      className={`h-full flex flex-col w-[340px] bg-[rgba(16,34,34,0.95)] border-l border-[var(--color-primary)]/20 transition-transform duration-200 ease-out ${open ? 'translate-x-0' : 'translate-x-full'}`}
+    <Flex
+      direction="column"
+      height="full"
+      width="340px"
+      bg="bg.panel"
+      borderLeftWidth="1px"
+      borderColor="border"
+      transform={open ? 'translateX(0)' : 'translateX(100%)'}
+      transition="transform 0.2s ease-out"
     >
-      <div className="px-3 py-2 flex items-center justify-between shrink-0 border-b border-[var(--color-primary)]/20 bg-[linear-gradient(to_right,rgba(255,0,255,0.08),transparent)]">
-        <div className="text-xs font-bold text-[var(--color-primary)] font-[family-name:var(--font-display)]">
+      <Flex
+        px="3"
+        py="2"
+        align="center"
+        justify="space-between"
+        flexShrink={0}
+        borderBottomWidth="1px"
+        borderColor="border"
+        bgGradient="to-r"
+        gradientFrom="accent.subtle"
+        gradientTo="transparent"
+      >
+        <Text fontSize="xs" fontWeight="bold" color="accent">
           {t('sendCenter.title')}
-        </div>
-        <button onClick={onClose} className="btn-interactive hover-text-primary focus-ring p-1 -m-1 text-[var(--color-text-muted)] text-[15px]" aria-label={t('header.close')}>×</button>
-      </div>
+        </Text>
+        <CloseButton size="sm" onClick={onClose} aria-label={t('header.close')} />
+      </Flex>
 
-      <div className="p-2 shrink-0 border-b border-[var(--color-primary)]/10">
-        <div className="flex items-center gap-1 rounded p-1 bg-[rgba(15,23,42,0.45)] border border-[var(--color-primary)]/15">
-          {(['history', 'shortcuts', 'scripts'] as SendCenterTabKey[]).map(k => {
-            const active = activeTab === k;
-            return (
-              <button
-                key={k}
-                onClick={() => onTabChange(k)}
-                className={`flex-1 rounded py-1 btn-interactive focus-ring text-[11px] font-[family-name:var(--font-display)] cursor-pointer ${active ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/12 border border-[var(--color-primary)]/35' : 'text-[var(--color-text-muted)] bg-transparent border border-transparent'}`}
-              >
-                {t(`sendCenter.tabs.${k}`)}
-              </button>
-            );
-          })}
-        </div>
-        <input
+      <Box p="2" flexShrink={0} borderBottomWidth="1px" borderColor="border">
+        <SegmentGroup.Root
+          value={activeTab}
+          onValueChange={(details) => onTabChange(details.value as SendCenterTabKey)}
+          size="sm"
+          width="full"
+        >
+          <SegmentGroup.Indicator />
+          <SegmentGroup.Items items={tabItems} flex="1" fontSize="2xs" />
+        </SegmentGroup.Root>
+        <Input
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder={t('sendCenter.searchPlaceholder')}
-          className="field-control w-full mt-2 h-[30px] text-[11px]"
+          size="sm"
+          mt="2"
+          height="30px"
+          fontSize="2xs"
         />
-      </div>
+      </Box>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-2">
+      <Box flex="1" minH="0" overflowY="auto" p="2" className="sidebar-scroll">
         {activeTab === 'history' && (
           <>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-[var(--color-text-muted)]">{t('sendCenter.historyCount', { count: historyList.length })}</span>
+            <Flex align="center" justify="space-between" mb="2">
+              <Text fontSize="2xs" color="fg.subtle">
+                {t('sendCenter.historyCount', { count: historyList.length })}
+              </Text>
               {!!session?.sendHistory.length && (
-                <button
-                  onClick={() => session && clearSendHistory(session.id)}
-                  className="btn-interactive hover-text-primary focus-ring text-[10px] text-[var(--color-text-muted)]"
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  color="fg.subtle"
+                  onClick={() => {
+                    if (session) {
+                      clearSendHistory(session.id);
+                      showToast('info', t('toast.historyCleared'));
+                    }
+                  }}
                 >
                   {t('sendCenter.clearAll')}
-                </button>
+                </Button>
               )}
-            </div>
+            </Flex>
             {historyList.length === 0 ? (
-              <div className="text-[var(--color-text-muted)] text-[11px] text-center pt-4">{t('sendCenter.emptyHistory')}</div>
+              <Text fontSize="2xs" color="fg.subtle" textAlign="center" pt="4">
+                {t('sendCenter.emptyHistory')}
+              </Text>
             ) : (
-              <div className="flex flex-col gap-1.5">
+              <Stack gap="1.5">
                 {historyList.map((item, idx) => {
                   const starred = isStarred(item);
                   const expanded = expandedHistoryItem === item;
                   return (
-                    <div
+                    <ExpandableItem
                       key={`${idx}-${item}`}
-                      className={`rounded p-2 group relative transition-all duration-200 ease-out bg-[rgba(16,34,34,0.7)] border border-[var(--color-primary)]/10 ${expanded ? 'pb-9' : ''}`}
-                      data-expand-item="true"
-                      onClick={() => setExpandedHistoryItem(prev => (prev === item ? null : item))}
+                      text={item}
+                      expanded={expanded}
+                      onToggle={() =>
+                        setExpandedHistoryItem((prev) => (prev === item ? null : item))
+                      }
                       onDoubleClick={() => appendText(item)}
-                    >
-                      <div
-                        className={`transition-[max-height,padding-right] duration-200 ease-out text-[11px] text-[var(--color-text-secondary)] font-[family-name:var(--font-mono)] leading-5 overflow-hidden ${expanded ? 'whitespace-pre-wrap break-all max-h-[9999px] text-clip' : 'whitespace-nowrap break-normal max-h-5 text-ellipsis group-hover:pr-52 group-focus-within:pr-52'}`}
-                      >
-                        {item}
-                      </div>
-                      <div
-                        className={`absolute right-2 flex items-center gap-1 px-1.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all bg-[rgba(31,41,55,0.92)] border border-[var(--color-text-muted)]/18 backdrop-blur-[2px] ${
-                          expanded ? 'bottom-2' : 'top-1/2 -translate-y-1/2'
-                        }`}
-                      >
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            fillText(item);
-                          }}
-                          title={t('sendCenter.fill')}
-                          aria-label={t('sendCenter.fill')}
-                          className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-primary)] text-[10px] font-semibold"
-                        >
-                          {t('sendCenter.fill')}
-                        </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            fillText(item, true);
-                          }}
-                          title={t('sendCenter.sendNow')}
-                          aria-label={t('sendCenter.sendNow')}
-                          className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-secondary)] text-[10px] font-semibold"
-                        >
-                          {t('sendCenter.sendNow')}
-                        </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            toggleStar(item);
-                          }}
-                          title={starred ? t('sendCenter.unstar') : t('sendCenter.star')}
-                          aria-label={starred ? t('sendCenter.unstar') : t('sendCenter.star')}
-                          className={`btn-interactive hover:opacity-80 focus-ring text-[10px] font-semibold ${starred ? 'text-amber-400' : 'text-[var(--color-text-muted)]'}`}
-                        >
-                          {starred ? t('sendCenter.unstar') : t('sendCenter.star')}
-                        </button>
-                        {session && (
-                          <button
-                            onClick={e => {
+                      actions={
+                        <>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="accent"
+                            onClick={(e) => {
                               e.stopPropagation();
-                              removeSendHistory(session.id, item);
+                              fillText(item);
                             }}
-                            title={t('sendCenter.delete')}
-                            aria-label={t('sendCenter.delete')}
-                            className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-text-muted)] text-[10px] font-semibold"
                           >
-                            {t('sendCenter.delete')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                            {t('sendCenter.fill')}
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color="success"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fillText(item, true);
+                            }}
+                          >
+                            {t('sendCenter.sendNow')}
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            color={starred ? 'warning' : 'fg.subtle'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStar(item);
+                            }}
+                          >
+                            {starred ? t('sendCenter.unstar') : t('sendCenter.star')}
+                          </Button>
+                          {session && (
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              color="fg.subtle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeSendHistory(session.id, item);
+                              }}
+                            >
+                              {t('sendCenter.delete')}
+                            </Button>
+                          )}
+                        </>
+                      }
+                    />
                   );
                 })}
-              </div>
+              </Stack>
             )}
           </>
         )}
 
         {activeTab === 'shortcuts' && (
           <>
-            <div className="flex items-center justify-end mb-2">
+            <Flex justify="flex-end" mb="2">
               {!addingShortcut && (
-                <button
-                  onClick={startAddShortcut}
-                  className="btn-interactive hover:opacity-90 focus-ring text-[10px] text-[var(--color-secondary)]"
-                >
+                <Button size="xs" variant="ghost" color="accent" onClick={startAddShortcut}>
                   + {t('shortcuts.add')}
-                </button>
+                </Button>
               )}
-            </div>
+            </Flex>
 
             {addingShortcut && (
-              <div
-                className="rounded p-2 mb-2 bg-[rgba(16,34,34,0.7)] border border-[var(--color-secondary)]/20"
+              <Box
+                rounded="md"
+                p="2"
+                mb="2"
+                bg="bg.subtle"
+                borderWidth="1px"
+                borderColor="accent.subtle"
               >
-                <input
+                <Input
                   value={shortcutName}
-                  onChange={e => setShortcutName(e.target.value)}
+                  onChange={(e) => setShortcutName(e.target.value)}
                   placeholder={t('shortcuts.namePlaceholder')}
-                  className="field-control w-full h-[28px] text-[11px]"
+                  size="sm"
+                  mb="1.5"
+                  fontSize="2xs"
                 />
-                <textarea
+                <Textarea
                   value={shortcutData}
-                  onChange={e => setShortcutData(e.target.value)}
+                  onChange={(e) => setShortcutData(e.target.value)}
                   placeholder={t('shortcuts.dataPlaceholder')}
                   rows={3}
-                  className="field-control mt-1.5 w-full resize-y min-h-[72px]"
+                  fontSize="2xs"
+                  fontFamily="mono"
+                  resize="y"
+                  minH="72px"
                 />
-                <div className="flex items-center gap-2 mt-2">
-                  <select
+                <Flex align="center" gap="2" mt="2">
+                  <FieldSelect
+                    flex="1"
                     value={shortcutEncoding}
-                    onChange={e => setShortcutEncoding(e.target.value as EncodingMode)}
-                    className="field-control h-[26px] text-[10px] flex-1"
-                  >
-                    <option value="ASCII">ASCII</option>
-                    <option value="HEX">HEX</option>
-                  </select>
-                  <button onClick={saveShortcut} className="btn-interactive hover:opacity-90 focus-ring text-[10px] text-[var(--color-primary)]">{t('shortcuts.save')}</button>
-                  <button onClick={() => setAddingShortcut(false)} className="btn-interactive hover-text-primary focus-ring text-[10px] text-[var(--color-text-muted)]">✕</button>
-                </div>
-              </div>
+                    onChange={(v) => setShortcutEncoding(v as EncodingMode)}
+                    options={[
+                      { value: 'ASCII', label: 'ASCII' },
+                      { value: 'HEX', label: 'HEX' },
+                    ]}
+                    fontSize="2xs"
+                  />
+                  <Button size="xs" color="accent" variant="ghost" onClick={saveShortcut}>
+                    {t('shortcuts.save')}
+                  </Button>
+                  <CloseButton size="xs" onClick={() => setAddingShortcut(false)} />
+                </Flex>
+              </Box>
             )}
 
             {shortcutList.length === 0 ? (
-              <div className="text-[var(--color-text-muted)] text-[11px] text-center pt-4">{t('sendCenter.emptyShortcuts')}</div>
+              <Text fontSize="2xs" color="fg.subtle" textAlign="center" pt="4">
+                {t('sendCenter.emptyShortcuts')}
+              </Text>
             ) : (
-              <div className="flex flex-col gap-1.5">
-                {shortcutList.map(cmd => (
-                  <div
+              <Stack gap="1.5">
+                {shortcutList.map((cmd) => (
+                  <ExpandableItem
                     key={cmd.id}
-                    className={`rounded p-2 group relative transition-all duration-200 ease-out bg-[rgba(16,34,34,0.7)] border border-[var(--color-primary)]/10 ${expandedShortcutId === cmd.id ? 'pb-9' : ''}`}
-                    data-expand-item="true"
-                    onClick={() => setExpandedShortcutId(prev => (prev === cmd.id ? null : cmd.id))}
+                    label={<Text fontSize="2xs" color="accent">{cmd.name}</Text>}
+                    sublabel={cmd.encoding}
+                    text={cmd.data}
+                    expanded={expandedShortcutId === cmd.id}
+                    onToggle={() =>
+                      setExpandedShortcutId((prev) => (prev === cmd.id ? null : cmd.id))
+                    }
                     onDoubleClick={() => appendText(cmd.data, cmd.encoding)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-[var(--color-primary)]">{cmd.name}</span>
-                      <span className="text-[9px] text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">{cmd.encoding}</span>
-                    </div>
-                    <div
-                      className={`transition-[max-height,padding-right] duration-200 ease-out text-[11px] text-[var(--color-text-secondary)] font-[family-name:var(--font-mono)] leading-5 overflow-hidden mt-0.5 ${expandedShortcutId === cmd.id ? 'whitespace-pre-wrap break-all max-h-[9999px] text-clip' : 'whitespace-nowrap break-normal max-h-5 text-ellipsis group-hover:pr-40 group-focus-within:pr-40'}`}
-                    >
-                      {cmd.data}
-                    </div>
-                    <div
-                      className={`absolute right-2 flex items-center gap-1 px-1.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all bg-[rgba(31,41,55,0.92)] border border-[var(--color-text-muted)]/18 backdrop-blur-[2px] ${
-                        expandedShortcutId === cmd.id ? 'bottom-2' : 'top-1/2 -translate-y-1/2'
-                      }`}
-                    >
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          fillText(cmd.data, false, cmd.encoding);
-                        }}
-                        title={t('sendCenter.fill')}
-                        aria-label={t('sendCenter.fill')}
-                        className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-primary)] text-[10px] font-semibold"
-                      >
-                        {t('sendCenter.fill')}
-                      </button>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          fillText(cmd.data, true, cmd.encoding);
-                        }}
-                        title={t('sendCenter.sendNow')}
-                        aria-label={t('sendCenter.sendNow')}
-                        className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-secondary)] text-[10px] font-semibold"
-                      >
-                        {t('sendCenter.sendNow')}
-                      </button>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          removeQuickCommand(cmd.id);
-                        }}
-                        title={t('sendCenter.delete')}
-                        aria-label={t('sendCenter.delete')}
-                        className="btn-interactive hover:opacity-80 focus-ring text-[var(--color-text-muted)] text-[10px] font-semibold"
-                      >
-                        {t('sendCenter.delete')}
-                      </button>
-                    </div>
-                  </div>
+                    actions={
+                      <>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          color="accent"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fillText(cmd.data, false, cmd.encoding);
+                          }}
+                        >
+                          {t('sendCenter.fill')}
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          color="success"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fillText(cmd.data, true, cmd.encoding);
+                          }}
+                        >
+                          {t('sendCenter.sendNow')}
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          color="fg.subtle"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeQuickCommand(cmd.id);
+                            showToast('info', t('toast.shortcutDeleted'));
+                          }}
+                        >
+                          {t('sendCenter.delete')}
+                        </Button>
+                      </>
+                    }
+                  />
                 ))}
-              </div>
+              </Stack>
             )}
           </>
         )}
 
-        {activeTab === 'scripts' && (
-          <ScriptsPanel sessionId={session?.id} />
-        )}
-      </div>
-    </div>
+        {activeTab === 'scripts' && <ScriptsPanel sessionId={session?.id} />}
+      </Box>
+    </Flex>
   );
 }
