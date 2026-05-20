@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
 import { useSessionStore, getAllSessions } from './store';
+import { showToast } from './store/toastStore';
 import type { ConnectionStatus, TauriDataEvent, TauriStatusEvent, LogEntry } from './types';
 import AppLayout from './components/layout/AppLayout';
 
@@ -29,6 +31,7 @@ function statusLogText(raw: string, message: string): string | null {
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const setStatus        = useSessionStore(s => s.setStatus);
   const appendLog        = useSessionStore(s => s.appendLog);
   const appendLogs       = useSessionStore(s => s.appendLogs);
@@ -96,6 +99,18 @@ export default function App() {
       const { connection_id, status, message } = ev.payload;
       const mapped = mapStatus(status);
       const remAddr = status === 'connected' ? message : undefined;
+
+      const prevStatus =
+        getAllSessions(useSessionStore.getState()).find((s) => s.id === connection_id)?.status
+        ?? 'idle';
+      if (prevStatus === 'connecting') {
+        if (mapped === 'connected' || mapped === 'listening') {
+          showToast('success', t('toast.connectSuccess'));
+        } else if (mapped === 'error') {
+          showToast('error', t('toast.connectFailed'));
+        }
+      }
+
       setStatus(connection_id, mapped, message, remAddr);
 
       const logText = statusLogText(status, message);
@@ -115,7 +130,7 @@ export default function App() {
     });
 
     return () => { unlistenStatus.then(f => f()); };
-  }, [appendLog, setStatus]);
+  }, [appendLog, setStatus, addClient, removeClient, t]);
 
   useEffect(() => {
     const flush = () => {

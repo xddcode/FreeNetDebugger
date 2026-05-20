@@ -2,7 +2,19 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Grid, Stack, Text } from '@chakra-ui/react';
 import type { TrafficSample } from '../../types';
-import { TRAFFIC_MAX_SAMPLES } from '../../config/constants';
+import {
+  TRAFFIC_MAX_SAMPLES,
+  TRAFFIC_RX_COLOR,
+  TRAFFIC_RX_CSS_VAR,
+  TRAFFIC_RX_SUBTLE,
+  TRAFFIC_TX_COLOR,
+  TRAFFIC_TX_CSS_VAR,
+  TRAFFIC_TX_SUBTLE,
+} from '../../config/constants';
+
+function trafficSubtle(color: typeof TRAFFIC_RX_COLOR | typeof TRAFFIC_TX_COLOR) {
+  return color === TRAFFIC_RX_COLOR ? TRAFFIC_RX_SUBTLE : TRAFFIC_TX_SUBTLE;
+}
 
 interface SparklineProps {
   data: number[];
@@ -57,25 +69,25 @@ interface StatCardProps {
   label: string;
   total: string;
   rateLine: string;
-  colorPalette: 'green' | 'blue';
+  trafficColor: typeof TRAFFIC_RX_COLOR | typeof TRAFFIC_TX_COLOR;
 }
 
-function StatCard({ label, total, rateLine, colorPalette }: StatCardProps) {
+function StatCard({ label, total, rateLine, trafficColor }: StatCardProps) {
   return (
     <Box
       p="2.5"
       rounded="md"
-      bg={`${colorPalette === 'green' ? 'success' : 'accent'}.subtle`}
+      bg={trafficSubtle(trafficColor)}
       borderWidth="1px"
       borderColor="border"
       borderLeftWidth="2px"
-      borderLeftColor={colorPalette === 'green' ? 'success' : 'accent'}
+      borderLeftColor={trafficColor}
     >
       <Text
         fontSize="2xs"
         textTransform="uppercase"
         letterSpacing="wider"
-        color={colorPalette === 'green' ? 'success' : 'accent'}
+        color={trafficColor}
         opacity={0.85}
         fontFamily="mono"
         mb="1"
@@ -85,7 +97,7 @@ function StatCard({ label, total, rateLine, colorPalette }: StatCardProps) {
       <Text
         fontSize="sm"
         fontWeight="bold"
-        color={colorPalette === 'green' ? 'success' : 'accent'}
+        color={trafficColor}
         fontFamily="mono"
         lineHeight="1.2"
       >
@@ -187,15 +199,15 @@ export default function TrafficChart({ samples }: Props) {
             ))}
             <Sparkline
               data={rxPadded}
-              stroke="var(--chakra-colors-success)"
-              fill="color-mix(in srgb, var(--chakra-colors-success) 18%, transparent)"
+              stroke={TRAFFIC_RX_CSS_VAR}
+              fill={`color-mix(in srgb, ${TRAFFIC_RX_CSS_VAR} 22%, transparent)`}
               width={W}
               height={H}
             />
             <Sparkline
               data={txPadded}
-              stroke="var(--chakra-colors-accent)"
-              fill="color-mix(in srgb, var(--chakra-colors-accent) 15%, transparent)"
+              stroke={TRAFFIC_TX_CSS_VAR}
+              fill={`color-mix(in srgb, ${TRAFFIC_TX_CSS_VAR} 20%, transparent)`}
               width={W}
               height={H}
             />
@@ -210,13 +222,13 @@ export default function TrafficChart({ samples }: Props) {
           label={t('traffic.totalIn')}
           total={formatTotal(rxTotal)}
           rateLine={`↓ ${formatRate(rxRate)} · ${t('traffic.peak')} ${formatRate(rxPeak)}`}
-          colorPalette="green"
+          trafficColor={TRAFFIC_RX_COLOR}
         />
         <StatCard
           label={t('traffic.totalOut')}
           total={formatTotal(txTotal)}
           rateLine={`↑ ${formatRate(txRate)} · ${t('traffic.peak')} ${formatRate(txPeak)}`}
-          colorPalette="blue"
+          trafficColor={TRAFFIC_TX_COLOR}
         />
       </Grid>
     </Stack>

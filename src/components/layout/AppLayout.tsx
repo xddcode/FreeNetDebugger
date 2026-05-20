@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { Save } from 'lucide-react';
+import { Github, Save } from 'lucide-react';
 import { Box, Button, Flex, IconButton } from '@chakra-ui/react';
 import i18n from '../../i18n';
 import {
@@ -17,7 +17,7 @@ import {
   getSessionGroupPath,
 } from '../../store';
 import { invoke } from '../../utils/tauri';
-import { flushStorage, flushDeferred } from '../../store/storage';
+import { flushStorage, flushDeferred, persistSessionLayout } from '../../store/storage';
 import SideNavBar from './SideNavBar';
 import SessionTabBar from './SessionTabBar';
 import StatusBar from '../status/StatusBar';
@@ -31,7 +31,14 @@ import ToastContainer from '../toast/ToastContainer';
 import { showToast } from '../../store/toastStore';
 import { APP } from '../../config/app';
 
-import { SIDEBAR_WIDTH } from '../../config/constants';
+import {
+  APP_HEADER_ACTION_BTN_SIZE,
+  APP_HEADER_ACTION_ICON_PX,
+  APP_HEADER_HEIGHT,
+  APP_HEADER_WIN_BTN_HEIGHT,
+  APP_HEADER_WIN_ICON_PX,
+  SIDEBAR_WIDTH,
+} from '../../config/constants';
 
 /** `null` = closing the app; otherwise the tab session id being closed. */
 type CloseConfirmTarget = 'app' | string | null;
@@ -224,6 +231,16 @@ export default function AppLayout() {
   };
 
   useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') {
+        persistSessionLayout();
+      }
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isSave =
         (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S');
@@ -245,16 +262,41 @@ export default function AppLayout() {
     return () => window.removeEventListener('keydown', onKey);
   }, [saveAll, t]);
 
+  const headerActionIconCss = {
+    '& svg': {
+      width: `${APP_HEADER_ACTION_ICON_PX}px`,
+      height: `${APP_HEADER_ACTION_ICON_PX}px`,
+      flexShrink: 0,
+    },
+  };
+
+  const headerActionBtnProps = {
+    variant: 'ghost' as const,
+    minW: APP_HEADER_ACTION_BTN_SIZE,
+    w: APP_HEADER_ACTION_BTN_SIZE,
+    h: APP_HEADER_ACTION_BTN_SIZE,
+    p: '0',
+    color: 'fg.muted',
+    css: headerActionIconCss,
+    _hover: { color: 'fg', bg: 'bg.muted' },
+  };
+
   const winBtn = (onClick: () => void, icon: ReactNode, title: string) => (
     <IconButton
       aria-label={title}
       title={title}
       variant="ghost"
-      size="sm"
       width="11"
-      height="10"
+      height={APP_HEADER_WIN_BTN_HEIGHT}
+      p="0"
       rounded="sm"
       color="fg.muted"
+      css={{
+        '& svg': {
+          width: `${APP_HEADER_WIN_ICON_PX}px`,
+          height: `${APP_HEADER_WIN_ICON_PX}px`,
+        },
+      }}
       _hover={{ bg: 'whiteAlpha.50', color: 'fg' }}
       onClick={onClick}
     >
@@ -274,7 +316,7 @@ export default function AppLayout() {
         justify="space-between"
         pl={SIDEBAR_WIDTH}
         pr="0"
-        height="10"
+        height={APP_HEADER_HEIGHT}
         flexShrink={0}
         bg="bg.panel"
         opacity={0.95}
@@ -298,19 +340,18 @@ export default function AppLayout() {
         />
 
         <Flex align="center" flexShrink={0}>
-          <Flex align="center" gap="1" mr="2">
+          <Flex align="center" gap="0.5" mr="2">
             <IconButton
               aria-label={t('closeConfirm.save')}
               title={`${t('closeConfirm.save')} (Ctrl+S)`}
-              variant="ghost"
-              size="sm"
+              {...headerActionBtnProps}
               position="relative"
-              color={hasUnsaved ? 'accent' : 'fg.subtle'}
+              color={hasUnsaved ? 'accent' : 'fg.muted'}
               disabled={!hasUnsaved}
               onClick={handleManualSave}
               _hover={hasUnsaved ? { color: 'accent', bg: 'accent.subtle' } : undefined}
             >
-              <Save size={14} strokeWidth={2} />
+              <Save size={APP_HEADER_ACTION_ICON_PX} strokeWidth={2} />
               {hasUnsaved && (
                 <Box
                   position="absolute"
@@ -326,25 +367,28 @@ export default function AppLayout() {
             <IconButton
               aria-label="GitHub"
               title="GitHub"
-              variant="ghost"
-              size="sm"
-              color="fg.muted"
-              _hover={{ color: 'accent' }}
+              {...headerActionBtnProps}
+              _hover={{ color: 'accent', bg: 'accent.subtle' }}
               onClick={() => openUrl(APP.github)}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-              </svg>
+              <Github size={APP_HEADER_ACTION_ICON_PX} strokeWidth={2} />
             </IconButton>
-            <Button variant="ghost" size="sm" color="fg.muted" onClick={() => setAboutOpen(true)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              h={APP_HEADER_ACTION_BTN_SIZE}
+              px="2.5"
+              fontSize="sm"
+              color="fg.muted"
+              _hover={{ color: 'fg', bg: 'bg.muted' }}
+              onClick={() => setAboutOpen(true)}
+            >
               {t('header.about')}
             </Button>
             <IconButton
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              variant="ghost"
-              size="sm"
-              color="fg.muted"
+              {...headerActionBtnProps}
               onClick={() => {
                 const next = theme === 'dark' ? 'light' : 'dark';
                 setTheme(next);
@@ -352,7 +396,7 @@ export default function AppLayout() {
               }}
             >
               {theme === 'dark' ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width={APP_HEADER_ACTION_ICON_PX} height={APP_HEADER_ACTION_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="5" />
                   <line x1="12" y1="1" x2="12" y2="3" />
                   <line x1="12" y1="21" x2="12" y2="23" />
@@ -364,7 +408,7 @@ export default function AppLayout() {
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                 </svg>
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width={APP_HEADER_ACTION_ICON_PX} height={APP_HEADER_ACTION_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                 </svg>
               )}
@@ -372,7 +416,11 @@ export default function AppLayout() {
             <Button
               variant="ghost"
               size="sm"
+              h={APP_HEADER_ACTION_BTN_SIZE}
+              px="2.5"
+              fontSize="sm"
               color="fg.muted"
+              _hover={{ color: 'fg', bg: 'bg.muted' }}
               title={locale === 'en' ? '切换为中文' : 'Switch to English'}
               onClick={handleToggleLang}
             >
@@ -381,17 +429,17 @@ export default function AppLayout() {
           </Flex>
           {winBtn(
             () => win.minimize(),
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12" /></svg>,
+            <svg width={APP_HEADER_WIN_ICON_PX} height={APP_HEADER_WIN_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12" /></svg>,
             t('header.minimize'),
           )}
           {winBtn(
             () => win.toggleMaximize(),
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1" /></svg>,
+            <svg width={APP_HEADER_WIN_ICON_PX} height={APP_HEADER_WIN_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="1" /></svg>,
             t('header.maximize'),
           )}
           {winBtn(
             handleWindowClose,
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+            <svg width={APP_HEADER_WIN_ICON_PX} height={APP_HEADER_WIN_ICON_PX} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
             t('header.close'),
           )}
         </Flex>

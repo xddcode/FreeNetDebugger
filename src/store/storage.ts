@@ -7,13 +7,13 @@ import { STORAGE_KEY } from '../config/constants';
  * - "Eager" keys (settings / scripts): every change immediately flushed to disk.
  *   These mutate rarely so the I/O is negligible.
  *
- * - "Deferred" keys (sessions): updates only mutate the in-memory cache.
- *   Disk write is triggered explicitly via `flushDeferred()` — invoked when the
- *   user hits ⌘/Ctrl+S, confirms the close dialog, or saves a tab.
+ * - "Deferred" keys (sessions): updates only mutate the in-memory cache by default.
+ *   Tab layout (open/close tabs, active tab, tree) is flushed immediately via
+ *   `persistSessionLayout()`. Full catalog + draft commits use `flushDeferred()`
+ *   (⌘/Ctrl+S, close dialog, save tab).
  *
- *   This gives us a Bruno / VSCode-style "dirty buffer" model: typing into the
- *   sidebar never touches the disk, the user is in charge of when state is
- *   persisted.
+ *   Tab edits stay in the in-memory draft until the user saves; layout changes
+ *   land on disk as soon as tabs are opened or closed.
  */
 const DEFERRED_KEYS: ReadonlySet<string> = new Set([`${STORAGE_KEY}-sessions`]);
 
@@ -84,6 +84,12 @@ export function removeCachedItem(name: string): void {
 /** Returns true if any deferred key has pending in-memory changes not yet on disk. */
 export function hasDeferredChanges(): boolean {
   return dirtyDeferred.size > 0;
+}
+
+/** Flush session layout (open tabs, active tab, workspace tree) to disk immediately. */
+export function persistSessionLayout(): void {
+  // Run after Zustand persist has written the latest snapshot to the memory cache.
+  void Promise.resolve().then(() => flushDeferred());
 }
 
 /** Persist all deferred keys to disk and wait until done. */

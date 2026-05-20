@@ -26,6 +26,10 @@ import {
   LOG_FILTER_DEBOUNCE_MS,
   LOG_TABLE_COLUMNS,
   LOG_TABLE_COLUMN_GAP,
+  TRAFFIC_RX_COLOR,
+  TRAFFIC_RX_PALETTE,
+  TRAFFIC_TX_COLOR,
+  TRAFFIC_TX_PALETTE,
 } from '../../config/constants';
 
 interface Props { session: Session }
@@ -36,7 +40,12 @@ function fmtTime(ms: number): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
 }
 
-type LogPayloadColor = 'success' | 'warning' | 'danger' | 'fg.subtle';
+type LogPayloadColor =
+  | typeof TRAFFIC_RX_COLOR
+  | typeof TRAFFIC_TX_COLOR
+  | 'success'
+  | 'danger'
+  | 'fg.subtle';
 
 type SystemLogKind = 'success' | 'info' | 'error';
 
@@ -107,7 +116,7 @@ function buildRowData(
 
   const dir = isRecv ? 'RX' : 'TX';
   const dirIcon = isRecv ? 'down' : 'up';
-  const payloadColor: LogPayloadColor = isRecv ? 'success' : 'warning';
+  const payloadColor: LogPayloadColor = isRecv ? TRAFFIC_RX_COLOR : TRAFFIC_TX_COLOR;
 
   const rawHex = bytesToHex(entry.data);
   const rawText = new TextDecoder().decode(new Uint8Array(entry.data));
@@ -446,17 +455,17 @@ export default function DataLog({ session }: Props) {
           {filteredLogs.length > 0 && (
             <Flex align="center" gap="1" mr="2">
               {stats.rx > 0 && (
-                <Badge size="sm" colorPalette="success" variant="subtle" fontSize="2xs">
+                <Badge size="sm" colorPalette={TRAFFIC_RX_PALETTE} variant="subtle" fontSize="2xs">
                   RX {stats.rx}
                 </Badge>
               )}
               {stats.tx > 0 && (
-                <Badge size="sm" colorPalette="warning" variant="subtle" fontSize="2xs">
+                <Badge size="sm" colorPalette={TRAFFIC_TX_PALETTE} variant="subtle" fontSize="2xs">
                   TX {stats.tx}
                 </Badge>
               )}
               {stats.sys > 0 && (
-                <Badge size="sm" colorPalette="warning" variant="subtle" fontSize="2xs">
+                <Badge size="sm" colorPalette="gray" variant="subtle" fontSize="2xs">
                   SYS {stats.sys}
                 </Badge>
               )}

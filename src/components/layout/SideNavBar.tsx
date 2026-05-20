@@ -34,6 +34,7 @@ import {
 import { APP } from '../../config/app';
 import { SIDEBAR_WIDTH } from '../../config/constants';
 import { useSessionStore, isGroup, isSession } from '../../store';
+import { sortWorkspaceItems } from '../../utils/workspaceTree';
 import { invoke } from '../../utils/tauri';
 import { showToast } from '../../store/toastStore';
 import type { GroupNode, SessionItem, Session, WorkspaceItem } from '../../types';
@@ -84,19 +85,6 @@ function NavIcon({ itemKey }: { itemKey: NavItemKey }) {
       )}
     </svg>
   );
-}
-
-function StatusDot({ status }: { status: Session['status'] }) {
-  const color =
-    {
-      connected: 'success',
-      listening: 'accent',
-      connecting: 'warning',
-      disconnecting: 'warning',
-      error: 'danger',
-      idle: 'fg.subtle',
-    }[status] ?? 'fg.subtle';
-  return <Box w="2" h="2" rounded="full" bg={color} flexShrink={0} />;
 }
 
 /** Tree rows are nested under the "Workspace" nav entry, so they start at depth 1. */
@@ -569,14 +557,12 @@ function SessionRow({
     },
   ];
 
-  const showStatus = sess.status !== 'idle';
-
   return (
     <NodeMenu actions={actions}>
       <Flex
         width="full"
         align="center"
-        gap="0"
+        gap="2"
         pl={`${TREE_BASE_INDENT + depth * TREE_INDENT_STEP}px`}
         pr="2"
         minH="9"
@@ -593,16 +579,6 @@ function SessionRow({
           if (!isEditing) { handlers.onSelectSession(sess.id); }
         }}
       >
-        {/* Same 12px column as group chevrons — keeps labels aligned in the tree. */}
-        <Box
-          w="3.5"
-          flexShrink={0}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          {showStatus && <StatusDot status={sess.status} />}
-        </Box>
         {isEditing ? (
           <RenameInput
             value={handlers.draftName}
@@ -654,9 +630,11 @@ function TreeBranch({
     handlers.pendingGroup !== null
     && handlers.pendingGroup.parentGroupId === branchParentGroupId;
 
+  const sortedItems = sortWorkspaceItems(items);
+
   return (
     <Stack gap="0">
-      {items.map((it) => {
+      {sortedItems.map((it) => {
         if (isGroup(it)) {
           return (
             <Box key={it.id}>

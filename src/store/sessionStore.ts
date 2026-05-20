@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { getCachedItem, setCachedItem, removeCachedItem, flushDeferred } from './storage';
+import {
+  getCachedItem,
+  setCachedItem,
+  removeCachedItem,
+  flushDeferred,
+  persistSessionLayout,
+} from './storage';
 import {
   isGroup, isSession,
   type Session, type GroupNode, type SessionItem, type WorkspaceItem,
@@ -12,6 +18,7 @@ import {
   TRAFFIC_MAX_SAMPLES, SEND_HISTORY_MAX, LOGS_CAP, LOGS_TRIM,
   STORAGE_KEY,
 } from '../config/constants';
+import { sortWorkspaceItemsInPlace } from '../utils/workspaceTree';
 
 let _logIdCounter = 0;
 const nextLogId = () => Date.now() * 1000 + ((_logIdCounter++) % 1000);
@@ -249,6 +256,21 @@ type PersistedWorkspaceItem =
 interface PersistedSessionState {
   rootChildren: PersistedWorkspaceItem[];
   activeSessionId: string | null;
+  /** Tab bar state — which catalog sessions had an open tab at last save. */
+  openedSessionIds: string[];
+}
+
+function collectOpenedSessionIds(state: SessionCore): string[] {
+  const ids = new Set<string>();
+  for (const id of Object.keys(state.tabDrafts)) {
+    ids.add(id);
+  }
+  for (const sess of iterSessions(state.rootChildren)) {
+    if (sess.opened) {
+      ids.add(sess.id);
+    }
+  }
+  return [...ids];
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -314,6 +336,7 @@ interface SessionState extends SessionCore {
 
   addClient: (id: string, clientAddr: string) => void;
   removeClient: (id: string, clientAddr: string) => void;
+  clearClients: (id: string) => void;
 
   // ───── persistence ─────
   /** Commits one tab draft to its catalog session. */
@@ -345,15 +368,17 @@ export const useSessionStore = create<SessionState>()(
               if (parent) {
                 parent.children.push(g);
                 parent.expanded = true;
+                sortWorkspaceItemsInPlace(parent.children);
                 return;
               }
             }
             s.rootChildren.push(g);
+            sortWorkspaceItemsInPlace(s.rootChildren);
           });
           return g.id;
         },
 
-        removeGroup: (id) =>
+        removeGroup: (id) => {
           set((s) => {
             const hit = findGroupParent(s.rootChildren, id);
             if (!hit) { return; }
@@ -370,7 +395,9 @@ export const useSessionStore = create<SessionState>()(
               }
             }
             hit.parent.splice(hit.index, 1);
-          }),
+          });
+          persistSessionLayout();
+        },
 
         renameGroup: (id, name) =>
           set((s) => {
@@ -388,7 +415,7 @@ export const useSessionStore = create<SessionState>()(
           }),
 
         // ───── session CRUD ─────
-        addSession: (protocol = 'TCP_CLIENT', name, parentGroupId) =>
+        addSession: (protocol = 'TCP_CLIENT', name, parentGroupId) => {
           set((s) => {
             const ss = makeSession(protocol, name);
             s.tabDrafts[ss.id] = cloneDraftFromSession(ss);
@@ -397,15 +424,19 @@ export const useSessionStore = create<SessionState>()(
               if (parent) {
                 parent.children.push(ss);
                 parent.expanded = true;
+                sortWorkspaceItemsInPlace(parent.children);
                 s.activeSessionId = ss.id;
                 return;
               }
             }
             s.rootChildren.push(ss);
+            sortWorkspaceItemsInPlace(s.rootChildren);
             s.activeSessionId = ss.id;
-          }),
+          });
+          persistSessionLayout();
+        },
 
-        removeSession: (id) =>
+        removeSession: (id) => {
           set((s) => {
             const hit = findSessionParent(s.rootChildren, id);
             if (!hit) { return; }
@@ -415,9 +446,11 @@ export const useSessionStore = create<SessionState>()(
               const nextOpen = [...iterSessions(s.rootChildren)].find((x) => x.opened);
               s.activeSessionId = nextOpen?.id ?? null;
             }
-          }),
+          });
+          persistSessionLayout();
+        },
 
-        closeSessionTab: (id) =>
+        closeSessionTab: (id) => {
           set((s) => {
             const sess = findSession(s.rootChildren, id);
             if (!sess) { return; }
@@ -427,9 +460,11 @@ export const useSessionStore = create<SessionState>()(
               const nextOpen = [...iterSessions(s.rootChildren)].find((x) => x.opened);
               s.activeSessionId = nextOpen?.id ?? null;
             }
-          }),
+          });
+          persistSessionLayout();
+        },
 
-        setActiveSession: (id) =>
+        setActiveSession: (id) => {
           set((s) => {
             const sess = findSession(s.rootChildren, id);
             if (!sess) { return; }
@@ -437,7 +472,9 @@ export const useSessionStore = create<SessionState>()(
             s.activeSessionId = id;
             ensureDraftOnState(s, id);
             recomputeTabDraftDirty(s, id);
-          }),
+          });
+          persistSessionLayout();
+        },
 
         // ───── per-session edits ─────
         updateConfig: (id, patch) =>
@@ -503,6 +540,10 @@ export const useSessionStore = create<SessionState>()(
             sess.status = status;
             sess.statusMsg = msg;
             if (remoteAddr !== undefined) { sess.remoteAddr = remoteAddr; }
+            // TCP server client list is runtime-only — clear when not actively listening.
+            if (status !== 'listening') {
+              sess.clients = [];
+            }
           }),
 
         appendLog: (id, entry) =>
@@ -610,6 +651,12 @@ export const useSessionStore = create<SessionState>()(
             sess.clients = sess.clients.filter((c) => c !== clientAddr);
           }),
 
+        clearClients: (id) =>
+          set((s) => {
+            const sess = findSession(s.rootChildren, id);
+            if (sess) { sess.clients = []; }
+          }),
+
         // ───── persistence ─────
         saveSession: (id) =>
           set((s) => {
@@ -655,7 +702,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: `${STORAGE_KEY}-sessions`,
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => ({
         getItem: (name) => getCachedItem(name),
         setItem: (name, value) => setCachedItem(name, value),
@@ -664,13 +711,23 @@ export const useSessionStore = create<SessionState>()(
       // Development phase: data shape changed multiple times. Any payload
       // persisted under an older version cannot be safely upgraded, so we drop
       // it and let the store re-initialize.
-      migrate: (_persisted, version) => {
+      migrate: (persisted, version) => {
         if (version < 4) {
           return undefined as unknown as PersistedSessionState;
         }
-        return _persisted as PersistedSessionState;
+        const p = persisted as PersistedSessionState & { openedSessionIds?: string[] };
+        if (version < 5) {
+          const legacyIds =
+            p.openedSessionIds
+            ?? (p.activeSessionId ? [p.activeSessionId] : []);
+          return { ...p, openedSessionIds: legacyIds };
+        }
+        return p;
       },
       partialize: (state): PersistedSessionState => {
+        const openedSessionIds = collectOpenedSessionIds(state);
+        const openedSet = new Set(openedSessionIds);
+
         const serialize = (items: WorkspaceItem[]): PersistedWorkspaceItem[] =>
           items
             .map<PersistedWorkspaceItem | null>((it) => {
@@ -696,10 +753,10 @@ export const useSessionStore = create<SessionState>()(
                 rxBytes: 0,
                 txBytes: 0,
                 trafficSamples: [],
-                clients: it.clients,
+                clients: [],
                 sendHistory: it.sendHistory,
                 sendContent: it.sendContent,
-                opened: false,
+                opened: openedSet.has(it.id),
               };
             })
             .filter((x): x is PersistedWorkspaceItem => x !== null);
@@ -707,24 +764,43 @@ export const useSessionStore = create<SessionState>()(
         return {
           rootChildren: serialize(state.rootChildren),
           activeSessionId: state.activeSessionId,
+          openedSessionIds,
         };
       },
-      // After hydration, re-open the previously active session (if any) so the
-      // user lands on the tab they last used.
-      onRehydrateStorage: () => (rehydrated) => {
-        if (!rehydrated) { return; }
+      // After hydration, restore every tab that was open at last save.
+      onRehydrateStorage: () => (state) => {
+        if (!state) { return; }
+        const rehydrated = state as unknown as PersistedSessionState;
         const tabDrafts: Record<string, TabDraft> = {};
-        let activeSessionId = rehydrated.activeSessionId;
-        if (activeSessionId) {
-          const target = findSession(rehydrated.rootChildren, activeSessionId);
-          if (target) {
-            target.opened = true;
-            tabDrafts[target.id] = cloneDraftFromSession(target);
+        const openedIds = new Set(
+          rehydrated.openedSessionIds?.length
+            ? rehydrated.openedSessionIds
+            : [...iterSessions(rehydrated.rootChildren)].filter((s) => s.opened).map((s) => s.id),
+        );
+
+        sortWorkspaceItemsInPlace(rehydrated.rootChildren);
+
+        for (const sess of iterSessions(rehydrated.rootChildren)) {
+          sess.status = 'idle';
+          sess.statusMsg = '';
+          sess.remoteAddr = undefined;
+          sess.clients = [];
+          if (openedIds.has(sess.id)) {
+            sess.opened = true;
+            tabDrafts[sess.id] = cloneDraftFromSession(sess);
           } else {
-            activeSessionId = null;
+            sess.opened = false;
           }
         }
-        if (!activeSessionId) {
+
+        let activeSessionId = rehydrated.activeSessionId;
+        if (!activeSessionId || !openedIds.has(activeSessionId)) {
+          activeSessionId = rehydrated.openedSessionIds?.find((id: string) => openedIds.has(id))
+            ?? [...openedIds][0]
+            ?? null;
+        }
+
+        if (openedIds.size === 0) {
           const first = [...iterSessions(rehydrated.rootChildren)][0];
           if (first) {
             first.opened = true;
@@ -732,6 +808,7 @@ export const useSessionStore = create<SessionState>()(
             tabDrafts[first.id] = cloneDraftFromSession(first);
           }
         }
+
         useSessionStore.setState({ tabDrafts, activeSessionId });
       },
       skipHydration: true,

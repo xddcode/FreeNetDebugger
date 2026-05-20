@@ -158,7 +158,7 @@ export interface Session {
   txBytes: number;
   remoteAddr?: string;
   trafficSamples: TrafficSample[];
-  /** Connected clients (TCP Server only) */
+  /** Connected clients (TCP Server only). Runtime-only — not persisted. */
   clients: string[];
   /** Last 30 sent texts for history recall */
   sendHistory: string[];
@@ -168,7 +168,7 @@ export interface Session {
    * Runtime-only flag: whether the session is currently shown as a tab.
    * Closing a tab flips this to false but does NOT delete the session — the
    * session still lives in the workspace tree. Deletion happens via the sidebar.
-   * Not persisted across restarts; on hydration the active session is re-opened.
+   * Persisted via `openedSessionIds` so open tabs survive app restart.
    */
   opened: boolean;
   // [PRO] optional script parser for this session

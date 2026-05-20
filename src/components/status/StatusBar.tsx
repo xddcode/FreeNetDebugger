@@ -6,6 +6,7 @@ import { useSessionStore } from '../../store';
 import type { Session, SystemStats } from '../../types';
 import { getProtocolAddress } from '../../utils/protocolConfig';
 import { showToast } from '../../store/toastStore';
+import { TRAFFIC_RX_COLOR, TRAFFIC_TX_COLOR } from '../../config/constants';
 
 interface Props {
   session: Session | null;
@@ -153,13 +154,13 @@ export default function StatusBar({ session }: Props) {
           <>
             <Text color="fg.muted">
               TX{' '}
-              <Box as="span" color="accent">
+              <Box as="span" color={TRAFFIC_TX_COLOR}>
                 {fmt(session.txBytes)}
               </Box>
             </Text>
             <Text color="fg.muted">
               RX{' '}
-              <Box as="span" color="success">
+              <Box as="span" color={TRAFFIC_RX_COLOR}>
                 {fmt(session.rxBytes)}
               </Box>
             </Text>

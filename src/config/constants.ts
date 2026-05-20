@@ -1,5 +1,25 @@
 // ── Layout ──
 export const SIDEBAR_WIDTH = '280px';
+/** Chakra spacing tokens for the app title bar (tab row + window controls). */
+export const APP_HEADER_HEIGHT = '12';
+export const APP_HEADER_TAB_HEIGHT = '9';
+export const APP_HEADER_TAB_ADD_SIZE = '9';
+export const APP_HEADER_WIN_BTN_HEIGHT = '11';
+/** Title-bar action cluster: icon px + Chakra button size token. */
+export const APP_HEADER_ACTION_ICON_PX = 16;
+export const APP_HEADER_WIN_ICON_PX = 14;
+export const APP_HEADER_ACTION_BTN_SIZE = '9';
+
+/** Unified RX/TX colors — dedicated traffic tokens, not success/accent. */
+export const TRAFFIC_RX_COLOR = 'traffic-rx' as const;
+export const TRAFFIC_TX_COLOR = 'traffic-tx' as const;
+export const TRAFFIC_RX_SUBTLE = 'traffic-rx-subtle' as const;
+export const TRAFFIC_TX_SUBTLE = 'traffic-tx-subtle' as const;
+/** CSS vars for SVG sparklines (see index.css --fnd-traffic-*) */
+export const TRAFFIC_RX_CSS_VAR = 'var(--fnd-traffic-rx)';
+export const TRAFFIC_TX_CSS_VAR = 'var(--fnd-traffic-tx)';
+export const TRAFFIC_RX_PALETTE = 'rx' as const;
+export const TRAFFIC_TX_PALETTE = 'tx' as const;
 
 // ── Session / Log limits ──
 export const TRAFFIC_MAX_SAMPLES = 60;

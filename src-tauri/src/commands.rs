@@ -50,6 +50,16 @@ pub async fn disconnect(
     Ok(())
 }
 
+/// Drop every live connection task (e.g. after a frontend reload while the Rust process kept running).
+#[tauri::command]
+pub async fn disconnect_all(state: State<'_, AppState>) -> Result<(), String> {
+    let mut conns = state.connections.lock().await;
+    for (_, entry) in conns.drain() {
+        entry.abort.abort();
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn send_data(
     app: AppHandle,

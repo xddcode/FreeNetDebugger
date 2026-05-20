@@ -127,6 +127,37 @@ const config = defineConfig({
           focusRing: { value: '{colors.accent}' },
           border: { value: '{colors.accent}' },
         },
+        /** Dedicated RX/TX traffic colors (flat keys for valid CSS variables in SVG). */
+        'traffic-rx': {
+          value: { _light: '#067a9d', _dark: '#6ecff5' },
+        },
+        'traffic-rx-subtle': {
+          value: { _light: 'rgba(6, 122, 157, 0.14)', _dark: 'rgba(110, 207, 245, 0.14)' },
+        },
+        'traffic-tx': {
+          value: { _light: '#c45c1a', _dark: '#ff9f6b' },
+        },
+        'traffic-tx-subtle': {
+          value: { _light: 'rgba(196, 92, 26, 0.14)', _dark: 'rgba(255, 159, 107, 0.14)' },
+        },
+        rx: {
+          solid: { value: '{colors.traffic-rx}' },
+          contrast: { value: '{colors.traffic-rx}' },
+          fg: { value: '{colors.traffic-rx}' },
+          muted: { value: '{colors.traffic-rx-subtle}' },
+          subtle: { value: '{colors.traffic-rx-subtle}' },
+          emphasized: { value: '{colors.traffic-rx}' },
+          focusRing: { value: '{colors.traffic-rx}' },
+        },
+        tx: {
+          solid: { value: '{colors.traffic-tx}' },
+          contrast: { value: '{colors.traffic-tx}' },
+          fg: { value: '{colors.traffic-tx}' },
+          muted: { value: '{colors.traffic-tx-subtle}' },
+          subtle: { value: '{colors.traffic-tx-subtle}' },
+          emphasized: { value: '{colors.traffic-tx}' },
+          focusRing: { value: '{colors.traffic-tx}' },
+        },
         success: {
           value: { _light: '#006b4f', _dark: '#4edea3' },
         },

@@ -9,6 +9,10 @@ import {
   Text,
 } from '@chakra-ui/react';
 import type { Session } from '../../types';
+import {
+  APP_HEADER_TAB_ADD_SIZE,
+  APP_HEADER_TAB_HEIGHT,
+} from '../../config/constants';
 
 export type TabSessionView = Session & { tabDirty: boolean };
 
@@ -93,7 +97,8 @@ export default function SessionTabBar({
       minW="0"
       height="full"
       gap="1"
-      px="2"
+      px="3"
+      py="1"
       cursor="move"
     >
       {sessions.map((sess) => {
@@ -106,8 +111,8 @@ export default function SessionTabBar({
             tabIndex={0}
             align="center"
             gap="1.5"
-            px="3"
-            height="8"
+            px="3.5"
+            height={APP_HEADER_TAB_HEIGHT}
             rounded="md"
             flexShrink={0}
             fontFamily="body"
@@ -200,8 +205,8 @@ export default function SessionTabBar({
         aria-label={newSessionTitle}
         title={newSessionTitle}
         size="sm"
-        minW="7"
-        height="7"
+        minW={APP_HEADER_TAB_ADD_SIZE}
+        height={APP_HEADER_TAB_ADD_SIZE}
         flexShrink={0}
         variant="outline"
         borderStyle="dashed"

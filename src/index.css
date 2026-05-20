@@ -175,6 +175,10 @@
 
   --color-outline:             #8b90a0;
   --color-outline-variant:     #414755;
+
+  /* RX/TX — used by SVG sparklines (Chakra token vars are unreliable in <svg>) */
+  --fnd-traffic-rx: #6ecff5;
+  --fnd-traffic-tx: #ff9f6b;
 }
 
 html[data-theme="light"] {
@@ -220,6 +224,9 @@ html[data-theme="light"] {
 
   --color-outline:             #6e7484;
   --color-outline-variant:     #c5c9d4;
+
+  --fnd-traffic-rx: #067a9d;
+  --fnd-traffic-tx: #c45c1a;
 }
 
 *, *::before, *::after { box-sizing: border-box; }

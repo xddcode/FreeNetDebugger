@@ -7,6 +7,7 @@ import './i18n';              // initialise i18next (side-effect import)
 import i18n from './i18n';
 import { useSettingsStore, useSessionStore, useScriptStore } from './store';
 import { initStorage } from './store/storage';
+import { invoke, isTauri } from './utils/tauri';
 
 async function bootstrap() {
   // Load persisted data from tauri-plugin-store into memory cache
@@ -18,6 +19,16 @@ async function bootstrap() {
     useSettingsStore.persist.rehydrate(),
     useScriptStore.persist.rehydrate(),
   ]);
+
+  // Frontend reload does not restart Rust — tear down any ghost listeners/sockets
+  // so UI idle state matches the backend (persisted status is always idle).
+  if (isTauri()) {
+    try {
+      await invoke('disconnect_all');
+    } catch (err) {
+      window.console.error('[bootstrap] disconnect_all failed', err);
+    }
+  }
 
   // Apply persisted locale before first render so there's no flash of wrong language
   const savedLocale = useSettingsStore.getState().locale;

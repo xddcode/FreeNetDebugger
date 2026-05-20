@@ -52,6 +52,7 @@ export default function NetworkPanel({ session }: Props) {
     if (isActive || isBusy) {
       try {
         await invoke('disconnect', { id: session.id });
+        useSessionStore.getState().clearClients(session.id);
         showToast('success', t('toast.disconnectSuccess'));
       } catch (e) {
         setStatus(session.id, 'error', String(e));
@@ -75,8 +76,8 @@ export default function NetworkPanel({ session }: Props) {
 
     try {
       setStatus(session.id, 'connecting');
+      // connect only spawns the async task; success/error toast comes from net:status in App.tsx
       await invoke('connect', { id: session.id, config: buildConnectPayload(liveConfig) });
-      showToast('success', t('toast.connectSuccess'));
     } catch (e) {
       setStatus(session.id, 'error', String(e));
       showToast('error', t('toast.connectFailed'));
@@ -128,7 +129,7 @@ export default function NetworkPanel({ session }: Props) {
 
         {renderProtocolForm()}
 
-        {isSrv && session.clients.length > 0 && (
+        {isSrv && session.status === 'listening' && session.clients.length > 0 && (
           <Box borderWidth="1px" borderColor="border" rounded="lg" overflow="hidden">
             <Flex
               align="center"

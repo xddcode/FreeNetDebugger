@@ -6,7 +6,10 @@ mod state;
 mod types;
 mod utils;
 
-use commands::{connect, disconnect, exit_app, get_system_stats, list_serial_ports, run_script, send_data};
+use commands::{
+    connect, disconnect, disconnect_all, exit_app, get_system_stats, list_serial_ports, run_script,
+    send_data,
+};
 use state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -20,6 +23,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             connect,
             disconnect,
+            disconnect_all,
             send_data,
             list_serial_ports,
             run_script,
