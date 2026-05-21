@@ -17,6 +17,16 @@ const zhCN: Translations = {
     UDP_SERVER: 'UDP 服务器',
     WEBSOCKET:  'WebSocket',
     SERIAL:     '串口',
+    HTTP:       'HTTP',
+    desc: {
+      TCP_CLIENT: '连接到远程 TCP 服务器',
+      TCP_SERVER: '监听传入的 TCP 连接',
+      UDP_CLIENT: '发送和接收 UDP 数据报',
+      UDP_SERVER: '绑定 UDP 端口接收数据报',
+      WEBSOCKET:  '全双工 WebSocket 通信',
+      SERIAL:     '通过串口/COM 口通信',
+      HTTP:       '发送 HTTP 请求，完整控制请求与响应',
+    },
   },
   header: {
     newSession: '新建会话',

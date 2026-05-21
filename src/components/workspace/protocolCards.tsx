@@ -3,16 +3,12 @@ import type { ProtocolType } from '../../types';
 
 export interface ProtocolCard {
   key: ProtocolType;
-  label: string;
-  desc: string;
   icon: ReactNode;
 }
 
 export const PROTOCOL_CARDS: ProtocolCard[] = [
   {
     key: 'TCP_CLIENT',
-    label: 'TCP Client',
-    desc: 'Connect to a remote TCP server',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M5 12h14M12 5l7 7-7 7" />
@@ -21,8 +17,6 @@ export const PROTOCOL_CARDS: ProtocolCard[] = [
   },
   {
     key: 'TCP_SERVER',
-    label: 'TCP Server',
-    desc: 'Listen for incoming TCP connections',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="2" y="3" width="20" height="14" rx="2" />
@@ -33,8 +27,6 @@ export const PROTOCOL_CARDS: ProtocolCard[] = [
   },
   {
     key: 'UDP_CLIENT',
-    label: 'UDP Client',
-    desc: 'Send and receive UDP datagrams',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -43,8 +35,6 @@ export const PROTOCOL_CARDS: ProtocolCard[] = [
   },
   {
     key: 'UDP_SERVER',
-    label: 'UDP Server',
-    desc: 'Bind to a UDP port for incoming datagrams',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="12" cy="12" r="10" />
@@ -54,8 +44,6 @@ export const PROTOCOL_CARDS: ProtocolCard[] = [
   },
   {
     key: 'WEBSOCKET',
-    label: 'WebSocket',
-    desc: 'Full-duplex WebSocket communication',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2" />
@@ -64,8 +52,6 @@ export const PROTOCOL_CARDS: ProtocolCard[] = [
   },
   {
     key: 'SERIAL',
-    label: 'Serial Port',
-    desc: 'Communicate over serial/COM ports',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M4 17h16M4 17l2-4h12l2 4M9 13V9a3 3 0 016 0v4" />
@@ -74,8 +60,6 @@ export const PROTOCOL_CARDS: ProtocolCard[] = [
   },
   {
     key: 'HTTP',
-    label: 'HTTP',
-    desc: 'Send HTTP requests with full control',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

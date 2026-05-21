@@ -57,8 +57,7 @@ export default function ProtocolPicker({
 
   const handleSelectProtocol = (protocol: ProtocolType) => {
     setSelectedProtocol(protocol);
-    const card = PROTOCOL_CARDS.find((c) => c.key === protocol);
-    setName(card?.label || '');
+    setName(t(`protocol.${protocol}`));
     setStep('name');
   };
 
@@ -149,7 +148,7 @@ export default function ProtocolPicker({
               </Flex>
               <Box flex="1" minW="0" textAlign="left">
                 <Text fontSize="sm" fontWeight="medium" lineHeight="short">
-                  {card.label}
+                  {t(`protocol.${card.key}`)}
                 </Text>
                 <Text
                   fontSize="2xs"
@@ -158,7 +157,7 @@ export default function ProtocolPicker({
                   mt="0.5"
                   wordBreak="break-word"
                 >
-                  {card.desc}
+                  {t(`protocol.desc.${card.key}`)}
                 </Text>
               </Box>
             </Button>

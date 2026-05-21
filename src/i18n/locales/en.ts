@@ -15,6 +15,16 @@ const en = {
     UDP_SERVER: 'UDP Server',
     WEBSOCKET:  'WebSocket',
     SERIAL:     'Serial Port',
+    HTTP:       'HTTP',
+    desc: {
+      TCP_CLIENT: 'Connect to a remote TCP server',
+      TCP_SERVER: 'Listen for incoming TCP connections',
+      UDP_CLIENT: 'Send and receive UDP datagrams',
+      UDP_SERVER: 'Bind to a UDP port for incoming datagrams',
+      WEBSOCKET:  'Full-duplex WebSocket communication',
+      SERIAL:     'Communicate over serial/COM ports',
+      HTTP:       'Send HTTP requests with full control',
+    },
   },
   header: {
     newSession: 'New Session',
