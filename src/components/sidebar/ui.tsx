@@ -211,9 +211,11 @@ export type FieldSelectProps = {
   options: { value: string; label: string }[];
   disabled?: boolean;
   width?: string;
+  minWidth?: string;
   flex?: string | number;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   fontSize?: string;
+  fontWeight?: string;
   textTransform?: 'uppercase' | 'lowercase' | 'capitalize' | 'none';
   height?: string | number;
   bg?: string;
@@ -226,9 +228,11 @@ export function FieldSelect({
   options,
   disabled,
   width = 'full',
+  minWidth,
   flex,
   size = 'sm',
   fontSize = 'sm',
+  fontWeight,
   textTransform,
   height,
   bg = 'bg.input',
@@ -244,6 +248,7 @@ export function FieldSelect({
       collection={collection}
       size={size}
       width={width}
+      minWidth={minWidth}
       flex={flex}
       disabled={disabled}
       variant="outline"
@@ -264,7 +269,7 @@ export function FieldSelect({
           boxShadow="none"
           fontFamily="mono"
           fontSize={fontSize}
-          fontWeight="normal"
+          fontWeight={fontWeight ?? 'normal'}
           textTransform={textTransform}
           height={height}
           _focusVisible={{ boxShadow: '0 0 0 1px var(--chakra-colors-border-focus)' }}

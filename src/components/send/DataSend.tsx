@@ -338,7 +338,6 @@ export default function DataSend({ session }: Props) {
             fontSize="sm"
             lineHeight="code"
             color="fg"
-            lineHeight="1.5"
             _focus={{ outline: 'none', boxShadow: 'none' }}
           />
         </Box>

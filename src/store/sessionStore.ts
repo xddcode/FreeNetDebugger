@@ -19,6 +19,7 @@ import {
   STORAGE_KEY,
 } from '../config/constants';
 import { sortWorkspaceItemsInPlace } from '../utils/workspaceTree';
+import { stripHttpResponseLogs } from '../utils/http';
 
 let _logIdCounter = 0;
 const nextLogId = () => Date.now() * 1000 + ((_logIdCounter++) % 1000);
@@ -324,6 +325,7 @@ interface SessionState extends SessionCore {
   appendLog: (id: string, entry: Omit<LogEntry, 'id'>) => void;
   appendLogs: (id: string, entries: Omit<LogEntry, 'id'>[]) => void;
   clearLogs: (id: string) => void;
+  clearHttpResponses: (id: string) => void;
 
   addRxBytes: (id: string, n: number) => void;
   addTxBytes: (id: string, n: number) => void;
@@ -575,6 +577,14 @@ export const useSessionStore = create<SessionState>()(
           set((s) => {
             const sess = findSession(s.rootChildren, id);
             if (sess) { sess.logs = []; }
+          }),
+
+        clearHttpResponses: (id) =>
+          set((s) => {
+            const sess = findSession(s.rootChildren, id);
+            if (sess) {
+              sess.logs = stripHttpResponseLogs(sess.logs);
+            }
           }),
 
         addRxBytes: (id, n) =>

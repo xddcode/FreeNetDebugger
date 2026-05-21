@@ -20,17 +20,19 @@
         "resizable": true,
         "center": true,
         "decorations": false,
-        "backgroundColor": "#102222"
+        "backgroundColor": "#102222",
+        "devtools": true
       }
     ],
     "security": {
       "csp": {
         "default-src": "'self'",
-        "script-src": "'self'",
-        "style-src": "'self' 'unsafe-inline'",
-        "connect-src": "'self' ipc: http://ipc.localhost",
-        "img-src": "'self' asset: http://asset.localhost",
-        "font-src": "'self'"
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+        "style-src": "'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "style-src-elem": "'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "connect-src": "'self' ipc: http://ipc.localhost https://fonts.googleapis.com https://cdn.jsdelivr.net",
+        "img-src": "'self' asset: http://asset.localhost https: data:",
+        "font-src": "'self' https://fonts.gstatic.com"
       }
     }
   },

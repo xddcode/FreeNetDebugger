@@ -12,7 +12,8 @@ interface Props {
   onValidate: (errors: ProtocolValidationErrors) => void;
 }
 
-const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'] as const;
+import { HTTP_METHODS } from '../../../utils/http';
+import type { HttpMethod } from '../../../types';
 
 export default function HttpForm({ session, disabled, errors, onValidate }: Props) {
   const { t } = useTranslation();
@@ -26,7 +27,7 @@ export default function HttpForm({ session, disabled, errors, onValidate }: Prop
           <FieldLabel seq={2} label={t('http.method')} />
           <FieldSelect
             value={config.httpMethod}
-            onChange={v => updateConfig(session.id, { httpMethod: v as typeof HTTP_METHODS[number] })}
+            onChange={v => updateConfig(session.id, { httpMethod: v as HttpMethod })}
             options={HTTP_METHODS.map(m => ({ value: m, label: m }))}
             disabled={disabled}
           />

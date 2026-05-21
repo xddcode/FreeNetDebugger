@@ -12,9 +12,11 @@ interface Props {
   value: string;
   onChange: (key: string) => void;
   endContent?: ReactNode;
+  /** Inline with sibling toolbar content — no extra vertical padding */
+  embedded?: boolean;
 }
 
-export default function PanelLineTabs({ tabs, value, onChange, endContent }: Props) {
+export default function PanelLineTabs({ tabs, value, onChange, endContent, embedded }: Props) {
   return (
     <Tabs.Root
       value={value}
@@ -23,19 +25,29 @@ export default function PanelLineTabs({ tabs, value, onChange, endContent }: Pro
       size="sm"
       flexShrink={0}
     >
-      <Tabs.List borderColor="border" px="2" pt="2" pb="0" gap="0.5">
+      <Tabs.List
+        borderColor="border"
+        px={embedded ? '0' : '2'}
+        pt={embedded ? '0' : '2'}
+        pb="0"
+        gap="0.5"
+      >
         {tabs.map((tab) => (
           <Tabs.Trigger
             key={tab.key}
             value={tab.key}
-            color="fg.subtle"
+            minH="8"
+            fontSize="2xs"
+            fontFamily="mono"
+            letterSpacing="label"
+            color="fg.muted"
             whiteSpace="nowrap"
             _selected={{ color: 'accent', borderColor: 'accent' }}
-            _hover={{ color: 'fg.muted' }}
+            _hover={{ color: 'fg' }}
           >
             {tab.label}
             {tab.count !== undefined && tab.count > 0 && (
-              <Text as="span" ml="1" fontSize="xs" color="fg.subtle">
+              <Text as="span" ml="1" fontSize="2xs" color="fg.subtle">
                 ({tab.count})
               </Text>
             )}

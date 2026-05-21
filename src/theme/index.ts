@@ -38,7 +38,7 @@ const config = defineConfig({
         },
         mono: {
           value:
-            "'JetBrains Mono', 'Geist Mono', 'Cascadia Mono', 'Consolas', 'PingFang SC', 'Microsoft YaHei UI', monospace",
+            "'Geist Mono', 'Cascadia Mono', 'Consolas', 'PingFang SC', 'Microsoft YaHei UI', monospace",
         },
       },
       fontSizes: {

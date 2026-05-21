@@ -3,20 +3,39 @@
   useMemo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   type ComponentProps,
   type KeyboardEvent,
+  type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
   Flex,
+  IconButton,
   Input,
   Stack,
   Text,
 } from '@chakra-ui/react';
-import { FieldLabel, FieldSelect } from '../sidebar/ui';
+import { Copy, Download, Eraser } from 'lucide-react';
+import LoadingOverlay from '../ui/LoadingOverlay';
+import { FieldInput, FieldLabel, FieldSelect } from '../sidebar/ui';
+import {
+  HTTP_METHODS,
+  buildUrlWithParams,
+  methodAllowsBody,
+  stripUrlQuery,
+  isValidHttpUrl,
+  buildHttpResponseExportText,
+  formatResponseBodyText,
+  suggestHttpResponseFileName,
+  normalizeHttpBody,
+  commitHttpBodyContent,
+  switchHttpBodyType,
+} from '../../utils/http';
+import { exportToFile } from '../../hooks/useFileSaver';
 import HttpKeyValueRow from '../ui/HttpKeyValueRow';
 import PanelLineTabs from '../ui/PanelLineTabs';
 import { Wand2 } from 'lucide-react';
@@ -24,7 +43,7 @@ import Editor from '@monaco-editor/react';
 import { useSessionStore, useSettingsStore } from '../../store';
 import { invoke } from '../../utils/tauri';
 import { buildConnectPayload } from '../../utils/protocolConfig';
-import { defineAppMonacoTheme, defineAppMonacoThemeSync } from '../../utils/monacoTheme';
+import { defineAppMonacoTheme, defineAppMonacoThemeSync, MONACO_BASE_EDITOR_OPTIONS } from '../../utils/monacoTheme';
 import { useDebouncedControlledValue } from '../../hooks/useDebouncedControlledValue';
 import { CONFIG_FIELD_DEBOUNCE_MS } from '../../config/constants';
 import { showToast } from '../../store/toastStore';
@@ -47,65 +66,116 @@ interface ParsedHttpResponse {
 
 /* ─── Helpers ─── */
 
+function parseHttpResponseAt(logs: Session['logs'], systemIndex: number): ParsedHttpResponse | null {
+  const entry = logs[systemIndex];
+  if (entry.direction !== 'system') {
+    return null;
+  }
+  const text = new TextDecoder().decode(new Uint8Array(entry.data));
+  const match = text.match(/^HTTP\s+(\d{3})\s+(.+)\s*\((\d+)\s*ms\)\n/);
+  if (!match) {
+    return null;
+  }
+  const statusCode = parseInt(match[1], 10);
+  const statusText = match[2].trim();
+  const elapsedMs = parseInt(match[3], 10);
+
+  const afterStatus = text.slice(match[0].length);
+  const headers: Record<string, string> = {};
+  let contentType = '';
+  for (const line of afterStatus.split('\n')) {
+    const idx = line.indexOf(':');
+    if (idx > 0) {
+      const key = line.slice(0, idx).trim().toLowerCase();
+      const value = line.slice(idx + 1).trim();
+      headers[key] = value;
+      if (key === 'content-type') {
+        contentType = value;
+      }
+    }
+  }
+
+  let bodyText = '';
+  for (let j = systemIndex + 1; j < logs.length; j++) {
+    if (logs[j].direction === 'recv') {
+      bodyText = new TextDecoder().decode(new Uint8Array(logs[j].data));
+      break;
+    }
+  }
+
+  return { statusCode, statusText, elapsedMs, headers, bodyText, bodySize: bodyText.length, contentType };
+}
+
 function parseHttpResponse(logs: Session['logs']): ParsedHttpResponse | null {
   for (let i = logs.length - 1; i >= 0; i--) {
-    const entry = logs[i];
-    if (entry.direction !== 'system') {
+    if (logs[i].direction !== 'system') {
       continue;
     }
-    const text = new TextDecoder().decode(new Uint8Array(entry.data));
-    const match = text.match(/^HTTP\s+(\d{3})\s+(.+)\s*\((\d+)\s*ms\)\n/);
-    if (!match) {
-      continue;
+    const parsed = parseHttpResponseAt(logs, i);
+    if (parsed) {
+      return parsed;
     }
-    const statusCode = parseInt(match[1], 10);
-    const statusText = match[2].trim();
-    const elapsedMs = parseInt(match[3], 10);
-
-    /* Parse headers from the system log line */
-    const afterStatus = text.slice(match[0].length);
-    const headers: Record<string, string> = {};
-    let contentType = '';
-    for (const line of afterStatus.split('\n')) {
-      const idx = line.indexOf(':');
-      if (idx > 0) {
-        const key = line.slice(0, idx).trim().toLowerCase();
-        const value = line.slice(idx + 1).trim();
-        headers[key] = value;
-        if (key === 'content-type') {
-          contentType = value;
-        }
-      }
-    }
-
-    /* Body is sent as a separate 'recv' event right after the system event */
-    let bodyText = '';
-    for (let j = i + 1; j < logs.length; j++) {
-      if (logs[j].direction === 'recv') {
-        bodyText = new TextDecoder().decode(new Uint8Array(logs[j].data));
-        break;
-      }
-    }
-
-    return { statusCode, statusText, elapsedMs, headers, bodyText, bodySize: bodyText.length, contentType };
   }
   return null;
 }
 
-function statusColorClass(code: number): string {
+function findHttpResponseAfter(logs: Session['logs'], since: number): ParsedHttpResponse | null {
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const entry = logs[i];
+    if (entry.timestamp < since) {
+      break;
+    }
+    if (entry.direction !== 'system') {
+      continue;
+    }
+    const parsed = parseHttpResponseAt(logs, i);
+    if (parsed) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function statusPalette(code: number): string {
   if (code >= 200 && code < 300) {
-    return 'text-[var(--color-success)]';
+    return 'success';
   }
-  if (code >= 300 && code < 400) {
-    return 'text-[var(--color-warning)]';
-  }
-  if (code >= 400 && code < 500) {
-    return 'text-[var(--color-warning)]';
+  if (code >= 300 && code < 500) {
+    return 'warning';
   }
   if (code >= 500) {
-    return 'text-[var(--color-error)]';
+    return 'danger';
   }
-  return 'text-[var(--color-text-muted)]';
+  return 'fg.muted';
+}
+
+/** Shared height/padding for request & response column toolbars */
+const HTTP_PANEL_TOOLBAR_PROPS = {
+  align: 'center' as const,
+  minH: '10',
+  py: '2',
+  px: '4',
+  flexShrink: 0,
+  borderBottomWidth: '1px',
+  borderColor: 'border',
+};
+
+function EmptyPlaceholder({ children }: { children: ReactNode }) {
+  return (
+    <Flex flex="1" align="center" justify="center" minH="160px" p="6" bg="bg.panel">
+      <Text
+        fontSize="2xs"
+        color="fg.subtle"
+        fontFamily="mono"
+        lineHeight="label"
+        letterSpacing="label"
+        textAlign="center"
+        maxW="240px"
+      >
+        {children}
+      </Text>
+    </Flex>
+  );
 }
 
 function detectBodyMode(contentType: string): 'json' | 'html' | 'xml' | 'text' {
@@ -121,24 +191,6 @@ function detectBodyMode(contentType: string): 'json' | 'html' | 'xml' | 'text' {
   }
   return 'text';
 }
-
-/* Build URL with query params — preserves path, replaces query string */
-function buildUrlWithParams(url: string, params: HttpQueryParam[]): string {
-  if (!url) {
-    return url;
-  }
-  const enabled = params.filter(p => p.enabled && p.key.trim());
-  if (enabled.length === 0) {
-    // strip query string if no params
-    return url.split('?')[0];
-  }
-  const qs = enabled.map(p => `${encodeURIComponent(p.key.trim())}=${encodeURIComponent(p.value)}`).join('&');
-  const base = url.split('?')[0];
-  return `${base}?${qs}`;
-}
-
-
-const HTTP_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
 
 const COMMON_HTTP_HEADERS = [
   'Accept', 'Accept-Charset', 'Accept-Encoding', 'Accept-Language',
@@ -263,6 +315,7 @@ export default function HttpProtocolLayout({ session }: Props) {
   const { t } = useTranslation();
   const updateConfig = useSessionStore(s => s.updateConfig);
   const appendLog = useSessionStore(s => s.appendLog);
+  const clearHttpResponses = useSessionStore(s => s.clearHttpResponses);
   const addSendHistory = useSessionStore(s => s.addSendHistory);
   const addTxBytes = useSessionStore(s => s.addTxBytes);
   const appTheme = useSettingsStore(s => s.theme);
@@ -270,37 +323,19 @@ export default function HttpProtocolLayout({ session }: Props) {
   const [reqTab, setReqTab] = useState<RequestTab>('body');
   const [resTab, setResTab] = useState<ResponseTab>('body');
   const [sending, setSending] = useState(false);
+  const [pinnedResponse, setPinnedResponse] = useState<ParsedHttpResponse | null>(null);
+  const sendStartedAtRef = useRef(0);
 
   const { config } = session;
+  const bodyAllowed = methodAllowsBody(config.httpMethod);
 
-  const {
-    draft: urlDraft,
-    setDraft: setUrlDraft,
-  } = useDebouncedControlledValue(config.httpUrl ?? '', (next) => {
-    updateConfig(session.id, { httpUrl: next });
-  }, CONFIG_FIELD_DEBOUNCE_MS);
-
-  /* Normalize httpBody — defends against stale/malformed persisted data */
-  const safeBody = useMemo(() => {
-    const b = config.httpBody;
-    if (b && typeof b === 'object' && 'type' in b) {
-      const type = (b as { type: unknown }).type as HttpBody['type'];
-      const content = typeof (b as { content?: unknown }).content === 'string'
-        ? (b as { content: string }).content
-        : '';
-      return { type, content } as HttpBody & { content: string };
-    }
-    return { type: 'none' as const, content: '' };
-  }, [config.httpBody]);
+  const safeBody = useMemo(() => normalizeHttpBody(config.httpBody), [config.httpBody]);
 
   const {
     draft: bodyDraft,
     setDraft: setBodyDraft,
   } = useDebouncedControlledValue(safeBody.content, (next) => {
-    const newBody: HttpBody = safeBody.type === 'json'
-      ? { type: 'json', content: next }
-      : { type: 'text', content: next };
-    updateConfig(session.id, { httpBody: newBody });
+    updateConfig(session.id, { httpBody: commitHttpBodyContent(safeBody, next) });
   }, CONFIG_FIELD_DEBOUNCE_MS);
 
   const httpHeaders = useMemo(() => config.httpHeaders ?? [], [config.httpHeaders]);
@@ -334,8 +369,37 @@ export default function HttpProtocolLayout({ session }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.id]);
 
-  const response = useMemo(() => parseHttpResponse(session.logs), [session.logs]);
-  const bodyMode = response ? detectBodyMode(response.contentType) : 'text';
+  const latestResponse = useMemo(() => parseHttpResponse(session.logs), [session.logs]);
+
+  const newResponse = useMemo(() => {
+    if (!sending) {
+      return null;
+    }
+    return findHttpResponseAfter(session.logs, sendStartedAtRef.current);
+  }, [session.logs, sending]);
+
+  const visibleResponse = newResponse ?? latestResponse;
+  const showLoadingOverlay = sending && !newResponse;
+  const displayResponse = showLoadingOverlay && pinnedResponse ? pinnedResponse : visibleResponse;
+  const bodyMode = displayResponse ? detectBodyMode(displayResponse.contentType) : 'text';
+
+  const loadingLabel = t('http.loading');
+
+  useLayoutEffect(() => {
+    if (!sending) {
+      setPinnedResponse(null);
+      return;
+    }
+    if (findHttpResponseAfter(session.logs, sendStartedAtRef.current)) {
+      setSending(false);
+      setPinnedResponse(null);
+      return;
+    }
+    if (session.status === 'error') {
+      setSending(false);
+      setPinnedResponse(null);
+    }
+  }, [session.logs, session.status, sending]);
 
   /* ─── Header helpers (Bruno-style: trailing empty row) ─── */
 
@@ -448,7 +512,10 @@ export default function HttpProtocolLayout({ session }: Props) {
       if (ctIndex >= 0) {
         nextHeaders = nextHeaders.filter((_, i) => i !== ctIndex);
       }
-      updateConfig(session.id, { httpBody: { type: 'none' }, httpHeaders: nextHeaders });
+      updateConfig(session.id, {
+        httpBody: switchHttpBodyType(safeBody, 'none', bodyDraft),
+        httpHeaders: nextHeaders,
+      });
       return;
     }
 
@@ -459,15 +526,18 @@ export default function HttpProtocolLayout({ session }: Props) {
       nextHeaders.push({ key: 'Content-Type', value: ctValue, enabled: true });
     }
 
-    const currentBody = safeBody;
-    const newBody: HttpBody = type === 'json'
-      ? { type: 'json', content: currentBody.type === 'none' ? '' : currentBody.content }
-      : { type: 'text', content: currentBody.type === 'none' ? '' : currentBody.content };
-
-    updateConfig(session.id, { httpBody: newBody, httpHeaders: nextHeaders });
+    updateConfig(session.id, {
+      httpBody: switchHttpBodyType(safeBody, type, bodyDraft),
+      httpHeaders: nextHeaders,
+    });
   };
 
-  /* ─── Body helpers ─── */
+  const handleMethodChange = (method: HttpMethod) => {
+    updateConfig(session.id, { httpMethod: method });
+    if (!methodAllowsBody(method) && safeBody.type !== 'none') {
+      setBodyType('none');
+    }
+  };
 
   /* ─── Send ─── */
 
@@ -475,6 +545,12 @@ export default function HttpProtocolLayout({ session }: Props) {
     if (!config.httpUrl) {
       return;
     }
+    if (!isValidHttpUrl(config.httpUrl)) {
+      showToast('error', t('http.invalidUrl'));
+      return;
+    }
+    sendStartedAtRef.current = Date.now();
+    setPinnedResponse(parseHttpResponse(session.logs));
     setSending(true);
 
     const enabledHeaders = httpHeaders.filter(h => h.enabled);
@@ -485,13 +561,18 @@ export default function HttpProtocolLayout({ session }: Props) {
       }
     }
 
-    const bodyStr = safeBody.type === 'none'
-      ? undefined
-      : safeBody.content.trim() || undefined;
+    const enabledParams = httpParams
+      .filter(p => p.enabled && p.key.trim())
+      .map(p => ({ key: p.key.trim(), value: p.value, enabled: true }));
+
+    const bodyStr = bodyAllowed && safeBody.type !== 'none'
+      ? safeBody.content.trim() || undefined
+      : undefined;
     const httpPayload = {
       method: config.httpMethod,
-      url: config.httpUrl,
+      url: stripUrlQuery(config.httpUrl),
       headers: headerMap,
+      params: enabledParams,
       body: bodyStr,
     };
     const jsonBytes = Array.from(new TextEncoder().encode(JSON.stringify(httpPayload)));
@@ -509,17 +590,44 @@ export default function HttpProtocolLayout({ session }: Props) {
         data: Array.from(new TextEncoder().encode(`HTTP ${t('send.sendFailed')}: ${e}`)),
       });
       showToast('error', `${t('toast.sendFailed')}: ${e}`);
-    } finally {
       setSending(false);
     }
-  }, [session.id, config, httpHeaders, safeBody, appendLog, addSendHistory, addTxBytes, t]);
+  }, [session.id, config, httpHeaders, httpParams, safeBody, bodyAllowed, appendLog, addSendHistory, addTxBytes, t]);
 
-  /* ─── Copy response ─── */
+  const canUseResponseActions = !!displayResponse && !showLoadingOverlay;
 
   const handleCopyResponse = () => {
-    if (response?.bodyText) {
-      void window.navigator.clipboard.writeText(response.bodyText).then(() => showToast('success', t('toast.copiedToClipboard')));
+    if (!displayResponse?.bodyText) {
+      return;
     }
+    const body = formatResponseBodyText(displayResponse.bodyText, bodyMode);
+    void window.navigator.clipboard
+      .writeText(body)
+      .then(() => showToast('success', t('toast.copiedToClipboard')));
+  };
+
+  const handleDownloadResponse = async () => {
+    if (!displayResponse) {
+      return;
+    }
+    const formatted = {
+      ...displayResponse,
+      bodyText: formatResponseBodyText(displayResponse.bodyText, bodyMode),
+    };
+    const content = buildHttpResponseExportText(formatted);
+    const fileName = suggestHttpResponseFileName(
+      displayResponse.statusCode,
+      displayResponse.contentType,
+    );
+    const result = await exportToFile(content, fileName);
+    if (result.ok) {
+      showToast('success', t('http.responseExported'));
+    }
+  };
+
+  const handleClearResponse = () => {
+    clearHttpResponses(session.id);
+    setPinnedResponse(null);
   };
 
   /* ─── Tab configs ─── */
@@ -534,159 +642,163 @@ export default function HttpProtocolLayout({ session }: Props) {
   /* ─── Render helpers ─── */
 
   const renderResponseBody = () => {
-    if (!response) {
-      return (
-        <div className="flex items-center justify-center h-full text-[var(--color-text-muted)]/60 text-sm font-[family-name:var(--font-mono)]">
-          {sending ? (
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-4 h-4 border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)] rounded-full animate-spin" />
-              Waiting for response...
-            </div>
-          ) : (
-            'Send a request to see the response'
-          )}
-        </div>
-      );
+    if (!displayResponse && !sending) {
+      return <EmptyPlaceholder>{t('http.sendHint')}</EmptyPlaceholder>;
     }
 
-    const text = response.bodyText;
-    if (!text) {
-      return (
-        <div className="flex items-center justify-center h-full text-[var(--color-text-muted)]/60 text-sm font-[family-name:var(--font-mono)]">
-          Empty response body
-        </div>
-      );
-    }
-
+    const rawText = displayResponse?.bodyText ?? '';
+    const text = formatResponseBodyText(rawText, bodyMode);
     const lang = bodyMode === 'json' ? 'json' : bodyMode === 'html' ? 'html' : bodyMode === 'xml' ? 'xml' : 'plaintext';
-    return (
-      <div className="h-full overflow-hidden">
+
+    const bodyContent = !rawText ? (
+      <EmptyPlaceholder>{t('http.emptyBody')}</EmptyPlaceholder>
+    ) : (
+      <Box flex="1" minH="0" overflow="hidden" className="http-editor-pane">
         <Editor
           value={text}
           language={lang}
           theme={`app-${appTheme}`}
           beforeMount={monaco => { defineAppMonacoThemeSync(monaco, appTheme); }}
           options={{
-            minimap: { enabled: false },
-            fontSize: 13,
-            fontFamily: 'var(--font-mono)',
-            lineNumbers: 'on',
-            renderWhitespace: 'none',
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-            padding: { top: 8 },
-            wordWrap: 'on',
+            ...MONACO_BASE_EDITOR_OPTIONS,
             readOnly: true,
+            renderLineHighlight: 'none',
           }}
         />
-      </div>
+      </Box>
     );
+
+    return !displayResponse && sending ? null : bodyContent;
   };
 
   const renderResponseHeaders = () => {
-    if (!response) {
-      return (
-        <div className="flex items-center justify-center h-full text-[var(--color-text-muted)]/60 text-sm font-[family-name:var(--font-mono)]">
-          No response yet
-        </div>
-      );
+    if (!displayResponse && !sending) {
+      return <EmptyPlaceholder>{t('http.noResponse')}</EmptyPlaceholder>;
     }
-    const entries = Object.entries(response.headers);
-    if (entries.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-full text-[var(--color-text-muted)]/60 text-sm font-[family-name:var(--font-mono)]">
-          No headers
-        </div>
-      );
-    }
-    return (
-      <div className="p-2 overflow-auto h-full">
-        <table className="w-full text-xs font-[family-name:var(--font-mono)]">
-          <tbody>
-            {entries.map(([key, value]) => (
-              <tr key={key} className="border-b border-[var(--color-border-subtle)]/50">
-                <td className="py-1.5 pr-3 text-[var(--color-primary)] whitespace-nowrap align-top">{key}</td>
-                <td className="py-1.5 text-[var(--color-text-secondary)] break-all">{value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
+    const entries = displayResponse ? Object.entries(displayResponse.headers) : [];
+    const headersContent = entries.length === 0 ? (
+      <EmptyPlaceholder>{t('http.emptyHeaders')}</EmptyPlaceholder>
+    ) : (
+      <Stack gap="0" p="4" overflowY="auto" className="sidebar-scroll" flex="1" minH="0">
+        {entries.map(([key, value]) => (
+          <Flex
+            key={key}
+            gap="3"
+            py="1.5"
+            borderBottomWidth="1px"
+            borderColor="border"
+            fontFamily="mono"
+            fontSize="2xs"
+            _last={{ borderBottomWidth: 0 }}
+          >
+            <Text color="accent" flexShrink={0} minW="0">
+              {key}
+            </Text>
+            <Text color="fg.muted" wordBreak="break-all" flex="1">
+              {value}
+            </Text>
+          </Flex>
+        ))}
+      </Stack>
     );
+
+    return headersContent;
   };
 
+  const responseLoading = sending && (!displayResponse || showLoadingOverlay);
+
   return (
-    <div className="flex flex-col h-full w-full gap-2">
-      {/* ─── Top Request Bar ─── */}
+    <Box
+      className="http-workspace"
+      flex="1"
+      minH="0"
+      minW="0"
+      display="flex"
+      flexDirection="column"
+      overflow="hidden"
+    >
+      {/* ─── URL bar ─── */}
       <Flex
         align="center"
-        gap="2"
-        px="3"
-        py="2"
+        gap="3"
+        px="4"
+        py="3"
         flexShrink={0}
-        bg="bg.panel"
         borderBottomWidth="1px"
         borderColor="border"
       >
         <FieldSelect
           value={config.httpMethod}
-          onChange={(v) => updateConfig(session.id, { httpMethod: v as HttpMethod })}
+          onChange={(v) => handleMethodChange(v as HttpMethod)}
           options={HTTP_METHODS.map((m) => ({ value: m, label: m }))}
-          width="auto"
-          fontWeight="bold"
-          textTransform="uppercase"
-          height="9"
+          width="110px"
+          minWidth="110px"
+          fontSize="xs"
         />
-        <Input
-          flex="1"
-          minW="0"
-          size="sm"
-          height="9"
-          value={urlDraft}
-          onChange={(e) => setUrlDraft(e.target.value)}
-          placeholder="https://api.example.com"
-          fontFamily="mono"
-        />
+        <Box flex="1" minW="0">
+          <FieldInput
+            debounceMs={CONFIG_FIELD_DEBOUNCE_MS}
+            value={config.httpUrl}
+            onChange={(v) => updateConfig(session.id, { httpUrl: v })}
+            placeholder="https://api.example.com"
+          />
+        </Box>
         <Button
           flexShrink={0}
-          height="9"
+          size="md"
           onClick={handleSend}
           disabled={sending || !config.httpUrl}
-          loading={sending}
-          loadingText={t('network.connecting')}
           bg="accent"
           color="accent.fg"
           _hover={{ bg: 'accent.emphasized' }}
-          textTransform="uppercase"
-          fontWeight="bold"
-          letterSpacing="wider"
+          fontSize="sm"
+          fontFamily="mono"
+          fontWeight="normal"
         >
-          {!sending && (
-            <Flex align="center" gap="1.5">
-              {t('send.sendBtn')}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </Flex>
-          )}
+          <Flex align="center" gap="1">
+            {t('send.sendBtn')}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </Flex>
         </Button>
       </Flex>
 
-      {/* ─── Main Content: Request | Response ─── */}
-      <div className="flex-1 flex gap-2 min-h-0 px-2 pb-2">
-        {/* Left: Request */}
-        <div className="flex-1 flex flex-col min-h-0 glass-panel overflow-hidden">
-          {/* Request tab bar */}
-          <PanelLineTabs
-            tabs={reqTabs.map((tab) => ({ key: tab.key, label: tab.label, count: tab.count }))}
-            value={reqTab}
-            onChange={(key) => setReqTab(key as RequestTab)}
-          />
+      {/* ─── Request | Response ─── */}
+      <Flex flex="1" minH="0" minW="0">
+        <Box
+          flex="1"
+          display="flex"
+          flexDirection="column"
+          minH="0"
+          minW="0"
+          borderRightWidth="1px"
+          borderColor="border"
+          overflow="hidden"
+        >
+          <Flex {...HTTP_PANEL_TOOLBAR_PROPS}>
+            <PanelLineTabs
+              embedded
+              tabs={reqTabs.map((tab) => ({ key: tab.key, label: tab.label, count: tab.count }))}
+              value={reqTab}
+              onChange={(key) => setReqTab(key as RequestTab)}
+            />
+          </Flex>
 
-          {/* Request content */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-3">
-                        {reqTab === 'params' && (
+          <Box
+            flex="1"
+            minH="0"
+            overflowY={reqTab === 'body' ? 'hidden' : 'auto'}
+            overflowX="hidden"
+            p={reqTab === 'body' ? '0' : '4'}
+            display="flex"
+            flexDirection="column"
+            bg="bg.panel"
+            className="sidebar-scroll"
+          >
+            {reqTab === 'params' && (
               <Stack gap="1.5">
                 {httpParams.map((p, i) => (
                   <HttpKeyValueRow
@@ -727,43 +839,42 @@ export default function HttpProtocolLayout({ session }: Props) {
               </Stack>
             )}
 
-{reqTab === 'body' && (
-              <div className="h-full flex flex-col gap-2">
-                {/* Body type selector */}
-                <div className="flex items-center gap-2">
+            {reqTab === 'body' && (
+              <Stack gap="0" flex="1" minH="0" h="full">
+                <Flex align="center" gap="2" px="4" py="2" flexShrink={0} borderBottomWidth="1px" borderColor="border">
                   <FieldSelect
                     value={safeBody.type}
                     onChange={(v) => setBodyType(v as HttpBody['type'])}
                     options={[
-                      { value: 'none', label: 'none' },
-                      { value: 'text', label: 'text' },
-                      { value: 'json', label: 'json' },
+                      { value: 'none', label: t('http.bodyTypeNone') },
+                      { value: 'text', label: t('http.bodyTypeText') },
+                      { value: 'json', label: t('http.bodyTypeJson') },
                     ]}
-                    width="auto"
+                    width="72px"
+                    minWidth="72px"
                     fontSize="2xs"
+                    disabled={!bodyAllowed}
                   />
-                  {safeBody.type === 'json' && (
+                  {safeBody.type === 'json' && bodyAllowed && (
                     <Button
                       onClick={handleFormatJson}
-                      title="Prettify"
+                      title={t('http.formatJson')}
                       size="xs"
                       variant="outline"
                       colorPalette="blue"
                       fontSize="2xs"
+                      fontFamily="mono"
                     >
                       <Wand2 size={12} />
                       {t('http.formatJson')}
                     </Button>
                   )}
-                </div>
+                </Flex>
 
-                {/* Body editor */}
-                {safeBody.type === 'none' ? (
-                  <div className="flex items-center justify-center flex-1 text-xs text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
-                    No body for this request
-                  </div>
+                {safeBody.type === 'none' || !bodyAllowed ? (
+                  <EmptyPlaceholder>{t('http.noBody')}</EmptyPlaceholder>
                 ) : (
-                  <div className="flex-1 min-h-0 rounded border border-[var(--color-border-subtle)] overflow-hidden">
+                  <Box flex="1" minH="0" overflow="hidden" className="http-editor-pane">
                     <Editor
                       value={bodyDraft}
                       onChange={v => setBodyDraft(v ?? '')}
@@ -772,29 +883,23 @@ export default function HttpProtocolLayout({ session }: Props) {
                       language={safeBody.type === 'json' ? 'json' : 'plaintext'}
                       theme={`app-${appTheme}`}
                       options={{
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        fontFamily: 'var(--font-mono)',
-                        lineNumbers: 'on',
+                        ...MONACO_BASE_EDITOR_OPTIONS,
                         renderLineHighlight: 'none',
-                        renderWhitespace: 'none',
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                        padding: { top: 8 },
-                        wordWrap: 'on',
                       }}
                     />
-                  </div>
+                  </Box>
                 )}
-              </div>
+              </Stack>
             )}
 
             {reqTab === 'auth' && (
-              <Stack gap="3" maxW="360px">
+              <Stack gap="4" maxW="360px">
                 <Box>
                   <FieldLabel label={t('http.username')} />
                   <Input
                     size="sm"
+                    width="full"
+                    colorPalette="blue"
                     value={authUserDraft}
                     onChange={(e) => {
                       const next = e.target.value;
@@ -802,15 +907,16 @@ export default function HttpProtocolLayout({ session }: Props) {
                       queueAuthCommit(next, authPassDraft);
                     }}
                     placeholder="username"
-                    fontFamily="mono"
-                    fontSize="xs"
+                    _placeholder={{ color: 'fg.subtle' }}
                   />
                 </Box>
                 <Box>
                   <FieldLabel label={t('http.password')} />
                   <Input
                     size="sm"
+                    width="full"
                     type="password"
+                    colorPalette="blue"
                     value={authPassDraft}
                     onChange={(e) => {
                       const next = e.target.value;
@@ -818,80 +924,112 @@ export default function HttpProtocolLayout({ session }: Props) {
                       queueAuthCommit(authUserDraft, next);
                     }}
                     placeholder="password"
-                    fontFamily="mono"
-                    fontSize="xs"
+                    _placeholder={{ color: 'fg.subtle' }}
                   />
                 </Box>
                 {hasBasicAuth && (
-                  <Text fontSize="2xs" color="success" fontFamily="mono">
-                    Authorization header will be added automatically
+                  <Text fontSize="2xs" color="success" fontFamily="mono" lineHeight="label" letterSpacing="label">
+                    {t('http.authHint')}
                   </Text>
                 )}
               </Stack>
             )}
-          </div>
-        </div>
+          </Box>
+        </Box>
 
-        {/* Right: Response */}
-        <div className="flex-1 flex flex-col min-h-0 glass-panel overflow-hidden">
-          {/* Response status bar */}
-          <div className="flex items-center gap-3 px-3 py-2 shrink-0 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-container-low)]">
-            {!response ? (
-              <span className="text-2xs text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
-                {sending ? 'Sending request...' : 'No response yet'}
-              </span>
-            ) : (
-              <>
-                <span className={`text-sm font-bold font-[family-name:var(--font-mono)] ${statusColorClass(response.statusCode)}`}>
-                  {response.statusCode}
-                </span>
-                <span className="text-2xs text-[var(--color-text-secondary)]">
-                  {response.statusText}
-                </span>
-                <span className="ml-2 text-2xs text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
-                  {response.elapsedMs}ms
-                </span>
-                <span className="ml-2 text-2xs text-[var(--color-text-muted)] font-[family-name:var(--font-mono)]">
-                  {response.bodySize > 0 ? `${(response.bodySize / 1024).toFixed(1)} KB` : '—'}
-                </span>
-                <span className="ml-2 text-2xs text-[var(--color-text-muted)] font-[family-name:var(--font-mono)] uppercase">
-                  {bodyMode}
-                </span>
-                <Flex ml="auto" gap="2">
-                  <Button
-                    onClick={handleCopyResponse}
-                    disabled={!response?.bodyText}
+        <Box flex="1" display="flex" flexDirection="column" minH="0" minW="0" overflow="hidden">
+          <Flex
+            {...HTTP_PANEL_TOOLBAR_PROPS}
+            justify="space-between"
+            gap="3"
+            fontFamily="mono"
+          >
+            <PanelLineTabs
+              embedded
+              tabs={[
+                { key: 'body', label: t('http.responseBody') },
+                { key: 'headers', label: t('http.responseHeaders') },
+              ]}
+              value={resTab}
+              onChange={(key) => setResTab(key as ResponseTab)}
+            />
+
+            <Flex
+              align="center"
+              gap="3"
+              flexShrink={0}
+              justify="flex-end"
+              className={showLoadingOverlay ? 'http-response-stale-dim' : undefined}
+            >
+              {!displayResponse ? (
+                <Text fontSize="2xs" color="fg.subtle" lineHeight="label" letterSpacing="label" whiteSpace="nowrap">
+                  {t('http.noResponse')}
+                </Text>
+              ) : (
+                <>
+                  <Text fontSize="sm" fontWeight="bold" color={statusPalette(displayResponse.statusCode)} whiteSpace="nowrap">
+                    {displayResponse.statusCode}
+                  </Text>
+                  <Text fontSize="2xs" color="fg.muted" whiteSpace="nowrap">
+                    {displayResponse.statusText}
+                  </Text>
+                  <Text fontSize="2xs" color="fg.subtle" whiteSpace="nowrap">
+                    {displayResponse.elapsedMs}ms
+                  </Text>
+                  <Text fontSize="2xs" color="fg.subtle" whiteSpace="nowrap">
+                    {displayResponse.bodySize > 0 ? `${(displayResponse.bodySize / 1024).toFixed(1)} KB` : '—'}
+                  </Text>
+                  <Text fontSize="2xs" color="fg.subtle" textTransform="uppercase" whiteSpace="nowrap">
+                    {bodyMode}
+                  </Text>
+                </>
+              )}
+
+              {canUseResponseActions && (
+                <Flex gap="0.5" flexShrink={0} ml="1">
+                  <IconButton
+                    aria-label={t('http.copyResponse')}
+                    title={t('http.copyResponse')}
                     size="xs"
                     variant="ghost"
                     colorPalette="blue"
-                    textTransform="uppercase"
-                    letterSpacing="wider"
-                    fontWeight="bold"
-                    fontSize="2xs"
+                    disabled={!displayResponse?.bodyText}
+                    onClick={handleCopyResponse}
                   >
-                    {t('http.copyResponse')}
-                  </Button>
+                    <Copy size={15} strokeWidth={2} />
+                  </IconButton>
+                  <IconButton
+                    aria-label={t('http.downloadResponse')}
+                    title={t('http.downloadResponse')}
+                    size="xs"
+                    variant="ghost"
+                    colorPalette="blue"
+                    onClick={() => void handleDownloadResponse()}
+                  >
+                    <Download size={15} strokeWidth={2} />
+                  </IconButton>
+                  <IconButton
+                    aria-label={t('http.clearResponse')}
+                    title={t('http.clearResponse')}
+                    size="xs"
+                    variant="ghost"
+                    colorPalette="blue"
+                    onClick={handleClearResponse}
+                  >
+                    <Eraser size={15} strokeWidth={2} />
+                  </IconButton>
                 </Flex>
-              </>
-            )}
-          </div>
+              )}
+            </Flex>
+          </Flex>
 
-          {/* Response tabs */}
-                    <PanelLineTabs
-            tabs={[
-              { key: 'body', label: t('http.responseBody') },
-              { key: 'headers', label: t('http.responseHeaders') },
-            ]}
-            value={resTab}
-            onChange={(key) => setResTab(key as ResponseTab)}
-          />
-
-          {/* Response content */}
-          <div className="flex-1 min-h-0 overflow-y-auto bg-[var(--color-surface-dim)]">
-            {resTab === 'body' ? renderResponseBody() : renderResponseHeaders()}
-          </div>
-        </div>
-      </div>
-    </div>
+          <LoadingOverlay loading={responseLoading} label={loadingLabel}>
+            <Box flex="1" minH="0" overflow="hidden" display="flex" flexDirection="column" bg="bg.panel">
+              {resTab === 'body' ? renderResponseBody() : renderResponseHeaders()}
+            </Box>
+          </LoadingOverlay>
+        </Box>
+      </Flex>
+    </Box>
   );
 }

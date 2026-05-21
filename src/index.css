@@ -1,7 +1,10 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss";
+
 /* ── Geist Font Faces ── */
 @font-face {
   font-family: 'Geist';
-  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  src: url('./assets/fonts/Geist-Variable.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -9,13 +12,11 @@
 
 @font-face {
   font-family: 'Geist Mono';
-  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+  src: url('./assets/fonts/GeistMono-Variable.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
-
-@import "tailwindcss";
 
 @theme {
   /* ── Color tokens (NetPulse Pro Design System) ── */
@@ -107,7 +108,7 @@
 
   /* ── Compact unified typography (11px labels · 12px UI · 13px brand) ── */
   --font-body:    'Geist', 'PingFang SC', 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
-  --font-mono:    'JetBrains Mono', 'Geist Mono', 'Cascadia Mono', 'Consolas', 'PingFang SC', 'Microsoft YaHei UI', monospace;
+  --font-mono:    'Geist Mono', 'Cascadia Mono', 'Consolas', 'PingFang SC', 'Microsoft YaHei UI', monospace;
   --font-display: 'Geist', 'PingFang SC', 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
   --font-size-label: 11px;
   --font-size-base:  12px;
@@ -543,6 +544,44 @@ input, select, textarea {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
+}
+
+/* HTTP workspace — solid editor surface, no glass tint */
+.http-workspace {
+  background: var(--color-surface);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+}
+
+[data-theme="light"] .http-workspace {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.http-editor-pane {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.http-editor-pane > div {
+  height: 100%;
+}
+
+.http-editor-pane .monaco-editor,
+.http-editor-pane .monaco-editor-background,
+.http-editor-pane .monaco-editor .margin {
+  background-color: var(--color-surface) !important;
+}
+
+/* HTTP: dim stale response while loading (no dark scrim) */
+.http-response-stale-dim {
+  filter: saturate(0.82) brightness(0.92);
+  pointer-events: none;
+}
+
+[data-theme="light"] .http-response-stale-dim {
+  filter: saturate(0.88) brightness(0.97);
 }
 
 /* Vertical rhythm for settings / form stacks */

@@ -41,9 +41,9 @@ export interface HttpQueryParam {
 }
 
 export type HttpBody =
-  | { type: 'none' }
-  | { type: 'text'; content: string }
-  | { type: 'json'; content: string };
+  | { type: 'none'; textContent?: string; jsonContent?: string }
+  | { type: 'text'; content: string; jsonContent?: string }
+  | { type: 'json'; content: string; textContent?: string };
 
 export interface ConnectionConfig {
   protocol: ProtocolType;

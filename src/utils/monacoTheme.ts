@@ -1,7 +1,7 @@
 import type { Monaco } from '@monaco-editor/react';
 
 function getCssVar(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return window.getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
 function withAlpha(color: string, alpha: number): string {
@@ -112,3 +112,24 @@ export async function defineAppMonacoTheme(theme: 'dark' | 'light') {
   const monaco = await loader.init();
   defineAppMonacoThemeSync(monaco, theme);
 }
+
+/** Shared Monaco options — hides scrollbar overview-ruler markers, keeps code folding. */
+export const MONACO_BASE_EDITOR_OPTIONS = {
+  contextmenu: false,
+  minimap: { enabled: false },
+  overviewRulerLanes: 0,
+  overviewRulerBorder: false,
+  hideCursorInOverviewRuler: true,
+  renderValidationDecorations: 'off' as const,
+  glyphMargin: false,
+  folding: true,
+  showFoldingControls: 'always' as const,
+  fontSize: 13,
+  fontFamily: 'var(--font-mono)',
+  lineNumbers: 'on' as const,
+  renderWhitespace: 'none' as const,
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  padding: { top: 8 },
+  wordWrap: 'on' as const,
+};

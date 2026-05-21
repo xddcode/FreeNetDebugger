@@ -1,0 +1,57 @@
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0a0f14; }
+#startup-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #111317 0%, #1a1c20 55%, #111317 100%);
+  transition: opacity .24s ease;
+}
+#startup-splash.fade-out { opacity: 0; pointer-events: none; }
+.startup-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(173,198,255,.28);
+  background: rgba(26,28,32,.92);
+  box-shadow: 0 0 26px rgba(173,198,255,.12), inset 0 0 14px rgba(173,198,255,.06);
+  color: #e2e2e8;
+}
+.startup-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(173,198,255,.35);
+}
+.startup-title {
+  font: 700 16px "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: .04em;
+  color: #adc6ff;
+}
+.startup-subtitle {
+  font: 500 11px "Geist Mono", "Consolas", monospace;
+  color: rgba(139,144,160,.85);
+}
+.startup-bar {
+  width: 170px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(139,144,160,.28);
+  overflow: hidden;
+}
+.startup-bar > span {
+  display: block;
+  width: 44%;
+  height: 100%;
+  background: linear-gradient(90deg, #adc6ff, #4edea3);
+  animation: startup-slide 1.1s ease-in-out infinite;
+}
+@keyframes startup-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(280%); }
+}

@@ -1,7 +1,10 @@
+(window as Window & { __startupSplashAt?: number }).__startupSplashAt = Date.now();
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import AppProvider from './providers/AppProvider';
+import './utils/monacoSetup';
 import './index.css';
 import './i18n';              // initialise i18next (side-effect import)
 import i18n from './i18n';
