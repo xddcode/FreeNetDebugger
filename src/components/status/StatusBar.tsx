@@ -4,9 +4,13 @@ import { Box, Button, Flex, Text } from '@chakra-ui/react';
 import { invoke } from '../../utils/tauri';
 import { useSessionStore } from '../../store';
 import type { Session, SystemStats } from '../../types';
-import { getProtocolAddress } from '../../utils/protocolConfig';
 import { showToast } from '../../store/toastStore';
 import { TRAFFIC_RX_COLOR, TRAFFIC_TX_COLOR } from '../../config/constants';
+import StatusBarSessionInfo, {
+  statusBarShowsDuration,
+  statusBarShowsStatusLabel,
+  statusBarStatusKey,
+} from './StatusBarSessionInfo';
 
 interface Props {
   session: Session | null;
@@ -57,10 +61,10 @@ export default function StatusBar({ session }: Props) {
   const isConn = session?.status === 'connected';
   const isListen = session?.status === 'listening';
   const isError = session?.status === 'error';
-  const isAlive = isConn || isListen;
+  const showDuration = session ? statusBarShowsDuration(session) : false;
 
   useEffect(() => {
-    if (!isAlive) {
+    if (!showDuration) {
       return;
     }
 
@@ -69,7 +73,7 @@ export default function StatusBar({ session }: Props) {
       clearInterval(timer);
       setTick(0);
     };
-  }, [isAlive, session?.id]);
+  }, [showDuration, session?.id]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -85,31 +89,25 @@ export default function StatusBar({ session }: Props) {
     return () => clearInterval(timer);
   }, []);
 
+  const showStatusLabel = statusBarShowsStatusLabel(session);
+  const statusKey = statusBarStatusKey(session);
   const statusLabel = () => {
-    if (!session || session.status === 'idle') {
-      return t('status.ready');
-    }
-    const m: Record<string, string> = {
+    const labels: Record<string, string> = {
+      ready: t('status.ready'),
       connecting: t('status.connecting'),
       connected: t('status.connected'),
       listening: t('status.listening'),
       error: t('status.error'),
       disconnecting: t('status.closing'),
     };
-    return m[session.status] ?? t('status.ready');
+    return labels[statusKey] ?? t('status.ready');
   };
 
-  const statusColor = isError ? 'danger' : isConn || isListen ? 'success' : 'fg.subtle';
-
-  const addrText = () => {
-    if (!session) {
-      return '';
-    }
-    if (session.remoteAddr) {
-      return session.remoteAddr;
-    }
-    return getProtocolAddress(session.config);
-  };
+  const statusColor = isError
+    ? 'danger'
+    : statusKey === 'connected' || statusKey === 'listening'
+      ? 'success'
+      : 'fg.subtle';
 
   return (
     <Flex
@@ -128,22 +126,19 @@ export default function StatusBar({ session }: Props) {
       fontSize="sm"
       lineHeight="code"
     >
-      <Flex align="center" gap="4">
-        <Text color={statusColor}>
-          {statusLabel()}
-        </Text>
-        {addrText() && (
-          <Text color="fg.muted">
-            {addrText()}
+      <Flex align="center" gap="4" minW="0">
+        {showStatusLabel && (
+          <Text color={statusColor} flexShrink={0}>
+            {statusLabel()}
           </Text>
         )}
         {session && (
-          <Text color="fg.subtle">
-            {session.config.protocol.replace('_', ' ')}
-          </Text>
+          <Flex align="center" gap="3" minW="0">
+            <StatusBarSessionInfo session={session} />
+          </Flex>
         )}
-        {isAlive && (
-          <Text color="fg.subtle">
+        {showDuration && (
+          <Text color="fg.subtle" flexShrink={0}>
             {fmtDuration(tick * 1000)}
           </Text>
         )}

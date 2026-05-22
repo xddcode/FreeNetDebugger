@@ -1,7 +1,7 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { Activity, PackageSearch } from 'lucide-react';
 import { Box, Flex, Text } from '@chakra-ui/react';
-import type { Session } from '../../types';
+import type { StreamSession } from '../../types';
 import ConnectionPanel from '../sidebar/ConnectionPanel';
 import { PanelCard, PanelHeader } from '../sidebar/ui';
 import DataLog from '../log/DataLog';
@@ -9,7 +9,7 @@ import DataSend from '../send/DataSend';
 import TrafficChart from '../traffic/TrafficChart';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
 }
 
 function LiveIndicator() {

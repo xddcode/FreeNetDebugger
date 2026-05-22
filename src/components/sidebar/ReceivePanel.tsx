@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Flex, Stack } from '@chakra-ui/react';
 import { useSessionStore } from '../../store';
-import type { Session, EncodingMode, AsciiNonPrintableMode } from '../../types';
+import type { StreamSession, EncodingMode, AsciiNonPrintableMode } from '../../types';
 import { bytesToDisplay, formatTimestamp } from '../../utils/encoding';
 import { PanelCard, PanelHeader, FieldSelect, CheckRow } from './ui';
 import { useFileSaver, pickSaveFile, exportToFile } from '../../hooks/useFileSaver';
 import { showToast } from '../../store/toastStore';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
 }
 
 export default function ReceivePanel({ session }: Props) {

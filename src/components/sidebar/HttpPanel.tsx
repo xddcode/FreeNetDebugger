@@ -1,12 +1,12 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { Button, Stack } from '@chakra-ui/react';
 import { useSessionStore } from '../../store';
-import type { Session } from '../../types';
+import type { HttpSession } from '../../types';
 import HttpKeyValueRow from '../ui/HttpKeyValueRow';
 import { PanelCard, PanelHeader } from './ui';
 
 interface Props {
-  session: Session;
+  session: HttpSession;
 }
 
 export default function HttpPanel({ session }: Props) {

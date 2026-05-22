@@ -1,7 +1,7 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { Checkbox, Flex, Stack, Text } from '@chakra-ui/react';
 import { useSessionStore } from '../../store';
-import type { Session } from '../../types';
+import type { StreamSession } from '../../types';
 import {
   PanelCard,
   PanelHeader,
@@ -13,7 +13,7 @@ import {
 } from './ui';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
 }
 
 export default function SendSettingsPanel({ session }: Props) {

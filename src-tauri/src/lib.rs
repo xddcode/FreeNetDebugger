@@ -7,8 +7,8 @@ mod types;
 mod utils;
 
 use commands::{
-    connect, disconnect, disconnect_all, exit_app, get_system_stats, list_serial_ports, run_script,
-    send_data,
+    connect, disconnect, disconnect_all, exit_app, get_system_stats, http_request, list_serial_ports,
+    run_script, send_data,
 };
 use state::AppState;
 
@@ -25,6 +25,7 @@ pub fn run() {
             disconnect,
             disconnect_all,
             send_data,
+            http_request,
             list_serial_ports,
             run_script,
             exit_app,

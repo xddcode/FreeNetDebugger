@@ -1,14 +1,14 @@
 ﻿import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Flex, Tabs } from '@chakra-ui/react';
-import type { Session } from '../../types';
+import type { StreamSession } from '../../types';
 import NetworkPanel from './NetworkPanel';
 import ReceivePanel from './ReceivePanel';
 import SendSettingsPanel from './SendSettingsPanel';
 import ProfilePanel from './ProfilePanel';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
 }
 
 type SidebarTab = 'network' | 'receive' | 'send' | 'importExport';
@@ -17,7 +17,7 @@ export default function ConnectionPanel({ session }: Props) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SidebarTab>('network');
 
-  const isTcp = session.config.protocol === 'TCP_CLIENT' || session.config.protocol === 'TCP_SERVER';
+  const isTcp = session.protocol === 'TCP_CLIENT' || session.protocol === 'TCP_SERVER';
 
   const tabs: { key: SidebarTab; label: string }[] = [
     { key: 'network', label: t('sidebar.tabs.network') },

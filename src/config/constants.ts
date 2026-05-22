@@ -47,6 +47,10 @@ export const FILE_FLUSH_INTERVAL = 120;
 export const LOG_FILTER_DEBOUNCE_MS = 300;
 export const CONFIG_FIELD_DEBOUNCE_MS = 300;
 
+/** HTTP response body tiers — progressive UI degradation by size. */
+export const HTTP_RESPONSE_BODY_FULL_BYTES = 5 * 1024 * 1024;
+export const HTTP_RESPONSE_BODY_RAW_MAX_BYTES = 20 * 1024 * 1024;
+
 // ── Default session config ──
 export const DEFAULT_REMOTE_HOST = '127.0.0.1';
 export const DEFAULT_REMOTE_PORT = 8080;

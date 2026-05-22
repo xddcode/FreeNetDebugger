@@ -23,6 +23,10 @@ export function useDebouncedControlledValue<T>(
   }, [draft]);
 
   useEffect(() => {
+    if (Object.is(value, draftRef.current)) {
+      return;
+    }
+    draftRef.current = value;
     setDraftState(value);
   }, [value]);
 

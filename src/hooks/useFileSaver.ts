@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect, type RefObject } from 'react';
 import { useSessionStore, getAllSessions } from '../store';
+import { isStreamSession } from '../types';
 import { bytesToDisplay, formatTimestamp } from '../utils/encoding';
 import { FILE_FLUSH_INTERVAL } from '../config/constants';
 
@@ -44,7 +45,7 @@ export function useFileSaver(sessionId: string): FileSaverState {
     const flushToFile = () => {
       const st = useSessionStore.getState();
       const live = getAllSessions(st).find((s) => s.id === sessionId);
-      if (!live || !live.receiveSettings.saveToFile || !fileHandleRef.current || live.logs.length === 0) {
+      if (!live || !isStreamSession(live) || !live.receiveSettings.saveToFile || !fileHandleRef.current || live.logs.length === 0) {
         return;
       }
 
@@ -103,9 +104,22 @@ export async function pickSaveFile(suggestedName: string): Promise<FileSystemFil
 export async function exportToFile(
   content: string,
   fileName: string,
+  options?: {
+    mimeType?: string;
+    description?: string;
+    extensions?: string[];
+  },
 ): Promise<{ ok: boolean; via: 'picker' | 'download' | null }> {
+  const mimeType = options?.mimeType ?? 'text/plain';
+  const description = options?.description ?? 'Text';
+  const extensions = options?.extensions ?? ['.txt'];
+  const accept: Record<string, string[]> = {};
+  for (const ext of extensions) {
+    accept[mimeType] = [...(accept[mimeType] ?? []), ext];
+  }
+
   const showSaveFilePicker = (window as unknown as {
-    showSaveFilePicker?: (options: {
+    showSaveFilePicker?: (opts: {
       suggestedName?: string;
       types?: Array<{ description?: string; accept: Record<string, string[]> }>;
     }) => Promise<FileSystemFileHandle>;
@@ -115,7 +129,7 @@ export async function exportToFile(
     try {
       const handle = await showSaveFilePicker({
         suggestedName: fileName,
-        types: [{ description: 'Text', accept: { 'text/plain': ['.txt'] } }],
+        types: [{ description, accept }],
       });
       const writer = await handle.createWritable();
       await writer.write(content);
@@ -129,7 +143,7 @@ export async function exportToFile(
   }
 
   try {
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement('a'), { href: url, download: fileName });
     a.style.display = 'none';

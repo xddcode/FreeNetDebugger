@@ -63,6 +63,32 @@ export function switchHttpBodyType(
   return { type: 'json', content: jsonContent, textContent };
 }
 
+export function exportHttpBody(raw: HttpBody): HttpBody {
+  const normalized = normalizeHttpBody(raw);
+  if (normalized.type === 'none') {
+    const body: HttpBody = { type: 'none' };
+    if (normalized.textContent) {
+      body.textContent = normalized.textContent;
+    }
+    if (normalized.jsonContent) {
+      body.jsonContent = normalized.jsonContent;
+    }
+    return body;
+  }
+  if (normalized.type === 'text') {
+    const body: HttpBody = { type: 'text', content: normalized.content };
+    if (normalized.jsonContent) {
+      body.jsonContent = normalized.jsonContent;
+    }
+    return body;
+  }
+  const body: HttpBody = { type: 'json', content: normalized.content };
+  if (normalized.textContent) {
+    body.textContent = normalized.textContent;
+  }
+  return body;
+}
+
 export const HTTP_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
 
 export const HTTP_METHODS_WITHOUT_BODY: HttpMethod[] = ['GET', 'HEAD', 'OPTIONS'];
@@ -71,11 +97,208 @@ export function methodAllowsBody(method: HttpMethod): boolean {
   return !HTTP_METHODS_WITHOUT_BODY.includes(method);
 }
 
+/** Path segment placeholder — `:id` or `:12` in `/users/:id` (not host port). */
+const PATH_PARAM_NAME = /:([A-Za-z0-9_]+)/g;
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Extract pathname from URL; falls back when input is still being edited. */
+export function extractUrlPathname(url: string): string {
+  if (!url) {
+    return '/';
+  }
+  try {
+    return new URL(url).pathname;
+  } catch {
+    const withoutScheme = url.replace(/^https?:\/\//i, '');
+    const slashIdx = withoutScheme.indexOf('/');
+    if (slashIdx < 0) {
+      return '/';
+    }
+    const pathPart = withoutScheme.slice(slashIdx);
+    const qIndex = pathPart.indexOf('?');
+    const hIndex = pathPart.indexOf('#');
+    const end = Math.min(
+      qIndex >= 0 ? qIndex : pathPart.length,
+      hIndex >= 0 ? hIndex : pathPart.length,
+    );
+    return pathPart.slice(0, end) || '/';
+  }
+}
+
+export interface UrlHighlightSegment {
+  kind: 'text' | 'pathParam';
+  text: string;
+}
+
+/** Index in full URL string where pathname begins (after host/port). */
+export function findPathnameStartInUrl(url: string): number {
+  if (!url) {
+    return 0;
+  }
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname) {
+      const idx = url.indexOf(parsed.pathname);
+      if (idx >= 0) {
+        return idx;
+      }
+    }
+  } catch {
+    // fall through for partial URLs while typing
+  }
+  const schemeMatch = url.match(/^https?:\/\//i);
+  const schemeLen = schemeMatch ? schemeMatch[0].length : 0;
+  const slashIdx = url.slice(schemeLen).indexOf('/');
+  if (slashIdx < 0) {
+    return url.length;
+  }
+  return schemeLen + slashIdx;
+}
+
+/** Split URL for overlay highlight — only `:name` in pathname, not host port. */
+export function segmentUrlForPathHighlight(url: string): UrlHighlightSegment[] {
+  if (!url) {
+    return [];
+  }
+
+  const pathnameStart = findPathnameStartInUrl(url);
+  const pathname = extractUrlPathname(url);
+  const pathnameEnd = pathnameStart + pathname.length;
+
+  const segments: UrlHighlightSegment[] = [];
+  let lastIndex = 0;
+  const pathRegion = url.slice(pathnameStart, pathnameEnd);
+
+  for (const match of pathRegion.matchAll(PATH_PARAM_NAME)) {
+    const matchStart = pathnameStart + (match.index ?? 0);
+    const matchEnd = matchStart + match[0].length;
+
+    if (matchStart > lastIndex) {
+      segments.push({ kind: 'text', text: url.slice(lastIndex, matchStart) });
+    }
+    segments.push({ kind: 'pathParam', text: url.slice(matchStart, matchEnd) });
+    lastIndex = matchEnd;
+  }
+
+  if (lastIndex < url.length) {
+    segments.push({ kind: 'text', text: url.slice(lastIndex) });
+  }
+
+  return segments.length > 0 ? segments : [{ kind: 'text', text: url }];
+}
+
+/** Parse `:name` placeholders from URL path into param rows. Preserves existing values. */
+export function mergePathParamsFromUrl(
+  url: string,
+  existing: HttpQueryParam[] = [],
+): HttpQueryParam[] {
+  const pathname = extractUrlPathname(url);
+  const names: string[] = [];
+  for (const match of pathname.matchAll(PATH_PARAM_NAME)) {
+    const name = match[1];
+    if (name && !names.includes(name)) {
+      names.push(name);
+    }
+  }
+  const existingMap = new Map(
+    existing.filter((p) => p.key.trim()).map((p) => [p.key.trim(), p]),
+  );
+  return names.map((name) => {
+    const prev = existingMap.get(name);
+    return prev
+      ? { ...prev, key: name }
+      : { key: name, value: '', enabled: true };
+  });
+}
+
+function substitutePathParams(path: string, pathParams: HttpQueryParam[]): string {
+  let result = path;
+  for (const param of pathParams) {
+    if (!param.key.trim()) {
+      continue;
+    }
+    const name = param.key.trim();
+    const pattern = new RegExp(`:${escapeRegExp(name)}(?=/|$|\\?|#)`, 'g');
+    result = result.replace(pattern, encodeURIComponent(param.value));
+  }
+  return result;
+}
+
+/** Replace `:name` segments with path param values. Query string is preserved. */
+export function buildUrlWithPathParams(url: string, pathParams: HttpQueryParam[]): string {
+  if (!url) {
+    return url;
+  }
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = substitutePathParams(parsed.pathname, pathParams);
+    return parsed.toString();
+  } catch {
+    const pathname = extractUrlPathname(url);
+    const prefix = url.slice(0, url.length - pathname.length);
+    return prefix + substitutePathParams(pathname, pathParams);
+  }
+}
+
+/** Apply path params then query params for the final request URL. */
+export function resolveHttpRequestUrl(
+  urlTemplate: string,
+  pathParams: HttpQueryParam[],
+  queryParams: HttpQueryParam[],
+): string {
+  const withPath = buildUrlWithPathParams(stripUrlQuery(urlTemplate), pathParams);
+  return buildUrlWithParams(withPath, queryParams);
+}
+
 export function stripUrlQuery(url: string): string {
   if (!url) {
     return url;
   }
-  return url.split('?')[0];
+  const hashIndex = url.indexOf('#');
+  const withoutHash = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
+  const qIndex = withoutHash.indexOf('?');
+  return qIndex >= 0 ? withoutHash.slice(0, qIndex) : withoutHash;
+}
+
+/** Parse query string from a URL into param rows (URL → Params sync). */
+export function parseQueryParamsFromUrl(url: string): HttpQueryParam[] {
+  if (!url) {
+    return [];
+  }
+  const hashIndex = url.indexOf('#');
+  const withoutHash = hashIndex >= 0 ? url.slice(0, hashIndex) : url;
+  const qIndex = withoutHash.indexOf('?');
+  if (qIndex < 0) {
+    return [];
+  }
+  const qs = withoutHash.slice(qIndex + 1);
+  if (!qs) {
+    return [];
+  }
+
+  return qs.split('&').flatMap((pair) => {
+    if (!pair) {
+      return [];
+    }
+    const eqIndex = pair.indexOf('=');
+    const decodePart = (part: string) => {
+      try {
+        return decodeURIComponent(part.replace(/\+/g, ' '));
+      } catch {
+        return part;
+      }
+    };
+    if (eqIndex < 0) {
+      const key = decodePart(pair);
+      return key ? [{ key, value: '', enabled: true }] : [];
+    }
+    const key = decodePart(pair.slice(0, eqIndex));
+    const value = decodePart(pair.slice(eqIndex + 1));
+    return key ? [{ key, value, enabled: true }] : [];
+  });
 }
 
 /** Build URL with query params — preserves path, replaces query string */
@@ -105,7 +328,18 @@ export function isHttpResponseSystemLog(entry: LogEntry): boolean {
   return /^HTTP\s+\d{3}/.test(text);
 }
 
-/** Remove HTTP response status lines and their following recv body chunks from logs. */
+export function isHttpErrorSystemLog(entry: LogEntry): boolean {
+  if (entry.direction !== 'system') {
+    return false;
+  }
+  const text = new TextDecoder().decode(new Uint8Array(entry.data)).trim();
+  if (/^HTTP\s+\d{3}/.test(text)) {
+    return false;
+  }
+  return /^Error:/.test(text) || /^HTTP\s+/i.test(text);
+}
+
+/** Remove HTTP responses, error lines, and trailing recv bodies from logs. */
 export function stripHttpResponseLogs(logs: LogEntry[]): LogEntry[] {
   const next: LogEntry[] = [];
   for (let i = 0; i < logs.length; i++) {
@@ -114,6 +348,9 @@ export function stripHttpResponseLogs(logs: LogEntry[]): LogEntry[] {
       if (i + 1 < logs.length && logs[i + 1].direction === 'recv') {
         i += 1;
       }
+      continue;
+    }
+    if (isHttpErrorSystemLog(entry)) {
       continue;
     }
     next.push(entry);

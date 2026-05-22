@@ -1,106 +1,50 @@
-﻿import { useRef, useState, type ChangeEvent } from 'react';
+﻿import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { save } from '@tauri-apps/plugin-dialog';
-import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { Box, Button, Flex, Stack, Text } from '@chakra-ui/react';
-import { useSessionStore } from '../../store';
-import type { Session, ConnectionConfig } from '../../types';
-import { extractProtocolConfig } from '../../utils/protocolConfig';
+import type { Session } from '../../types';
+import { exportSessionProfile, importSessionProfileFromFile } from '../../services/sessionProfileService';
 import { showToast } from '../../store/toastStore';
+import { useUnsavedGuard } from '../../context/UnsavedGuardContext';
 import { PanelCard, PanelHeader } from './ui';
 
 interface Props {
   session: Session;
 }
 
-interface ExportedSessionConfig {
-  _fndVersion: string;
-  _type: 'fnd-session-config';
-  exportedAt: number;
-  name: string;
-  protocol: string;
-  config: Partial<ConnectionConfig>;
-  receiveSettings: object;
-  sendSettings: object;
-}
-
-function isValidConfig(data: unknown): data is ExportedSessionConfig {
-  if (typeof data !== 'object' || data === null) return false;
-  const d = data as Record<string, unknown>;
-  return (
-    d._type === 'fnd-session-config' &&
-    typeof d.config === 'object' &&
-    d.config !== null &&
-    typeof (d.config as Record<string, unknown>).protocol === 'string'
-  );
-}
-
 export default function ProfilePanel({ session }: Props) {
   const { t } = useTranslation();
-  const updateConfig = useSessionStore((s) => s.updateConfig);
-  const updateReceiveSettings = useSessionStore((s) => s.updateReceiveSettings);
-  const updateSendSettings = useSessionStore((s) => s.updateSendSettings);
+  const { requestGuardedAction } = useUnsavedGuard();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importMsg, setImportMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
-  const handleExport = async () => {
-    const payload: ExportedSessionConfig = {
-      _fndVersion: '1.0',
-      _type: 'fnd-session-config',
-      exportedAt: Date.now(),
-      name: session.name,
-      protocol: session.config.protocol,
-      config: extractProtocolConfig(session.config),
-      receiveSettings: { ...session.receiveSettings },
-      sendSettings: { ...session.sendSettings },
-    };
-    const defaultName = `fnd-${session.config.protocol.toLowerCase().replace('_', '-')}-${Date.now()}.json`;
-
-    const path = await save({
-      defaultPath: defaultName,
-      filters: [{ name: 'JSON', extensions: ['json'] }],
-    });
-    if (!path) return;
-
-    try {
-      await writeTextFile(path, JSON.stringify(payload, null, 2));
+  const runExport = async () => {
+    const result = await exportSessionProfile(session.id);
+    if (result.cancelled) {
+      return;
+    }
+    if (result.ok) {
       showToast('success', t('toast.exportSuccess'));
-    } catch {
+    } else {
       showToast('error', t('toast.exportFailed'));
     }
   };
 
-  const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleExport = () => {
+    requestGuardedAction({ kind: 'export', sessionId: session.id }, runExport);
+  };
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const content = ev.target?.result;
-        if (typeof content !== 'string') {
-          setImportMsg({ text: t('profile.importInvalid'), ok: false });
-          showToast('error', t('toast.importFailed'));
-          return;
-        }
-        const data = JSON.parse(content) as unknown;
-        if (!isValidConfig(data)) {
-          setImportMsg({ text: t('profile.importInvalid'), ok: false });
-          showToast('error', t('toast.importFailed'));
-          return;
-        }
-        updateConfig(session.id, data.config);
-        updateReceiveSettings(session.id, data.receiveSettings);
-        updateSendSettings(session.id, data.sendSettings);
-        setImportMsg({ text: t('profile.importSuccess'), ok: true });
-        showToast('success', t('toast.importSuccess'));
-      } catch {
-        setImportMsg({ text: t('profile.importInvalid'), ok: false });
-        showToast('error', t('toast.importFailed'));
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+  const handleImport = async (file: File) => {
+    const result = await importSessionProfileFromFile(session.id, file);
+    if (result.ok) {
+      setImportMsg({ text: t('profile.importSuccess'), ok: true });
+      showToast('success', t('toast.importSuccess'));
+      return;
+    }
+    const failText = result.reason === 'protocolMismatch'
+      ? t('toast.importProtocolMismatch')
+      : t('profile.importInvalid');
+    setImportMsg({ text: failText, ok: false });
+    showToast('error', failText);
   };
 
   return (
@@ -118,7 +62,7 @@ export default function ProfilePanel({ session }: Props) {
       />
       <Stack gap="4" px="4" py="3" pt="2">
         <Flex align="center" gap="2" fontSize="sm" fontFamily="mono" fontWeight="normal">
-          <Text color="accent">{session.config.protocol}</Text>
+          <Text color="accent">{session.protocol}</Text>
           <Text color="fg.subtle" truncate>
             {session.name}
           </Text>
@@ -129,7 +73,7 @@ export default function ProfilePanel({ session }: Props) {
             flex="1"
             size="sm"
             variant="outline"
-            onClick={() => void handleExport()}
+            onClick={handleExport}
             bg="accent.subtle"
             color="accent"
             borderColor="accent.subtle"
@@ -153,7 +97,19 @@ export default function ProfilePanel({ session }: Props) {
           >
             {t('profile.import')}
           </Button>
-          <input ref={fileInputRef} type="file" accept=".json" hidden onChange={handleImport} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                void handleImport(file);
+              }
+              e.target.value = '';
+            }}
+          />
         </Flex>
 
         {importMsg && (

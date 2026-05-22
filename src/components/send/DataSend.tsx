@@ -17,12 +17,12 @@ import { CONFIG_FIELD_DEBOUNCE_MS } from '../../config/constants';
 import { useSessionStore } from '../../store';
 import { sendPanelBus } from '../../utils/sendPanelBus';
 import { showToast } from '../../store/toastStore';
-import type { EncodingMode, Session } from '../../types';
+import type { EncodingMode, StreamSession } from '../../types';
 import { asciiToBytes, hexToBytes, parseEscapeSequences } from '../../utils/encoding';
 import { appendChecksum } from '../../utils/checksum';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
 }
 
 const SEND_CONTENT_SYNC_MS = 300;
@@ -137,39 +137,6 @@ export default function DataSend({ session }: Props) {
         return;
       }
 
-      if (session.config.protocol === 'HTTP') {
-        const enabledHeaders = session.config.httpHeaders.filter((h) => h.enabled);
-        const headerMap: Record<string, string> = {};
-        for (const h of enabledHeaders) {
-          headerMap[h.key] = h.value;
-        }
-        const bodyStr =
-          session.config.httpBody.type === 'none'
-            ? undefined
-            : session.config.httpBody.content.trim() || undefined;
-        const httpPayload = {
-          method: session.config.httpMethod,
-          url: session.config.httpUrl,
-          headers: headerMap,
-          body: bodyStr,
-        };
-        const jsonBytes = Array.from(new TextEncoder().encode(JSON.stringify(httpPayload)));
-        try {
-          await invoke('send_data', { id: session.id, data: jsonBytes });
-          appendLog(session.id, { timestamp: Date.now(), direction: 'send', data: jsonBytes });
-          addTxBytes(session.id, jsonBytes.length);
-          addSendHistory(session.id, `${session.config.httpMethod} ${session.config.httpUrl}`);
-        } catch (e) {
-          appendLog(session.id, {
-            timestamp: Date.now(),
-            direction: 'system',
-            data: Array.from(new TextEncoder().encode(`${t('send.sendFailed')}: ${e}`)),
-          });
-          showToast('error', `${t('toast.sendFailed')}: ${e}`);
-        }
-        return;
-      }
-
       const payload = buildPayload(raw, overrideEncoding);
       if (payload.length === 0) {
         return;
@@ -188,7 +155,7 @@ export default function DataSend({ session }: Props) {
         showToast('error', `${t('toast.sendFailed')}: ${e}`);
       }
     },
-    [canSend, session.id, session.config, buildPayload, appendLog, addSendHistory, addTxBytes, t],
+    [canSend, session.id, buildPayload, appendLog, addSendHistory, addTxBytes, t],
   );
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -10,11 +10,12 @@ import {
   useSessionStore,
   useSettingsStore,
   getActiveSession,
-  getAllSessions,
+  getOpenedTabSessions,
   getOpenedTabView,
   getDirtyOpenedTabs,
   hasUnsavedSessions,
   getSessionGroupPath,
+  isStreamSession,
 } from '../../store';
 import { invoke } from '../../utils/tauri';
 import { flushStorage, flushDeferred, persistSessionLayout } from '../../store/storage';
@@ -30,6 +31,13 @@ import HttpProtocolLayout from '../workspace/HttpProtocolLayout';
 import ToastContainer from '../toast/ToastContainer';
 import { showToast } from '../../store/toastStore';
 import { APP } from '../../config/app';
+import { UnsavedGuardProvider } from '../../context/UnsavedGuardContext';
+import {
+  guardTargetNeedsConfirm,
+  syncTabFieldEditors,
+  type GuardTarget,
+} from '../../services/unsavedChangesService';
+import type { GuardedProceed } from '../../context/UnsavedGuardContext';
 
 import {
   APP_HEADER_ACTION_BTN_SIZE,
@@ -40,8 +48,8 @@ import {
   SIDEBAR_WIDTH,
 } from '../../config/constants';
 
-/** `null` = closing the app; otherwise the tab session id being closed. */
-type CloseConfirmTarget = 'app' | string | null;
+/** Pending guarded action — close app, close tab, or export. */
+type GuardDialogTarget = GuardTarget | null;
 
 export default function AppLayout() {
   const { t } = useTranslation();
@@ -49,8 +57,10 @@ export default function AppLayout() {
   const rootChildren = useSessionStore((s) => s.rootChildren);
   const tabDrafts = useSessionStore((s) => s.tabDrafts);
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
+  const openedTabOrder = useSessionStore((s) => s.openedTabOrder);
   const setActive = useSessionStore((s) => s.setActiveSession);
   const closeSessionTab = useSessionStore((s) => s.closeSessionTab);
+  const setOpenTabOrder = useSessionStore((s) => s.setOpenTabOrder);
   const renameSessionDraft = useSessionStore((s) => s.renameSessionDraft);
   const saveAll = useSessionStore((s) => s.saveAll);
   const saveSession = useSessionStore((s) => s.saveSession);
@@ -62,8 +72,8 @@ export default function AppLayout() {
   const setTheme = useSettingsStore((s) => s.setTheme);
 
   const sessionSlice = useMemo(
-    () => ({ rootChildren, tabDrafts, activeSessionId }),
-    [rootChildren, tabDrafts, activeSessionId],
+    () => ({ rootChildren, tabDrafts, activeSessionId, openedTabOrder }),
+    [rootChildren, tabDrafts, activeSessionId, openedTabOrder],
   );
 
   // Merged view must not live inside useSessionStore — getActiveSession returns a
@@ -74,42 +84,51 @@ export default function AppLayout() {
   );
 
   const tabSessions = useMemo(
-    () =>
-      getAllSessions(sessionSlice)
-        .filter((s) => s.opened)
-        .map((s) => getOpenedTabView(sessionSlice, s.id))
-        .filter((v): v is NonNullable<typeof v> => v !== null),
+    () => getOpenedTabSessions(sessionSlice),
     [sessionSlice],
   );
 
   const [aboutOpen, setAboutOpen] = useState(false);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-  const [closeTarget, setCloseTarget] = useState<CloseConfirmTarget>(null);
+  const [guardTarget, setGuardTarget] = useState<GuardDialogTarget>(null);
+  const [pendingProceed, setPendingProceed] = useState<GuardedProceed | null>(null);
   const [protocolSelectorOpen, setProtocolSelectorOpen] = useState(false);
   const [pendingParentGroupId, setPendingParentGroupId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [isExiting, setIsExiting] = useState(false);
 
-  const requestCloseConfirm = (target: CloseConfirmTarget) => {
-    setCloseTarget(target);
-    setCloseConfirmOpen(true);
-  };
-
   const dismissCloseConfirm = () => {
     setCloseConfirmOpen(false);
-    setCloseTarget(null);
+    setGuardTarget(null);
+    setPendingProceed(null);
     setIsExiting(false);
   };
 
-  /** Closing a tab is a view-level action — never deletes the catalog session. */
-  const handleCloseTab = (id: string) => {
-    if (tabDrafts[id]?.dirty) {
-      requestCloseConfirm(id);
+  const requestGuardedAction = useCallback((target: GuardTarget, proceed: GuardedProceed) => {
+    if (target.kind === 'app') {
+      syncTabFieldEditors();
+    } else {
+      syncTabFieldEditors(target.sessionId);
+    }
+
+    const state = useSessionStore.getState();
+    if (!guardTargetNeedsConfirm(state, target)) {
+      void Promise.resolve(proceed());
       return;
     }
-    closeSessionTab(id);
-  };
+
+    setPendingProceed(() => proceed);
+    setGuardTarget(target);
+    setCloseConfirmOpen(true);
+  }, []);
+
+  /** Closing a tab is a view-level action — never deletes the catalog session. */
+  const handleCloseTab = useCallback((id: string) => {
+    requestGuardedAction({ kind: 'closeTab', sessionId: id }, () => {
+      closeSessionTab(id);
+    });
+  }, [requestGuardedAction, closeSessionTab]);
 
   const handleNewSession = (parentGroupId: string | null = null) => {
     setPendingParentGroupId(parentGroupId);
@@ -145,45 +164,52 @@ export default function AppLayout() {
 
   useEffect(() => {
     const unlisten = win.onCloseRequested((event) => {
+      syncTabFieldEditors();
       const dirty = hasUnsavedSessions(useSessionStore.getState());
       if (!dirty) {
         return;
       }
       event.preventDefault();
-      requestCloseConfirm('app');
+      setPendingProceed(async () => {
+        await invoke('exit_app');
+      });
+      setGuardTarget({ kind: 'app' });
+      setCloseConfirmOpen(true);
     });
     return () => {
       unlisten.then((f) => f());
     };
   }, [win]);
 
-  const handleWindowClose = () => {
-    const dirty = hasUnsavedSessions(useSessionStore.getState());
-    if (dirty) {
-      requestCloseConfirm('app');
-    } else {
-      void invoke('exit_app');
-    }
-  };
-
-  const finishCloseTab = (id: string) => {
-    closeSessionTab(id);
-    dismissCloseConfirm();
-  };
+  const handleWindowClose = useCallback(() => {
+    requestGuardedAction({ kind: 'app' }, async () => {
+      await invoke('exit_app');
+    });
+  }, [requestGuardedAction]);
 
   const handleSaveAndClose = async () => {
     setIsExiting(true);
     try {
-      if (closeTarget === 'app') {
+      if (!guardTarget) {
+        return;
+      }
+      if (guardTarget.kind === 'app') {
         await saveAll();
+        await flushDeferred();
         await invoke('exit_app');
         return;
       }
-      if (typeof closeTarget === 'string') {
-        saveSession(closeTarget);
-        await flushDeferred();
-        finishCloseTab(closeTarget);
+
+      const { sessionId } = guardTarget;
+      saveSession(sessionId);
+      await flushDeferred();
+
+      if (guardTarget.kind === 'closeTab') {
+        closeSessionTab(sessionId);
+      } else {
+        await pendingProceed?.();
       }
+      dismissCloseConfirm();
     } catch (e) {
       showToast('error', `${t('toast.saveFailed')}: ${e}`);
       setIsExiting(false);
@@ -193,16 +219,24 @@ export default function AppLayout() {
   const handleDiscardAndClose = async () => {
     setIsExiting(true);
     try {
-      if (closeTarget === 'app') {
+      if (!guardTarget) {
+        return;
+      }
+      if (guardTarget.kind === 'app') {
         discardAllUnsavedDrafts();
         await flushStorage();
         await invoke('exit_app');
         return;
       }
-      if (typeof closeTarget === 'string') {
-        revertTabDraft(closeTarget);
-        finishCloseTab(closeTarget);
+
+      const { sessionId } = guardTarget;
+      if (guardTarget.kind === 'closeTab') {
+        revertTabDraft(sessionId);
+        closeSessionTab(sessionId);
+      } else {
+        await pendingProceed?.();
       }
+      dismissCloseConfirm();
     } catch (e) {
       showToast('error', `${t('toast.saveFailed')}: ${e}`);
       setIsExiting(false);
@@ -217,6 +251,22 @@ export default function AppLayout() {
       })),
     [sessionSlice],
   );
+
+  const dialogUnsavedSessions = useMemo(() => {
+    if (guardTarget?.kind === 'closeTab' || guardTarget?.kind === 'export') {
+      const view = getOpenedTabView(sessionSlice, guardTarget.sessionId);
+      if (!view) {
+        return [];
+      }
+      return [{
+        session: view,
+        path: getSessionGroupPath(sessionSlice, guardTarget.sessionId).map((g) => g.name),
+      }];
+    }
+    return unsavedSessions;
+  }, [guardTarget, unsavedSessions, sessionSlice]);
+
+  const confirmVariant = guardTarget?.kind === 'export' ? 'export' : 'close';
   const hasUnsaved = unsavedSessions.length > 0;
 
   const handleManualSave = () => {
@@ -229,6 +279,18 @@ export default function AppLayout() {
       showToast('info', t('toast.nothingToSave'));
     }
   };
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      syncTabFieldEditors();
+      if (hasUnsavedSessions(useSessionStore.getState())) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
 
   useEffect(() => {
     const onHide = () => {
@@ -304,7 +366,13 @@ export default function AppLayout() {
     </IconButton>
   );
 
+  const guardContextValue = useMemo(
+    () => ({ requestGuardedAction }),
+    [requestGuardedAction],
+  );
+
   return (
+    <UnsavedGuardProvider value={guardContextValue}>
     <Box position="relative" display="flex" flexDirection="column" height="full" width="full" overflow="hidden" bg="bg">
       <SideNavBar onAddSession={handleNewSession} />
 
@@ -335,6 +403,7 @@ export default function AppLayout() {
           onConfirmRename={handleConfirmRename}
           onCancelRename={handleCancelRename}
           onCloseSession={handleCloseTab}
+          onReorderOrder={setOpenTabOrder}
           onNewSession={() => handleNewSession(null)}
           newSessionTitle={t('header.newSession')}
         />
@@ -450,11 +519,11 @@ export default function AppLayout() {
           <Box flex="1" className="glass-panel" overflow="hidden">
             <EmptyWorkspace />
           </Box>
-        ) : activeSession.config.protocol === 'HTTP' ? (
+        ) : activeSession.protocol === 'HTTP' ? (
           <HttpProtocolLayout session={activeSession} />
-        ) : (
+        ) : isStreamSession(activeSession) ? (
           <StreamProtocolLayout session={activeSession} />
-        )}
+        ) : null}
       </Box>
 
       <Box ml={SIDEBAR_WIDTH}>
@@ -465,7 +534,8 @@ export default function AppLayout() {
       <CloseConfirmDialog
         open={closeConfirmOpen}
         isExiting={isExiting}
-        unsavedSessions={unsavedSessions}
+        variant={confirmVariant}
+        unsavedSessions={dialogUnsavedSessions}
         onSave={handleSaveAndClose}
         onDiscard={handleDiscardAndClose}
         onCancel={dismissCloseConfirm}
@@ -480,5 +550,6 @@ export default function AppLayout() {
       />
       <ToastContainer />
     </Box>
+    </UnsavedGuardProvider>
   );
 }

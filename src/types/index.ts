@@ -45,24 +45,47 @@ export type HttpBody =
   | { type: 'text'; content: string; jsonContent?: string }
   | { type: 'json'; content: string; textContent?: string };
 
-export interface ConnectionConfig {
-  protocol: ProtocolType;
-  remoteHost: string;
-  remotePort: number;
-  localPort: number;
-  localHost: string;
-  wsUrl: string;
-  serialPort: string;
-  baudRate: number;
-  dataBits: 5 | 6 | 7 | 8;
-  stopBits: 1 | 2;
-  parity: 'none' | 'odd' | 'even';
-  httpUrl: string;
-  httpMethod: HttpMethod;
-  httpHeaders: HttpHeader[];
-  httpParams: HttpQueryParam[];
-  httpBody: HttpBody;
-}
+export type {
+  HttpConfig,
+} from './protocols/httpConfig';
+export type {
+  StreamConnectionConfig,
+  StreamProtocolType,
+  StreamSessionSettings,
+} from './protocols/streamConfig';
+export type {
+  HttpSession,
+  StreamSession,
+  HttpSessionItem,
+  StreamSessionItem,
+  HttpTabDraft,
+  StreamTabDraft,
+  SessionRuntimeBase,
+  Session,
+  TabDraft,
+  SessionItem,
+} from './protocols/sessionModel';
+export {
+  isHttpSession,
+  isStreamSession,
+  isHttpSessionItem,
+  isStreamSessionItem,
+  isHttpTabDraft,
+  isStreamTabDraft,
+  isStreamProtocol,
+  normalizePersistedSessionItem,
+  normalizeWorkspaceTree,
+  mergeSessionItemWithDraft,
+  cloneDraftFromSessionItem,
+  applyDraftToSessionItem,
+  defaultHttpConfig,
+  defaultStreamConnectionConfig,
+  defaultStreamSessionSettings,
+} from './protocols/sessionModel';
+
+/** @deprecated Use HttpConfig or StreamConnectionConfig with session.protocol */
+export type ConnectionConfig = import('./protocols/streamConfig').StreamConnectionConfig
+  | (import('./protocols/httpConfig').HttpConfig & { protocol: 'HTTP' });
 
 /** Protocol-specific config views — used for type-safe UI isolation */
 export interface TcpClientConfigView { remoteHost: string; remotePort: number; localPort: number; }
@@ -71,7 +94,7 @@ export interface UdpClientConfigView { remoteHost: string; remotePort: number; l
 export interface UdpServerConfigView { localHost: string; localPort: number; }
 export interface WebSocketConfigView { wsUrl: string; }
 export interface SerialConfigView { serialPort: string; baudRate: number; dataBits: 5 | 6 | 7 | 8; stopBits: 1 | 2; parity: 'none' | 'odd' | 'even'; }
-export interface HttpConfigView { httpUrl: string; httpMethod: HttpMethod; httpHeaders: HttpHeader[]; httpParams: HttpQueryParam[]; httpBody: HttpBody; }
+export interface HttpConfigView { httpUrl: string; httpMethod: HttpMethod; httpHeaders: HttpHeader[]; httpParams: HttpQueryParam[]; httpPathParams: HttpQueryParam[]; httpBody: HttpBody; }
 
 export interface ReceiveSettings {
   encoding: EncodingMode;
@@ -145,51 +168,6 @@ export interface ProtocolParser {
   lastResult?: ParsedFrame;
 }
 
-export interface Session {
-  id: string;
-  name: string;
-  config: ConnectionConfig;
-  status: ConnectionStatus;
-  statusMsg: string;
-  receiveSettings: ReceiveSettings;
-  sendSettings: SendSettings;
-  logs: LogEntry[];
-  rxBytes: number;
-  txBytes: number;
-  remoteAddr?: string;
-  trafficSamples: TrafficSample[];
-  /** Connected clients (TCP Server only). Runtime-only — not persisted. */
-  clients: string[];
-  /** Last 30 sent texts for history recall */
-  sendHistory: string[];
-  /** Per-session send input content */
-  sendContent: string;
-  /**
-   * Runtime-only flag: whether the session is currently shown as a tab.
-   * Closing a tab flips this to false but does NOT delete the session — the
-   * session still lives in the workspace tree. Deletion happens via the sidebar.
-   * Persisted via `openedSessionIds` so open tabs survive app restart.
-   */
-  opened: boolean;
-  // [PRO] optional script parser for this session
-  parser?: ProtocolParser;
-}
-
-/**
- * Per-tab working copy of editable session fields. Runtime data (logs, status,
- * traffic) stays on the catalog `Session`; edits in an open tab go here until
- * the user saves, which commits the draft back to the session.
- */
-export interface TabDraft {
-  name: string;
-  config: ConnectionConfig;
-  receiveSettings: ReceiveSettings;
-  sendSettings: SendSettings;
-  sendContent: string;
-  sendHistory: string[];
-  dirty: boolean;
-}
-
 /**
  * The workspace is a Bruno-style tree:
  *   workspace root
@@ -213,15 +191,13 @@ export interface GroupNode {
   children: WorkspaceItem[];
 }
 
-export type SessionItem = Session & { kind: 'session' };
-
-export type WorkspaceItem = GroupNode | SessionItem;
+export type WorkspaceItem = GroupNode | import('./protocols/sessionModel').SessionItem;
 
 export function isGroup(item: WorkspaceItem): item is GroupNode {
   return item.kind === 'group';
 }
 
-export function isSession(item: WorkspaceItem): item is SessionItem {
+export function isSession(item: WorkspaceItem): item is import('./protocols/sessionModel').SessionItem {
   return item.kind === 'session';
 }
 

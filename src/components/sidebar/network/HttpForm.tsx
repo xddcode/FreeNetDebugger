@@ -1,19 +1,18 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { useSessionStore } from '../../../store';
-import type { Session } from '../../../types';
+import type { HttpSession } from '../../../types';
 import type { ProtocolValidationErrors } from '../../../utils/protocolConfig';
 import { CONFIG_FIELD_DEBOUNCE_MS } from '../../../config/constants';
 import { FieldLabel, FieldInput, FieldSelect } from '../ui';
+import { HTTP_METHODS } from '../../../utils/http';
+import type { HttpMethod } from '../../../types';
 
 interface Props {
-  session: Session;
+  session: HttpSession;
   disabled: boolean;
   errors: ProtocolValidationErrors;
   onValidate: (errors: ProtocolValidationErrors) => void;
 }
-
-import { HTTP_METHODS } from '../../../utils/http';
-import type { HttpMethod } from '../../../types';
 
 export default function HttpForm({ session, disabled, errors, onValidate }: Props) {
   const { t } = useTranslation();

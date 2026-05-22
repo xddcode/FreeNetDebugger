@@ -1,14 +1,14 @@
 ﻿import { Box, Button, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { useSessionStore } from '../../../store';
-import type { Session } from '../../../types';
+import type { StreamSession } from '../../../types';
 import type { ProtocolValidationErrors } from '../../../utils/protocolConfig';
 import { useSerialPorts } from '../../../hooks/useSerialPorts';
 import { showToast } from '../../../store/toastStore';
 import { FieldLabel, FieldSelect } from '../ui';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
   disabled: boolean;
   errors: ProtocolValidationErrors;
   onValidate: (errors: ProtocolValidationErrors) => void;

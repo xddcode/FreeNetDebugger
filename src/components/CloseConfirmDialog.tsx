@@ -19,6 +19,7 @@ export interface UnsavedSessionEntry {
 interface Props {
   open: boolean;
   isExiting?: boolean;
+  variant?: 'close' | 'export';
   unsavedSessions: UnsavedSessionEntry[];
   onSave: () => void;
   onDiscard: () => void;
@@ -28,6 +29,7 @@ interface Props {
 export default function CloseConfirmDialog({
   open,
   isExiting,
+  variant = 'close',
   unsavedSessions,
   onSave,
   onDiscard,
@@ -35,6 +37,7 @@ export default function CloseConfirmDialog({
 }: Props) {
   const { t } = useTranslation();
   const totalCount = unsavedSessions.length;
+  const isExport = variant === 'export';
 
   // Group unsaved sessions by their breadcrumb path so the dialog mirrors
   // the sidebar layout. Root-level sessions go under a single "(root)" bucket.
@@ -53,11 +56,15 @@ export default function CloseConfirmDialog({
   return (
     <AppDialog open={open} onClose={onCancel} size="sm">
       <Dialog.Header>
-        <Dialog.Title color="fg">{t('closeConfirm.title')}</Dialog.Title>
+        <Dialog.Title color="fg">
+          {isExport ? t('closeConfirm.exportTitle') : t('closeConfirm.title')}
+        </Dialog.Title>
       </Dialog.Header>
       <Dialog.Body>
         <Text fontSize="sm" color="fg.subtle" mb="4">
-          {t('closeConfirm.message', { count: totalCount })}
+          {isExport
+            ? t('closeConfirm.exportMessage', { count: totalCount })
+            : t('closeConfirm.message', { count: totalCount })}
         </Text>
 
         <Box
@@ -102,7 +109,7 @@ export default function CloseConfirmDialog({
                         {sess.name}
                       </Text>
                       <Text color="fg.subtle" opacity={0.5} flexShrink={0}>
-                        {sess.config.protocol.replace('_', ' ')}
+                        {sess.protocol.replace('_', ' ')}
                       </Text>
                     </Flex>
                   ))}
@@ -112,9 +119,16 @@ export default function CloseConfirmDialog({
           </Stack>
         </Box>
 
-        <Flex gap="2">
+        <Flex gap="2" align="stretch">
           <Button
             flex="1"
+            minW="0"
+            h="auto"
+            minH="9"
+            py="2"
+            px="2"
+            whiteSpace="normal"
+            lineHeight="short"
             disabled={isExiting}
             onClick={onSave}
             loading={isExiting}
@@ -128,6 +142,13 @@ export default function CloseConfirmDialog({
           </Button>
           <Button
             flex="1"
+            minW="0"
+            h="auto"
+            minH="9"
+            py="2"
+            px="2"
+            whiteSpace="normal"
+            lineHeight="short"
             disabled={isExiting}
             onClick={onDiscard}
             variant="outline"
@@ -136,10 +157,17 @@ export default function CloseConfirmDialog({
             bg="danger.subtle"
             _hover={{ bg: 'danger.subtle', opacity: 0.9 }}
           >
-            {t('closeConfirm.dontSave')}
+            {isExport ? t('closeConfirm.exportDontSave') : t('closeConfirm.dontSave')}
           </Button>
           <Button
             flex="1"
+            minW="0"
+            h="auto"
+            minH="9"
+            py="2"
+            px="2"
+            whiteSpace="normal"
+            lineHeight="short"
             disabled={isExiting}
             onClick={onCancel}
             variant="outline"

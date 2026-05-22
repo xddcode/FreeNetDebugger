@@ -546,15 +546,37 @@ input, select, textarea {
   border-radius: var(--radius-lg);
 }
 
-/* HTTP workspace — solid editor surface, no glass tint */
+/* HTTP workspace — solid editor surface, no outer frame */
 .http-workspace {
   background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-lg);
 }
 
-[data-theme="light"] .http-workspace {
-  border-color: rgba(0, 0, 0, 0.08);
+/* Session tab bar — reorder layout + window drag region; tab visuals via Chakra */
+.session-tab-reorder-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.session-tab-reorder-item {
+  flex-shrink: 0;
+  list-style: none;
+  position: relative;
+}
+
+.session-tab-item {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.session-tab-bar-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+  cursor: default;
 }
 
 .http-editor-pane {
@@ -582,6 +604,133 @@ input, select, textarea {
 
 [data-theme="light"] .http-response-stale-dim {
   filter: saturate(0.88) brightness(0.97);
+}
+
+/* HTTP key-value table — explicit borders for both request & response tables */
+.http-kv-table {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.http-kv-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.http-kv-table th,
+.http-kv-table td {
+  border-bottom: 1px solid var(--color-border) !important;
+  border-right: 1px solid var(--color-border) !important;
+}
+
+.http-kv-table th:last-child,
+.http-kv-table td:last-child {
+  border-right: none;
+}
+
+.http-kv-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.http-kv-table thead th {
+  background: var(--color-surface-container);
+}
+
+/* HTTP key-value table — flat in-cell inputs, no hover box artifacts */
+.http-kv-cell-input {
+  display: block;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  padding: 0;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.http-kv-cell-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.http-kv-cell-input:focus {
+  outline: none;
+}
+
+.http-kv-cell-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* HTTP URL bar — path placeholder highlight overlay */
+.http-url-input__mirror {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding-inline: 0.625rem;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.http-url-input__text {
+  color: var(--color-text-primary);
+}
+
+[data-theme='light'] .http-url-input__text {
+  color: var(--color-light-text-primary);
+}
+
+.http-url-input .http-url-input__field,
+.http-url-input .http-url-input__field.chakra-input {
+  position: relative;
+  z-index: 1;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--color-text-primary);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme='light'] .http-url-input .http-url-input__field,
+[data-theme='light'] .http-url-input .http-url-input__field.chakra-input {
+  caret-color: var(--color-light-text-primary);
+}
+
+.http-url-input .http-url-input__field::placeholder {
+  color: var(--color-text-muted);
+  -webkit-text-fill-color: var(--color-text-muted);
+  opacity: 1;
+}
+
+[data-theme='light'] .http-url-input .http-url-input__field::placeholder {
+  color: var(--color-light-text-muted);
+  -webkit-text-fill-color: var(--color-light-text-muted);
+}
+
+.http-url-input__field::selection {
+  background: rgba(173, 198, 255, 0.35);
+}
+
+[data-theme='light'] .http-url-input__field::selection {
+  background: rgba(0, 91, 193, 0.2);
+}
+
+.http-url-input__placeholder {
+  color: var(--color-warning);
+}
+
+[data-theme='light'] .http-url-input__placeholder {
+  color: var(--color-light-warning);
 }
 
 /* Vertical rhythm for settings / form stacks */

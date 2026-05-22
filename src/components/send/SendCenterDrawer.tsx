@@ -14,7 +14,7 @@ import {
 import { useSessionStore, useSettingsStore } from '../../store';
 import { sendPanelBus } from '../../utils/sendPanelBus';
 import { showToast } from '../../store/toastStore';
-import type { EncodingMode, Session } from '../../types';
+import type { EncodingMode, StreamSession } from '../../types';
 import ScriptsPanel from '../scripts/ScriptsPanel';
 import { FieldSelect } from '../sidebar/ui';
 
@@ -22,7 +22,7 @@ export type SendCenterTabKey = 'history' | 'shortcuts' | 'scripts';
 
 interface Props {
   open: boolean;
-  session: Session | null;
+  session: StreamSession | null;
   activeTab: SendCenterTabKey;
   onTabChange: (tab: SendCenterTabKey) => void;
   onClose: () => void;

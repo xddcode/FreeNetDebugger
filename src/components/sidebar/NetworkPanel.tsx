@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Box, Flex, Stack, Text } from '@chakra-ui/react';
 import { invoke } from '../../utils/tauri';
 import { useSessionStore, getAllSessions } from '../../store';
-import type { Session, ProtocolType } from '../../types';
+import type { StreamSession, ProtocolType } from '../../types';
 import { PanelCard, PanelHeader, FieldLabel, FieldSelect } from './ui';
-import { validateProtocolConfig, hasValidationErrors, buildConnectPayload } from '../../utils/protocolConfig';
+import { validateStreamConfig, hasValidationErrors, buildConnectPayload } from '../../utils/protocolConfig';
 import type { ProtocolValidationErrors } from '../../utils/protocolConfig';
 import { showToast } from '../../store/toastStore';
 import ConnectActionButton from '../ui/ConnectActionButton';
@@ -16,10 +16,9 @@ import UdpClientForm from './network/UdpClientForm';
 import UdpServerForm from './network/UdpServerForm';
 import WebSocketForm from './network/WebSocketForm';
 import SerialForm from './network/SerialForm';
-import HttpForm from './network/HttpForm';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
 }
 
 const PROTOCOLS: { value: ProtocolType; label: string }[] = [
@@ -29,7 +28,6 @@ const PROTOCOLS: { value: ProtocolType; label: string }[] = [
   { value: 'UDP_SERVER', label: 'UDP Server' },
   { value: 'WEBSOCKET', label: 'WebSocket' },
   { value: 'SERIAL', label: 'Serial' },
-  { value: 'HTTP', label: 'HTTP' },
 ];
 
 export default function NetworkPanel({ session }: Props) {
@@ -39,10 +37,10 @@ export default function NetworkPanel({ session }: Props) {
 
   const [errors, setErrors] = useState<ProtocolValidationErrors>({});
 
-  const { config } = session;
+  const { config, protocol } = session;
   const isActive = session.status === 'connected' || session.status === 'listening';
   const isBusy = session.status === 'connecting' || session.status === 'disconnecting';
-  const isSrv = config.protocol === 'TCP_SERVER';
+  const isSrv = protocol === 'TCP_SERVER';
 
   const handleValidate = (fieldErrors: ProtocolValidationErrors) => {
     setErrors((prev) => ({ ...prev, ...fieldErrors }));
@@ -66,9 +64,11 @@ export default function NetworkPanel({ session }: Props) {
       return;
     }
 
-    const liveConfig =
-      getAllSessions(useSessionStore.getState()).find((s) => s.id === session.id)?.config ?? config;
-    const newErrors = validateProtocolConfig(liveConfig);
+    const liveSession = getAllSessions(useSessionStore.getState()).find((s) => s.id === session.id);
+    const liveConfig = liveSession && liveSession.protocol !== 'HTTP'
+      ? liveSession.config
+      : config;
+    const newErrors = validateStreamConfig(liveConfig);
     setErrors(newErrors);
     if (hasValidationErrors(newErrors)) {
       return;
@@ -77,7 +77,7 @@ export default function NetworkPanel({ session }: Props) {
     try {
       setStatus(session.id, 'connecting');
       // connect only spawns the async task; success/error toast comes from net:status in App.tsx
-      await invoke('connect', { id: session.id, config: buildConnectPayload(liveConfig) });
+      await invoke('connect', { id: session.id, config: buildConnectPayload(protocol, liveConfig) });
     } catch (e) {
       setStatus(session.id, 'error', String(e));
       showToast('error', t('toast.connectFailed'));
@@ -91,7 +91,7 @@ export default function NetworkPanel({ session }: Props) {
 
   const renderProtocolForm = () => {
     const props = { session, disabled: isActive || isBusy, errors, onValidate: handleValidate };
-    switch (config.protocol) {
+    switch (protocol) {
       case 'TCP_CLIENT':
         return <TcpClientForm {...props} />;
       case 'TCP_SERVER':
@@ -104,8 +104,6 @@ export default function NetworkPanel({ session }: Props) {
         return <WebSocketForm {...props} />;
       case 'SERIAL':
         return <SerialForm {...props} />;
-      case 'HTTP':
-        return <HttpForm {...props} />;
       default:
         return null;
     }
@@ -124,7 +122,7 @@ export default function NetworkPanel({ session }: Props) {
       <Stack gap="4" px="4" py="3" pt="2" className="settings-stack">
         <Box>
           <FieldLabel seq={1} label={t('network.protocolType')} />
-          <FieldSelect value={config.protocol} onChange={() => {}} options={PROTOCOLS} disabled />
+          <FieldSelect value={protocol} onChange={() => {}} options={PROTOCOLS} disabled />
         </Box>
 
         {renderProtocolForm()}

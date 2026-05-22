@@ -27,6 +27,7 @@ export default function PanelLineTabs({ tabs, value, onChange, endContent, embed
     >
       <Tabs.List
         borderColor="border"
+        borderBottomWidth={embedded ? '0' : '1px'}
         px={embedded ? '0' : '2'}
         pt={embedded ? '0' : '2'}
         pb="0"

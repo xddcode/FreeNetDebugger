@@ -1,13 +1,13 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { useSessionStore } from '../../../store';
-import type { Session } from '../../../types';
+import type { StreamSession } from '../../../types';
 import type { ProtocolValidationErrors } from '../../../utils/protocolConfig';
 import { isValidWsUrl } from '../../../utils/validation';
 import { CONFIG_FIELD_DEBOUNCE_MS } from '../../../config/constants';
 import { FieldLabel, FieldInput } from '../ui';
 
 interface Props {
-  session: Session;
+  session: StreamSession;
   disabled: boolean;
   errors: ProtocolValidationErrors;
   onValidate: (errors: ProtocolValidationErrors) => void;

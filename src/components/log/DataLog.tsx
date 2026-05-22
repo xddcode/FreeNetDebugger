@@ -14,7 +14,7 @@ import {
 import { SearchInput } from '../ui/SearchInput';
 import { Plug, Clock, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { useSessionStore, useLogStore } from '../../store';
-import type { Session, LogEntry, EncodingMode, AsciiNonPrintableMode } from '../../types';
+import type { StreamSession, LogEntry, EncodingMode, AsciiNonPrintableMode } from '../../types';
 import {
   bytesToDisplay, bytesToHexText, bytesToHex,
 } from '../../utils/encoding';
@@ -32,7 +32,7 @@ import {
   TRAFFIC_TX_PALETTE,
 } from '../../config/constants';
 
-interface Props { session: Session }
+interface Props { session: StreamSession }
 
 function fmtTime(ms: number): string {
   const d = new Date(ms);

@@ -2,6 +2,7 @@ use tauri::{AppHandle, State};
 use tokio::sync::mpsc;
 
 use crate::events::emit_status;
+use crate::protocols::http_client::{execute_http_request, HttpRequestPayload};
 use crate::protocols::spawn_connection_task;
 use crate::state::{AppState, ConnEntry};
 use crate::types::{ConnectionConfig, SystemStats};
@@ -97,6 +98,14 @@ pub async fn send_data(
             .map_err(|e| e.to_string()),
         None => Err("No active connection".to_string()),
     }
+}
+
+#[tauri::command]
+pub async fn http_request(
+    state: State<'_, AppState>,
+    payload: HttpRequestPayload,
+) -> Result<crate::protocols::http_client::HttpResponseDto, String> {
+    execute_http_request(&state.http_client, payload).await
 }
 
 #[tauri::command]
